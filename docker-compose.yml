@@ -1,0 +1,11 @@
+services:
+  discord-bot:
+    container_name: MamieHenrriette
+    build: .
+    restart: on-failure
+    environment:
+      - TOKEN=your token
+      - STATUS=online
+      - INTERVAL=3600
+    volumes:
+      - ./statuts.txt:/app/statuts.txt
