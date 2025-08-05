@@ -1,2 +1,5 @@
 discord.py==2.3.2
 python-dotenv==1.0.0
+# necessaire pour discord.py
+aiohttp>=3.7.4,<4
+audioop-lts; python_version>='3.13'

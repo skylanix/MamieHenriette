@@ -56,3 +56,34 @@ En mode supervision
 
 - discord.py==2.3.2
 - python-dotenv==1.0.0
+
+
+
+# Installation poste de dev
+## installation des dépendences systeme 
+~~~
+sudo apt install python3 python3-pip p
+~~~
+
+## creation de l'environnement python locale
+Dans le projet
+~~~
+python3 -m venv .venv
+~~~
+
+Puis activer l'environnement : 
+~~~
+source .venv/bin/activate
+~~~
+
+## installation des dépendences python 
+
+~~~
+pip install -r requirements.txt
+~~~
+
+## execution
+
+~~~
+TOKEN=truc python3 bot.py
+~~~
