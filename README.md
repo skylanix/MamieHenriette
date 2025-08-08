@@ -1,4 +1,3 @@
-Voici le README.md pour votre projet :
 
 # 👵 Mamie Henrriette - Discord Status Bot 🤖
 
@@ -13,11 +12,13 @@ Mamie Henrriette est un bot Discord intelligent qui change automatiquement de st
 - Gestion des erreurs et logging
 - Support multi-statuts Discord
 - Déploiement simplifié avec Docker
+- 📊 Surveillance optionnelle avec Zabbix
 
 ## 🛠 Prérequis
 
-- Docker
+- Docker et Docker Compose
 - Compte Discord et Token du bot
+- (Optionnel) Serveur Zabbix pour la surveillance
 
 ## 📦 Installation
 
@@ -27,19 +28,69 @@ git clone https://git.favrep.ch/lapatatedouce/MamieHenrriette
 cd MamieHenrriette
 ```
 
-2. Conteneur Docker
+2. Copiez le fichier de configuration
+```bash
+cp .env.example .env
+```
 
+3. Éditez le fichier `.env` avec vos paramètres
+```bash
+nano .env
+```
+
+4. Démarrez le conteneur Docker
+
+**Mode développement (avec logs):**
 ```bash
 docker-compose up --build
 ```
 
+**Mode production (en arrière-plan):**
+```bash
+docker-compose up --build -d
+```
+
+**Voir les logs:**
+```bash
+docker-compose logs -f discord-bot
+```
+
+**Arrêter le conteneur:**
+```bash
+docker-compose down
+```
+
 ## 🔧 Configuration
 
-### Variables d'environnement
+### Variables d'environnement principales
 
 - `TOKEN`: Votre token Discord (obligatoire)
 - `STATUS`: Statut initial (défaut: online)
-- `INTERVAL`: Intervalle de changement de statut (défaut: 60 secondes)
+- `INTERVAL`: Intervalle de changement de statut (défaut: 3600 secondes)
+
+### 📊 Configuration Zabbix (optionnelle)
+
+- `ENABLE_ZABBIX`: Activer la surveillance Zabbix (défaut: false)
+- `ZABBIX_SERVER`: Adresse du serveur Zabbix
+- `ZABBIX_HOSTNAME`: Nom d'hôte pour identifier le bot
+- `ZABBIX_PORT`: Port d'exposition Zabbix (défaut: 10050)
+
+#### Métriques surveillées par Zabbix
+
+- Statut du bot Discord
+- Temps de fonctionnement (uptime)
+- Utilisation mémoire
+- Erreurs et avertissements dans les logs
+- Connectivité à Discord
+
+#### Activation de Zabbix
+
+Dans votre fichier `.env` :
+```bash
+ENABLE_ZABBIX=true
+ZABBIX_SERVER=votre-serveur-zabbix.com
+ZABBIX_HOSTNAME=mamie-henrriette-bot
+```
 
 ### Fichier `statuts.txt`
 
@@ -57,33 +108,38 @@ En mode supervision
 - discord.py==2.3.2
 - python-dotenv==1.0.0
 
+---
 
+# 🖥️ Installation environnement de développement
 
-# Installation poste de dev
-## installation des dépendences systeme 
-~~~
-sudo apt install python3 python3-pip p
-~~~
+## Installation des dépendances système
 
-## creation de l'environnement python locale
-Dans le projet
-~~~
+```bash
+sudo apt install python3 python3-pip
+```
+
+## Création de l'environnement Python local
+
+Dans le dossier du projet :
+
+```bash
 python3 -m venv .venv
-~~~
+```
 
-Puis activer l'environnement : 
-~~~
+Puis activer l'environnement :
+
+```bash
 source .venv/bin/activate
-~~~
+```
 
-## installation des dépendences python 
+## Installation des dépendances Python
 
-~~~
+```bash
 pip install -r requirements.txt
-~~~
+```
 
-## execution
+## Exécution
 
-~~~
-TOKEN=truc python3 bot.py
-~~~
+```bash
+TOKEN=votre_token_discord python3 bot.py
+```
