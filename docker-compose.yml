@@ -1,18 +1,16 @@
 services:
   discord-bot:
-    container_name: MamieHenrriette
+    container_name: MamieHenriette
     build: .
     restart: on-failure
     environment:
-      - TOKEN=your token
+      - TOKEN=VOTRE_TOKEN_DISCORD_ICI
       - STATUS=online
       - INTERVAL=3600
-      - ENABLE_ZABBIX=${ENABLE_ZABBIX:-false}
-      - ZABBIX_SERVER=${ZABBIX_SERVER:-zabbix-server.example.com}
-      - ZABBIX_HOSTNAME=${ZABBIX_HOSTNAME:-mamie-henrriette-bot}
+      - ENABLE_ZABBIX=false
+      - ZABBIX_SERVER=zabbix-server.example.com
+      - ZABBIX_HOSTNAME=mamie-henriette-bot
     volumes:
       - ./statuts.txt:/app/statuts.txt
-    ports:
-      - "${ZABBIX_PORT:-10050}:10050"
-    profiles:
-      - default
+    # ports:
+    #   - "10050:10050"  # Décommentez si ENABLE_ZABBIX=true
