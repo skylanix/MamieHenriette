@@ -1,8 +1,21 @@
-FROM alpine:3.22.1
+FROM debian:trixie-slim
 
 WORKDIR /app
 
-RUN apk add --no-cache python3 py3-pip zabbix-agent2
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    apt-utils \
+    python3 \
+    python3-pip \
+    python3-venv \
+    wget \
+    && wget https://repo.zabbix.com/zabbix/7.4/release/debian/pool/main/z/zabbix-release/zabbix-release_latest_7.4+debian12_all.deb \
+    && dpkg -i zabbix-release_latest_7.4+debian12_all.deb \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends zabbix-agent2 \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm zabbix-release_latest_7.4+debian12_all.deb
 
 COPY requirements.txt .
 COPY bot.py .
