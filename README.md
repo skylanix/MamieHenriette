@@ -1,9 +1,9 @@
 
-# 👵 Mamie Henrriette - Discord Status Bot 🤖
+# 👵 Mamie Henriette - Discord Status Bot 🤖
 
 ## 📖 Description
 
-Mamie Henrriette est un bot Discord intelligent qui change automatiquement de statut, surveillant et gérant votre serveur avec une touche d'humour et de caractère.
+Mamie Henriette est un bot Discord intelligent qui change automatiquement de statut, surveillant et gérant votre serveur avec une touche d'humour et de caractère.
 
 ## ✨ Fonctionnalités
 
@@ -89,7 +89,7 @@ Dans votre fichier `.env` :
 ```bash
 ENABLE_ZABBIX=true
 ZABBIX_SERVER=votre-serveur-zabbix.com
-ZABBIX_HOSTNAME=mamie-henrriette-bot
+ZABBIX_HOSTNAME=MamieHenriette
 ```
 
 ### Fichier `statuts.txt`
