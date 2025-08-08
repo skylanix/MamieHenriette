@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html color-mode="user">
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+	<meta name="mobile-web-app-capable" content="yes" />
+	<title>Mamie Henriette</title>
+	<link rel="stylesheet" href="/static/css/mvp.css" />
+	<link rel="stylesheet" href="/static/css/style.css" />
+	<link rel="icon" href="/static/ico/favicon.ico" type="image/x-icon">
+	<link rel="shortcut icon" href="/static/ico/favicon.ico" type="image/x-icon">
+</head>
+
+<body>
+	<header>
+		<nav>
+			<a href="/"><img src="/static/ico/favicon.ico"></a>
+			<ul>
+				<li><a href="/">Menu1</a></li>
+				<li><a href="/">Menu2</a></li>
+				<li><a href="/">Menu3</a></li>
+				<li><a href="/">Menu4</a></li>
+				<li><a href="/">Menu5</a></li>
+			</ul>
+		</nav>
+	</header>
+	<main>
+		{% block content %}{% endblock %}
+	</main>
+	<footer>
+		<hr>
+		<p>Mamie Henriette by <a href="mailto:TODO">Mow</a>, <a href="mailto:shionn@gmail.com">Shionn</a>, <a
+				href="mailto:TODO">Sky</a>, <a href="mailto:TODO">Steve</a></p>
+	</footer>
+	<jsp:invoke fragment="scripts" />
+</body>
+
+</html>
