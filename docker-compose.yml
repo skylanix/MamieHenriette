@@ -7,5 +7,12 @@ services:
       - TOKEN=your token
       - STATUS=online
       - INTERVAL=3600
+      - ENABLE_ZABBIX=${ENABLE_ZABBIX:-false}
+      - ZABBIX_SERVER=${ZABBIX_SERVER:-zabbix-server.example.com}
+      - ZABBIX_HOSTNAME=${ZABBIX_HOSTNAME:-mamie-henrriette-bot}
     volumes:
       - ./statuts.txt:/app/statuts.txt
+    ports:
+      - "${ZABBIX_PORT:-10050}:10050"
+    profiles:
+      - default
