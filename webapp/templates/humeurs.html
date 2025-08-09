@@ -1,0 +1,28 @@
+{% extends "template.html" %}
+
+{% block content %}
+<h1>Humeurs de Mamie.</h1>
+<table>
+	<thead>
+		<tr>
+			<th>Text</th>
+			<th>Action</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for humeur in humeurs %}
+		<tr>
+			<td>{{humeur.text}}</td>
+			<td><a href="{{ url_for('delHumeur', id = humeur.id) }}">Supprimer</a></td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+
+<h2>Ajouter une humeur</h2>
+<form action="{{ url_for('addHumeur') }}" method="POST">
+	<label for="text">Text</label>
+	<input name="text" type="text" />
+	<input type="Submit" value="Ajouter">
+</form>
+{% endblock %}

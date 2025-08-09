@@ -6,7 +6,12 @@ webapp.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 db = SQLAlchemy(webapp)
 
 with webapp.app_context():
-    with open('database/schema.sql', 'r') as f:
-        sql_script = f.read()
-    db.session.execute(text(sql_script))
-    db.session.commit()
+	with open('database/schema.sql', 'r') as f:
+		sql = f.read()
+		connection = db.session.connection().connection
+		try:
+			cursor = connection.cursor()
+			cursor.executescript(sql)
+			cursor.close()
+		finally:
+			connection.close()
