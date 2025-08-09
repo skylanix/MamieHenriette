@@ -6,7 +6,7 @@ import asyncio
 from database.models import Humeur
 from webapp import webapp
 
-class MyClient(discord.Client):
+class DiscordBot(discord.Client):
 	async def on_ready(self):
 		logging.info(f'Logged in as {self.user} (ID: {self.user.id})')
 		for c in self.get_all_channels() :
@@ -22,7 +22,7 @@ class MyClient(discord.Client):
 		await asyncio.sleep(60)
 
 intents = discord.Intents.default()
-client = MyClient(intents=intents)
+bot = DiscordBot(intents=intents)
 
 with webapp.app_context():
-	client.run(os.getenv('TOKEN'))
+	bot.run(os.getenv('TOKEN'))
