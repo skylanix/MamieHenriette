@@ -1,4 +1,5 @@
-from webapp import db
+# from webapp import db
+from database import db
 
 class Message(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
