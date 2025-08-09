@@ -1,0 +1,13 @@
+{% extends "template.html" %}
+
+{% block content %}
+<h1>Configuration de Mamie.</h1>
+
+<h2>Api</h2>
+<form action="{{ url_for('setConfiguration', key = 'discord_token') }}" method="POST">
+	<label for="value">Api Discord (cachée)</label>
+	<input name="value" type="password" />
+	<input type="Submit" value="Définir">
+	<p>Nécéssite un redémarrage</p>
+</form>
+{% endblock %}
