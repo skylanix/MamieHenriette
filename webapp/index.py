@@ -1,6 +1,7 @@
-from flask import Flask, render_template
-from webapp import webapp, db
-from webapp.models import Message
+from flask import render_template
+from webapp import webapp
+# from database import db
+# from database.message import Message
 
 @webapp.route("/")
 def index():
