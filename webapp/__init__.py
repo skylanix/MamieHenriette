@@ -1,4 +1,5 @@
 from flask import Flask
+from discordbot import bot
 
 webapp = Flask(__name__)
 

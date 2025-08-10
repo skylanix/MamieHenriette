@@ -3,6 +3,19 @@
 {% block content %}
 <h1>Configuration de Mamie.</h1>
 
+<h2>Humble Bundle</h2>
+<form action="{{ url_for('updateConfiguration') }}" method="POST">
+	<label for="humble_bundle_channel">Api Discord (cachée)</label>
+	{{channels}}
+	<select name="humble_bundle_channel">
+		{% for channel in channels %}
+		<option value="{{channel.id}}">{{channel.name}}</option>
+		{% endfor %}
+	</select>
+	<input type="Submit" value="Définir">
+</form>
+
+
 <h2>Api</h2>
 <form action="{{ url_for('setConfiguration', key = 'discord_token') }}" method="POST">
 	<label for="value">Api Discord (cachée)</label>
