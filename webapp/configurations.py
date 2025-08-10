@@ -8,7 +8,6 @@ from discordbot import bot
 def openConfigurations():
 	all = Configuration.query.all()
 	configurations = {conf.key: conf for conf in all}
-	
 	return render_template("configurations.html", configurations = configurations, channels = bot.get_all_channels())
 
 @webapp.route("/updateConfiguration", methods=['POST']) 

@@ -11,8 +11,8 @@ from database.models import Configuration, GameBundle, Humeur
 class DiscordBot(discord.Client):
 	async def on_ready(self):
 		logging.info(f'Logged in as {self.user} (ID: {self.user.id})')
-		# for c in self.get_all_channels() :
-		# 	print(f'{c.id} {c.name}')
+		for c in self.get_all_channels() :
+			logging.info(f'{c.id} {c.name}')
 		
 		self.loop.create_task(self.updateStatus())
 		self.loop.create_task(self.updateHumbleBundle())
