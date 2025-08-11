@@ -21,10 +21,12 @@ class DiscordBot(discord.Client):
 	
 	async def updateStatus(self):
 		while not self.is_closed():
-			humeur = random.choice(Humeur.query.all())
-			if humeur != None: 
-				logging.info(f'changement de status {humeur.text}')
-				await self.change_presence(status = discord.Status.online,  activity = discord.CustomActivity(humeur.text))
+			humeurs = Humeur.query.all()
+			if len(humeurs)>0 :
+				humeur = random.choice(humeurs)
+				if humeur != None: 
+					logging.info(f'changement de status {humeur.text}')
+					await self.change_presence(status = discord.Status.online,  activity = discord.CustomActivity(humeur.text))
 			# 10 minutes TODO à rendre configurable
 			await asyncio.sleep(10*60)
 
