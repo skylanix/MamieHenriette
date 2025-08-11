@@ -1,14 +1,12 @@
 from flask import render_template, request, redirect, url_for
 from webapp import webapp
 from database import db
-from database.models import Configuration
 from database.helpers import ConfigurationHelper
 from discordbot import bot
 from discord import TextChannel
 
 @webapp.route("/configurations")
 def openConfigurations():
-	all = Configuration.query.all()
 	channels = []
 	for channel in bot.get_all_channels():
 		if isinstance(channel, TextChannel):
