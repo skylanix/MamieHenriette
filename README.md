@@ -54,7 +54,7 @@ Mamie Henriette est un bot intelligent open-source développé spécifiquement p
 
 ```bash
 # 1. Cloner le projet
-git clone https://github.com/skylanix/MamieHenrietteCredential
+git clone https://github.com/skylanix/MamieHenriette.git
 ```
 
 ```bash
