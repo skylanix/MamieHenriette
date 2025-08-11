@@ -22,4 +22,3 @@ CREATE TABLE IF NOT EXISTS `message` (
 	`text` VARCHAR(256) NULL,
 	periodicity INTEGER NULL
 );
-

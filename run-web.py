@@ -9,7 +9,6 @@ def start_server():
 	logging.info("Start Web Serveur")
 	from waitress import serve
 	serve(webapp, host="0.0.0.0", port=5000)
-	# webapp.run()
 
 def start_discord_bot():
 	logging.info("Start Discord Bot")
