@@ -19,6 +19,7 @@ def openConfigurations():
 def updateConfiguration():
 	for key in request.form : 
 		ConfigurationHelper().createOrUpdate(key, request.form.get(key))
+	# Je fait ca car html n'envoi pas le parametre de checkbox quand il est décoché
 	if (request.form.get("humble_bundle_channel") != None and request.form.get("humble_bundle_enable") == None) :
 		ConfigurationHelper().createOrUpdate('humble_bundle_enable', False)
 	db.session.commit()
