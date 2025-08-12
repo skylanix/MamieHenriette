@@ -40,11 +40,6 @@ jobs:
           type=ref,event=pr
           type=semver,pattern={{version}}
           type=raw,value=latest,enable={{is_default_branch}}
-        labels: |
-          org.opencontainers.image.title=MamieHenriette
-          org.opencontainers.image.description=Bot multi-plateformes Discord/Twitch/YouTube pour la communauté STEvE
-          org.opencontainers.image.source=https://github.com/skylanix/MamieHenriette
-          org.opencontainers.image.url=https://github.com/skylanix/MamieHenriette
 
     - name: Build and push
       uses: docker/build-push-action@v5
