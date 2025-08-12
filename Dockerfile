@@ -1,11 +1,9 @@
 FROM debian:trixie-slim
 
-# Métadonnées de l'image
-LABEL org.opencontainers.image.title="MamieHenriette"
+# Labels requis pour GitHub Container Registry
+LABEL org.opencontainers.image.source=https://github.com/skylanix/MamieHenriette
 LABEL org.opencontainers.image.description="Bot multi-plateformes Discord/Twitch/YouTube pour la communauté STEvE"
-LABEL org.opencontainers.image.authors="skylanix"
-LABEL org.opencontainers.image.source="https://github.com/skylanix/MamieHenriette"
-LABEL org.opencontainers.image.url="https://github.com/skylanix/MamieHenriette"
+# LABEL org.opencontainers.image.licenses=Apache-2.0
 
 WORKDIR /app
 
