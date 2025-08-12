@@ -41,6 +41,12 @@ jobs:
           type=ref,event=pr
           type=semver,pattern={{version}}
           type=raw,value=latest,enable={{is_default_branch}}
+        labels: |
+          org.opencontainers.image.title=${{ github.repository }}
+          org.opencontainers.image.description=Bot multi-plateformes Discord/Twitch/YouTube pour la communauté STEvE
+          org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          org.opencontainers.image.url=https://github.com/${{ github.repository }}
+          org.opencontainers.image.licenses=GPL-3.0
 
     - name: Build and push
       uses: docker/build-push-action@v5
@@ -48,3 +54,4 @@ jobs:
         context: .
         push: true
         tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
