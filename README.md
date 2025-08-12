@@ -47,7 +47,7 @@ Mamie Henriette est un bot intelligent open-source développé spécifiquement p
 ## Installation
 
 ### Prérequis
-- Docker et Docker Compose
+- [Docker Engine](https://docs.docker.com/engine/install/) ou [Docker Desktop](https://docs.docker.com/desktop/)
 - Token Discord pour le bot
 
 ### Démarrage rapide
