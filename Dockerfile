@@ -1,5 +1,12 @@
 FROM debian:trixie-slim
 
+# Métadonnées de l'image
+LABEL org.opencontainers.image.title="MamieHenriette"
+LABEL org.opencontainers.image.description="Bot multi-plateformes Discord/Twitch/YouTube pour la communauté STEvE"
+LABEL org.opencontainers.image.authors="skylanix"
+LABEL org.opencontainers.image.source="https://github.com/skylanix/MamieHenriette"
+LABEL org.opencontainers.image.url="https://github.com/skylanix/MamieHenriette"
+
 WORKDIR /app
 
 ENV DEBIAN_FRONTEND=noninteractive
