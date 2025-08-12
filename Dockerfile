@@ -3,7 +3,7 @@ FROM debian:trixie-slim
 # Labels requis pour GitHub Container Registry
 LABEL org.opencontainers.image.source=https://github.com/skylanix/MamieHenriette
 LABEL org.opencontainers.image.description="Bot multi-plateformes Discord/Twitch/YouTube pour la communauté STEvE"
-# LABEL org.opencontainers.image.licenses=Apache-2.0
+LABEL org.opencontainers.image.licenses=GPL-3.0
 
 WORKDIR /app
 
