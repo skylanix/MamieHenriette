@@ -1,7 +1,8 @@
 services:
   mamiehenriette:
     container_name: MamieHenriette
-    build: .
+    image: ghcr.io/skylanix/mamiehenriette:latest
+    # build: .
     restart: on-failure
     environment:
       - ENABLE_ZABBIX=false
