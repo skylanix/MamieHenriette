@@ -37,10 +37,12 @@ jobs:
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
+          type=ref,event=branch
           type=ref,event=pr
           type=semver,pattern={{version}}
           type=raw,value=latest,enable={{is_default_branch}}
-        annotations: |
+        labels: |
+          org.opencontainers.image.source=https://github.com/${{ github.repository }}
           org.opencontainers.image.description=Bot multi-plateformes Discord/Twitch/YouTube pour la communauté STEvE
           org.opencontainers.image.licenses=GPL-3.0
 
@@ -51,4 +53,3 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        annotations: ${{ steps.meta.outputs.annotations }}
