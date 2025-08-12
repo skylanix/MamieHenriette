@@ -18,4 +18,4 @@ else
 fi
 
 echo "Démarrage du bot Discord..."
-exec python3 bot.py
+exec /app/venv/bin/python run-web.py

@@ -1,175 +1,188 @@
+# MamieHenriette 👵
 
-# 👵 Mamie Henriette - Discord Status Bot 🤖
+**Bot multi-plateformes pour Discord, Twitch et YouTube Live**
 
-## 📖 Description
 
-Mamie Henriette est un bot Discord intelligent qui change automatiquement de statut, surveillant et gérant votre serveur avec une touche d'humour et de caractère.
+## Vue d'ensemble
 
-## ✨ Fonctionnalités
+Mamie Henriette est un bot intelligent open-source développé spécifiquement pour les communautés de [STEvE](https://www.youtube.com/@STEvE_YT) sur YouTube, [Twitch](https://www.twitch.tv/steve_yt) et Discord.
 
-- Changement cyclique automatique des statuts
-- Configuration flexible via variables d'environnement
-- Gestion des erreurs et logging
-- Support multi-statuts Discord
-- Déploiement simplifié avec Docker
-- 📊 Surveillance optionnelle avec Zabbix
+> ⚠️ **Statut** : En cours de développement
 
-## 🛠 Prérequis
+### Caractéristiques principales
 
-- Docker et Docker Compose
-- Compte Discord et Token du bot
-- (Optionnel) Serveur Zabbix pour la surveillance
+- Interface web d'administration complète
+- Gestion multi-plateformes (Discord, Twitch, YouTube Live)
+- Système de notifications automatiques
+- Base de données intégrée pour la persistance
+- Surveillance optionnelle avec Zabbix *(non testée)*
 
-## 📦 Installation
+## Fonctionnalités
 
-1. Clonez le dépôt
+### Discord
+- **Statuts dynamiques** : Rotation automatique des humeurs (10 min)
+- **Notifications Humble Bundle** : Surveillance et alertes automatiques (30 min)
+- **Commandes personnalisées** : Gestion via interface web
+- **Modération** : Outils intégrés
+
+### Twitch *(en développement)*
+- **Chat bot** : Commandes et interactions
+- **Événements live** : Notifications de stream
+
+### YouTube Live *(en développement)*
+- **Chat bot** : Modération et commandes
+- **Événements** : Notifications de diffusion
+
+### Interface d'administration
+- **Dashboard** : Vue d'ensemble et statistiques
+- **Configuration** : Tokens, paramètres des plateformes
+- **Gestion des humeurs** : Création et modification des statuts
+- **Commandes** : Édition des commandes personnalisées
+- **Modération** : Outils de gestion communautaire
+
+### Surveillance
+- **Zabbix Agent 2** : Monitoring avancé *(non testé)*
+- **Métriques** : Santé du bot et uptime
+
+## Installation
+
+### Prérequis
+- [Docker Engine](https://docs.docker.com/engine/install/) ou [Docker Desktop](https://docs.docker.com/desktop/)
+- Token Discord pour le bot
+
+### Démarrage rapide
+
 ```bash
-git clone https://git.favrep.ch/lapatatedouce/MamieHenrriette
-cd MamieHenrriette
+# 1. Cloner le projet
+git clone https://github.com/skylanix/MamieHenriette.git
 ```
 
-2. Copiez le fichier de configuration
 ```bash
-cp .env.example .env
+cd MamieHenriette
 ```
 
-3. Éditez le fichier `.env` avec vos paramètres
 ```bash
-nano .env
+# 2. Lancer avec Docker
+docker compose up --build -d
 ```
 
-4. Démarrez le conteneur Docker
+### Configuration
 
-**Mode développement (avec logs):**
+1. **Interface web** : Accédez à http://localhost
+2. **Token Discord** : Section "Configurations"
+3. **Humeurs** : Définir les statuts du bot
+4. **Canaux** : Configurer les notifications
+
+> ⚠️ **Important** : Après avoir configuré le token Discord, les humeurs et autres fonctionnalités via l'interface web, **redémarrez le conteneur** pour que les changements soient pris en compte :
+> ```bash
+> docker compose restart mamiehenriette
+> ```
+
+### Commandes Docker utiles
+
 ```bash
-docker-compose up --build
+# Logs en temps réel
+docker compose logs -f mamiehenriette
 ```
 
-**Mode production (en arrière-plan):**
 ```bash
-docker-compose up --build -d
+# Logs d'un conteneur en cours d'exécution
+docker logs -f mamiehenriette
 ```
 
-**Voir les logs:**
 ```bash
-docker-compose logs -f discord-bot
+# Redémarrer
+docker compose restart mamiehenriette
 ```
 
-**Arrêter le conteneur:**
 ```bash
-docker-compose down
+# Arrêter
+docker compose down
 ```
 
-## 🔧 Configuration
+## Configuration avancée
 
-### Variables d'environnement principales
+### Variables d'environnement
 
-- `TOKEN`: Votre token Discord (obligatoire)
-- `STATUS`: Statut initial (défaut: online)
-- `INTERVAL`: Intervalle de changement de statut (défaut: 3600 secondes)
+```yaml
+environment:
+  - ENABLE_ZABBIX=false     # Surveillance (non testée)
+  - ZABBIX_SERVER=localhost
+  - ZABBIX_HOSTNAME=MamieHenriette
+```
 
-### 📊 Configuration Zabbix (optionnelle)
+### Interface d'administration
 
-- `ENABLE_ZABBIX`: Activer la surveillance Zabbix (défaut: false)
-- `ZABBIX_SERVER`: Adresse du serveur Zabbix
-- `ZABBIX_HOSTNAME`: Nom d'hôte pour identifier le bot
-- `ZABBIX_PORT`: Port d'exposition Zabbix (défaut: 10050)
+| Section | Fonction |
+|---------|----------|
+| **Configurations** | Tokens et paramètres généraux |
+| **Humeurs** | Gestion des statuts Discord |
+| **Commandes** | Commandes personnalisées |
+| **Modération** | Outils de gestion |
 
-#### Métriques surveillées par Zabbix
+## Architecture du projet
 
-- Statut du bot Discord
-- Temps de fonctionnement (uptime)
-- Utilisation mémoire
-- Erreurs et avertissements dans les logs
-- Connectivité à Discord
+### Structure des modules
 
-#### Activation de Zabbix
+```
+├── database/          # Couche données
+│   ├── models.py      # Modèles ORM
+│   ├── helpers.py     # Utilitaires BDD
+│   └── schema.sql     # Structure initiale
+│
+├── discordbot/        # Module Discord
+│   └── __init__.py    # Bot et handlers
+│
+└── webapp/            # Interface d'administration
+    ├── static/        # Assets statiques
+    ├── templates/     # Vues HTML
+    └── *.py          # Contrôleurs par section
+```
 
-Dans votre fichier `.env` :
+### Composants principaux
+
+| Fichier | Rôle |
+|---------|------|
+| `run-web.py` | Point d'entrée principal |
+| `start.sh` | Script de démarrage Docker |
+| `docker-compose.yml` | Configuration des services |
+| `requirements.txt` | Dépendances Python |
+
+## Spécifications techniques
+
+### Base de données (SQLite)
+- **Configuration** : Paramètres et tokens
+- **Humeur** : Statuts Discord rotatifs
+- **Message** : Messages périodiques *(planifié)*
+- **GameBundle** : Historique Humble Bundle
+
+### Architecture multi-thread
+- **Thread 1** : Interface web Flask (port 5000)
+- **Thread 2** : Bot Discord et tâches automatisées
+
+### Dépendances principales
+```
+discord.py     # API Discord
+flask          # Interface web
+requests       # Client HTTP
+waitress       # Serveur WSGI
+```
+
+## Développement
+
+### Installation locale
 ```bash
-ENABLE_ZABBIX=true
-ZABBIX_SERVER=votre-serveur-zabbix.com
-ZABBIX_HOSTNAME=MamieHenriette
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python run-web.py
 ```
 
-### Fichier `statuts.txt`
-
-Créez un fichier `statuts.txt` avec vos statuts, un par ligne.
-
-Exemple :
-```
-Surveiller le serveur
-Mamie est là !
-En mode supervision
-```
-
-## 📋 Dépendances
-
-- discord.py==2.3.2
-- python-dotenv==1.0.0
+### Contribution
+1. Fork du projet
+2. Branche feature
+3. Pull Request
 
 ---
 
-# 🖥️ Installation environnement de développement
-
-## Installation des dépendances système
-
-```bash
-sudo apt install python3 python3-pip
-```
-
-## Création de l'environnement Python local
-
-Dans le dossier du projet :
-
-```bash
-python3 -m venv .venv
-```
-
-Puis activer l'environnement :
-
-```bash
-source .venv/bin/activate
-```
-
-## Installation des dépendances Python
-
-```bash
-pip install -r requirements.txt
-```
-
-## Exécution
-
-```bash
-python3 run-web.py
-```
-
-# Structure du projet
-
-```
-.
-|-- database : module de connexion à la BDD
-|   |-- __init.py__
-|   |-- models.py : contient les pojo représentant chaque table
-|   |-- schema.sql : contient un scrip sql d'initialisation de la bdd, celui-ci doit être réentrant
-|
-|-- discordbot : module de connexion à discord
-|   |-- __init.py__
-|
-|-- webapp : module du site web d'administration
-|   |-- static : Ressource fixe directement accessible par le navigateir
-|   |   |-- css
-|   |   |-- ...
-|   |
-|   |-- template : Fichier html
-|   |   |-- template.html : structure globale du site
-|   |   |-- commandes.html : page de gestion des commandes
-|   |   |-- ...
-|   |
-|   |-- __init.py__
-|   |-- index.py : controller de la page d'acceuil
-|   |-- commandes.py : controller de gestion des commandes
-|   |-- ...
-|
-|-- run-web.py : launcher
-```
+*Mamie Henriette vous surveille ! 👵👀*
