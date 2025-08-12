@@ -5,7 +5,7 @@
 
 ## Vue d'ensemble
 
-Mamie Henriette est un bot intelligent open-source développé spécifiquement pour les communautés de [STEvE](https://www.youtube.com/@STEvE_YT) sur YouTube, [Twitch](https://www.twitch.tv/steve_yt) et Discord.
+Mamie Henriette est un bot intelligent open-source développé spécifiquement pour la communauté de [STEvE](https://www.facebook.com/ChaineSTEvE) sur YouTube, [Twitch](https://www.twitch.tv/chainesteve) et [Discord](https://discord.com/invite/UwAPqMJnx3).
 
 > ⚠️ **Statut** : En cours de développement
 
@@ -49,6 +49,36 @@ Mamie Henriette est un bot intelligent open-source développé spécifiquement p
 ### Prérequis
 - [Docker Engine](https://docs.docker.com/engine/install/) ou [Docker Desktop](https://docs.docker.com/desktop/)
 - Token Discord pour le bot
+
+### Création du bot Discord
+
+Avant d'installer MamieHenriette, vous devez créer un bot Discord et obtenir son token :
+
+1. **Accéder au portail développeur** : Rendez-vous sur [Discord Developer Portal](https://discord.com/developers/applications)
+
+2. **Créer une nouvelle application** :
+   - Cliquez sur "New Application"
+   - Donnez un nom à votre bot (ex: "MmeMichue")
+   - Acceptez les conditions et cliquez sur "Create"
+
+3. **Configurer le bot** :
+   - Dans le menu latéral, cliquez sur "Bot"
+   - Ajoutez une photo de profil et un pseudo à votre bot
+   - **Important** : Activez les "Privileged Gateway Intents" :
+     - ☑️ Presence Intent
+     - ☑️ Server Members Intent 
+     - ☑️ Message Content Intent
+   - Cliquez sur "Save Changes"
+
+4. **Récupérer le token** :
+   - Dans la section "Token", cliquez sur "Reset Token"
+   - Copiez le token généré (gardez-le secret !)
+
+5. **Inviter le bot sur votre serveur** :
+   - Allez dans "OAuth2" > "URL Generator"
+   - Sélectionnez les scopes : `bot` et `applications.commands`
+   - Sélectionnez les permissions nécessaires (Administrator recommandé pour simplifier)
+   - Utilisez l'URL générée pour inviter le bot sur votre serveur
 
 ### Démarrage rapide
 

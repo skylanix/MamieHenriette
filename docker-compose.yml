@@ -1,16 +1,28 @@
+# Configuration Docker Compose pour MamieHenriette
+
 services:
   mamiehenriette:
+    # Nom du conteneur
     container_name: MamieHenriette
+    
+    # Image hébergée sur GitHub Container Registry
     image: ghcr.io/skylanix/mamiehenriette:latest
-    # build: .
+    
+    # Redémarrage automatique en cas d'erreur
     restart: on-failure
+    
     environment:
-      - ENABLE_ZABBIX=false
+      - TZ=Europe/Zurich              # Fuseau horaire
+      - ENABLE_ZABBIX=false           # Surveillance désactivée
       - ZABBIX_SERVER=zabbix-server.example.com
       - ZABBIX_HOSTNAME=mamie-henriette-bot
+    
     volumes:
+      # Base de données et configuration persistante
       - ./instance:/app/instance
-  
+    
     ports:
+      # Interface web sur http://localhost:8000
       - 80:5000
-    #   - "10050:10050"  # Décommentez si ENABLE_ZABBIX=true
+      # Port Zabbix (décommentez si nécessaire)
+      #   - "10050:10050"
