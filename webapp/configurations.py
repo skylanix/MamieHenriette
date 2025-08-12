@@ -1,19 +1,24 @@
 from flask import render_template, request, redirect, url_for
 from webapp import webapp
 from database import db
-from database.models import Configuration
+from database.helpers import ConfigurationHelper
+from discordbot import bot
+from discord import TextChannel
 
 @webapp.route("/configurations")
 def openConfigurations():
-	return render_template("configurations.html")
+	channels = []
+	for channel in bot.get_all_channels():
+		if isinstance(channel, TextChannel):
+			channels.append(channel)
+	return render_template("configurations.html", configuration = ConfigurationHelper(), channels = channels)
 
-@webapp.route('/configurations/set/<key>', methods=['POST'])
-def setConfiguration(key):
-	conf = Configuration.query.filter_by(key=key).first()
-	if conf :
-		conf.value = request.form['value']
-	else :
-		conf = Configuration(key = key, value = request.form['value'])
-		db.session.add(conf)
+@webapp.route("/configurations/update", methods=['POST']) 
+def updateConfiguration():
+	for key in request.form : 
+		ConfigurationHelper().createOrUpdate(key, request.form.get(key))
+	# Je fait ca car html n'envoi pas le parametre de checkbox quand il est décoché
+	if (request.form.get("humble_bundle_channel") != None and request.form.get("humble_bundle_enable") == None) :
+		ConfigurationHelper().createOrUpdate('humble_bundle_enable', False)
 	db.session.commit()
 	return redirect(url_for('openConfigurations'))
