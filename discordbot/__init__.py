@@ -52,7 +52,11 @@ class DiscordBot(discord.Client):
 				logging.info('Humble bundle est désactivé')
 			# toute les 30 minutes
 			await asyncio.sleep(30*60)
-	
+
+	# TODO voir ce que je prend
+	def event(self, coro):
+		return super().event(coro)
+
 	def begin(self) : 
 		token = Configuration.query.filter_by(key='discord_token').first()
 		if token :
@@ -63,3 +67,10 @@ class DiscordBot(discord.Client):
 intents = discord.Intents.default()
 bot = DiscordBot(intents=intents)
 
+# TODO voir ce que je prend
+@bot.event
+async def on_message(message):
+	if message.channel.id == 1234567:
+		@bot.command()
+		async def name(ctx, arg):
+			await ctx.send(f"hello {arg}")

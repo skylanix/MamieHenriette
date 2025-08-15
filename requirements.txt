@@ -1,10 +1,18 @@
-discord.py==2.3.2
 python-dotenv==1.0.0
-# necessaire pour discord.py
+
+# necessaire pour l'api discord
+discord.py==2.3.2
 aiohttp>=3.7.4,<4
 audioop-lts; python_version>='3.13'
 
+# necessaire pour l'hebergement du site web
 flask>=2.3.2
 flask-sqlalchemy>=3.0.3
 waitress>=3.0.2
+
+# necessaire pour l'appel à l'api humble bundle
 requests>=2.32.4
+
+# necessaire pour l'appel à protopn db
+algoliasearch>=4,<5
+
