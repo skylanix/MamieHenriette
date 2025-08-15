@@ -10,6 +10,7 @@ from database import db
 from database.helpers import ConfigurationHelper
 from database.models import Configuration, GameBundle, Humeur
 from protondb import searhProtonDb
+from discord import Message
 
 
 class DiscordBot(discord.Client):
@@ -67,16 +68,18 @@ intents.message_content = True
 bot = DiscordBot(intents=intents)
 
 @bot.event
-async def on_message(message):
-	content: str = message.content;
-	if(ConfigurationHelper().getValue('proton_db_enable_enable') and content.find('!protondb')==0) :
-		if (content.find('@')>0) :
-			user = content[content.find('@'):]
+async def on_message(message: Message):
+	if(ConfigurationHelper().getValue('proton_db_enable_enable') and message.content.find('!protondb')==0) :
+		if (message.content.find('<@')>0) :
+			mention = message.content[message.content.find('<@'):]
 		else :
-			user = f'@{message.author.name}'
-		name = message.content.replace('!protondb', '').replace(f'{user}', '').strip();
+			mention = message.author.mention
+		name = message.content.replace('!protondb', '').replace(f'{mention}', '').strip();
 		games = searhProtonDb(name)
-		msg = f'{user} J\'ai trouvé {len(games)} jeux :\n'
-		for game in games: 
-			msg += f'- [{game.get('name')}](https://www.protondb.com/app/{game.get('id')}) classé **{game.get('tier')}**\n'
+		if (len(games)==0) :
+			msg = f'{mention} Je n\'ai pas trouvé de jeux correspondant à **{name}**'
+		else :
+			msg = f'{mention} J\'ai trouvé {len(games)} jeux :\n'
+			for game in games: 
+				msg += f'- [{game.get('name')}](https://www.protondb.com/app/{game.get('id')}) classé **{game.get('tier')}**\n'
 		await message.channel.send(msg)
