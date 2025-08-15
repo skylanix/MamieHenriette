@@ -1,36 +1,52 @@
 
+import logging
 import requests
-from algoliasearch.search.client import SearchClientSync, SearchConfig, RequestOptions
 
-app_id = "94HE6YATEI"
-api_key = "9ba0e69fb2974316cdaec8f5f257088f"
+from algoliasearch.search.client import SearchClientSync, SearchConfig
+from database.helpers import ConfigurationHelper
 
-search_name = "call of duty"
+def _call_algoliasearch(search_name:str): 
+	config = SearchConfig(ConfigurationHelper().getValue('proton_db_api_id'), 
+						ConfigurationHelper().getValue('proton_db_api_key'))
+	config.set_default_hosts()
+	client = SearchClientSync(config=config)
+	return client.search_single_index(index_name="steamdb",
+											search_params={
+												"query":search_name,
+												"facetFilters":[["appType:Game"]],
+												"hitsPerPage":50},
+											request_options= {'headers':{'Referer':'https://www.protondb.com/'}})
 
+def _call_summary(id): 
+	response = requests.get(f'http://jazzy-starlight-aeea19.netlify.app/api/v1/reports/summaries/{id}.json')
+	if (response.status_code == 200) :
+		return response.json()
+	logging.error(f'{response.status_code} on {id}')
+	return None
 
-config = SearchConfig(app_id, api_key)
-config.set_default_hosts()
-client = SearchClientSync(app_id, api_key, config=config)
-options = RequestOptions(config=config, headers={'referers':'https://www.protondb.com/'})
-responses = client.search_single_index(index_name="steamdb",
-										search_params={
-											"query":"call of duty",
-											"facetFilters":[["appType:Game"]],
-											"hitsPerPage":50},
-										request_options= {'headers':{'Referer':'https://www.protondb.com/'}})
-for hit in responses.model_dump().get('hits'): 
-	id = hit.get('object_id')
-	name:str = hit.get('name')
-	if (name.lower().find(search_name.lower())>=0) :
-		try:
-			response = requests.get(f'http://jazzy-starlight-aeea19.netlify.app/api/v1/reports/summaries/{id}.json')
-			if (response.status_code == 200) :
-				summmary = response.json()
-				tier = summmary.get('tier')
-				print(f'{name} : {tier}')
-			else :
-				print(f'{response.status_code} on {name}({id})')
-		except Exception as e:
-			print(f'error on {name}({id}): {e}')
-	else:
-		print(f'{name}({id} ne contient pas {search_name})')
+def _is_name_match(name:str, search_name:str) -> bool: 
+	return name.lower().find(search_name.lower()) >= 0
+
+def searhProtonDb(search_name:str): 
+	results = []
+	responses = _call_algoliasearch(search_name)
+	for hit in responses.model_dump().get('hits'): 
+		id = hit.get('object_id')
+		name:str = hit.get('name')
+		if (_is_name_match(name, search_name)) :
+			try:
+				summmary = _call_summary(id)
+				if (summmary != None) :
+					tier = summmary.get('tier')
+					results.append({
+						'id':id, 
+						'name' : name,
+						'tier' : tier
+					})
+					logging.info(f'found {name}({id} : {tier}')
+			except Exception as e:
+				logging.error(f'error on {name}({id}): {e}')
+		else:
+			logging.info(f'{name}({id} ne contient pas {search_name})')
+	return results
+

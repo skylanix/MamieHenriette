@@ -20,6 +20,19 @@
 	<input type="Submit" value="Définir">
 </form>
 
+<h2>Proton DB</h2>
+<form action="{{ url_for('updateConfiguration') }}" method="POST">
+	<label for="proton_db_enable_enable">Activer</label>
+	<input type="checkbox" name="proton_db_enable_enable" {% if configuration.getValue('proton_db_enable_enable') %}
+		checked="checked" {% endif %}>
+	<label>Activer la commande Proton DB</label>
+	<label for="proton_db_api_id">Api ID</label>
+	<input name="proton_db_api_id" type="text" value="{{ configuration.getValue('proton_db_api_id') }}" />
+	<label for="proton_db_api_key">Api KEY</label>
+	<input name="proton_db_api_key" type="text" value="{{ configuration.getValue('proton_db_api_key') }}" />
+	<input type="Submit" value="Définir">
+</form>
+
 <h2>Api</h2>
 <form action="{{ url_for('updateConfiguration') }}" method="POST">
 	<label for="discord_token">Api Discord (cachée)</label>
