@@ -20,5 +20,7 @@ def updateConfiguration():
 	# Je fait ca car html n'envoi pas le parametre de checkbox quand il est décoché
 	if (request.form.get("humble_bundle_channel") != None and request.form.get("humble_bundle_enable") == None) :
 		ConfigurationHelper().createOrUpdate('humble_bundle_enable', False)
+	if (request.form.get("proton_db_api_id") != None and request.form.get("proton_db_enable_enable") == None) :
+		ConfigurationHelper().createOrUpdate('proton_db_enable_enable', False)
 	db.session.commit()
 	return redirect(url_for('openConfigurations'))

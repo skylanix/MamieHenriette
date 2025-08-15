@@ -9,6 +9,8 @@ import requests
 from database import db
 from database.helpers import ConfigurationHelper
 from database.models import Configuration, GameBundle, Humeur
+from protondb import searhProtonDb
+
 
 class DiscordBot(discord.Client):
 	async def on_ready(self):
@@ -53,10 +55,6 @@ class DiscordBot(discord.Client):
 			# toute les 30 minutes
 			await asyncio.sleep(30*60)
 
-	# TODO voir ce que je prend
-	def event(self, coro):
-		return super().event(coro)
-
 	def begin(self) : 
 		token = Configuration.query.filter_by(key='discord_token').first()
 		if token :
@@ -65,12 +63,20 @@ class DiscordBot(discord.Client):
 			logging.error('pas de token on ne lance pas discord')
 
 intents = discord.Intents.default()
+intents.message_content = True
 bot = DiscordBot(intents=intents)
 
-# TODO voir ce que je prend
 @bot.event
 async def on_message(message):
-	if message.channel.id == 1234567:
-		@bot.command()
-		async def name(ctx, arg):
-			await ctx.send(f"hello {arg}")
+	content: str = message.content;
+	if(ConfigurationHelper().getValue('proton_db_enable_enable') and content.find('!protondb')==0) :
+		if (content.find('@')>0) :
+			user = content[content.find('@'):]
+		else :
+			user = f'@{message.author.name}'
+		name = message.content.replace('!protondb', '').replace(f'{user}', '').strip();
+		games = searhProtonDb(name)
+		msg = f'{user} J\'ai trouvé {len(games)} jeux :\n'
+		for game in games: 
+			msg += f'- [{game.get('name')}](https://www.protondb.com/app/{game.get('id')}) classé **{game.get('tier')}**\n'
+		await message.channel.send(msg)
