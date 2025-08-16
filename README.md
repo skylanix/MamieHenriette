@@ -5,7 +5,7 @@
 
 ## Vue d'ensemble
 
-Mamie Henriette est un bot intelligent open-source développé spécifiquement pour la communauté de [STEvE](https://www.facebook.com/ChaineSTEvE) sur YouTube, [Twitch](https://www.twitch.tv/chainesteve) et [Discord](https://discord.com/invite/UwAPqMJnx3).
+Mamie Henriette est un bot intelligent open-source développé spécifiquement pour la communauté de [STEvE](https://www.facebook.com/ChaineSTEvE) sur [YouTube](https://www.youtube.com/@513v3), [Twitch](https://www.twitch.tv/chainesteve) et [Discord](https://discord.com/invite/UwAPqMJnx3).
 
 > ⚠️ **Statut** : En cours de développement
 
@@ -23,6 +23,7 @@ Mamie Henriette est un bot intelligent open-source développé spécifiquement p
 - **Statuts dynamiques** : Rotation automatique des humeurs (10 min)
 - **Notifications Humble Bundle** : Surveillance et alertes automatiques (30 min)
 - **Commandes personnalisées** : Gestion via interface web
+- **Recherche ProtonDB** : Commande `!protondb <nom_du_jeu>` pour vérifier la compatibilité Linux/Steam Deck
 - **Modération** : Outils intégrés
 
 ### Twitch *(en développement)*
@@ -35,7 +36,7 @@ Mamie Henriette est un bot intelligent open-source développé spécifiquement p
 
 ### Interface d'administration
 - **Dashboard** : Vue d'ensemble et statistiques
-- **Configuration** : Tokens, paramètres des plateformes
+- **Configuration** : Tokens, paramètres des plateformes, configuration ProtonDB
 - **Gestion des humeurs** : Création et modification des statuts
 - **Commandes** : Édition des commandes personnalisées
 - **Modération** : Outils de gestion communautaire
@@ -100,8 +101,9 @@ docker compose up --build -d
 
 1. **Interface web** : Accédez à http://localhost
 2. **Token Discord** : Section "Configurations"
-3. **Humeurs** : Définir les statuts du bot
-4. **Canaux** : Configurer les notifications
+3. **ProtonDB** : Configurer l'API Algolia dans "Configurations" pour activer `!protondb`
+4. **Humeurs** : Définir les statuts du bot
+5. **Canaux** : Configurer les notifications
 
 > ⚠️ **Important** : Après avoir configuré le token Discord, les humeurs et autres fonctionnalités via l'interface web, **redémarrez le conteneur** pour que les changements soient pris en compte :
 > ```bash
@@ -145,7 +147,7 @@ environment:
 
 | Section | Fonction |
 |---------|----------|
-| **Configurations** | Tokens et paramètres généraux |
+| **Configurations** | Tokens, paramètres généraux et configuration ProtonDB |
 | **Humeurs** | Gestion des statuts Discord |
 | **Commandes** | Commandes personnalisées |
 | **Modération** | Outils de gestion |
@@ -163,10 +165,13 @@ environment:
 ├── discordbot/        # Module Discord
 │   └── __init__.py    # Bot et handlers
 │
+├── protondb/          # Module ProtonDB
+│   └── __init__.py    # API Algolia et recherche compatibilité
+│
 └── webapp/            # Interface d'administration
     ├── static/        # Assets statiques
     ├── templates/     # Vues HTML
-    └── *.py          # Contrôleurs par section
+    └── *.py           # Contrôleurs par section
 ```
 
 ### Composants principaux
@@ -192,10 +197,11 @@ environment:
 
 ### Dépendances principales
 ```
-discord.py     # API Discord
-flask          # Interface web
-requests       # Client HTTP
-waitress       # Serveur WSGI
+discord.py         # API Discord
+flask              # Interface web
+requests           # Client HTTP
+waitress           # Serveur WSGI
+algoliasearch      # API ProtonDB/SteamDB
 ```
 
 ## Développement

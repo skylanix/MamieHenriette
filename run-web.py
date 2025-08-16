@@ -23,7 +23,7 @@ def signal_handler(sig, frame):
 	os._exit(0)
 
 if __name__ == '__main__':
-	locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
+	locale.setlocale(locale.LC_TIME, 'fr_CH.UTF-8')
 	
 	signal.signal(signal.SIGINT, signal_handler)
 	signal.signal(signal.SIGTERM, signal_handler)
