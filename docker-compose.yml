@@ -8,6 +8,10 @@ services:
     # Image hébergée sur GitHub Container Registry
     image: ghcr.io/skylanix/mamiehenriette:latest
     
+    # Build du conteneur à partir d'un Dockerfile local
+    # build: .
+    # image: mamiehenriette
+    
     # Redémarrage automatique en cas d'erreur
     restart: on-failure
     
@@ -23,6 +27,6 @@ services:
     
     ports:
       # Interface web sur http://localhost:8000
-      - 80:5000
+      - 5000:5000
       # Port Zabbix (décommentez si nécessaire)
       #   - "10050:10050"
