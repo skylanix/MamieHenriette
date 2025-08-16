@@ -2,6 +2,35 @@
 
 **Bot multi-plateformes pour Discord, Twitch et YouTube Live**
 
+## Table des matières
+
+- [Vue d'ensemble](#vue-densemble)
+- [Fonctionnalités](#fonctionnalités)
+  - [Discord](#discord)
+  - [Twitch](#twitch-en-développement)
+  - [YouTube Live](#youtube-live-en-développement)
+  - [Interface d'administration](#interface-dadministration)
+  - [Surveillance](#surveillance)
+- [Installation](#installation)
+  - [Prérequis](#prérequis)
+  - [Création du bot Discord](#création-du-bot-discord)
+  - [Démarrage rapide](#démarrage-rapide)
+  - [Configuration](#configuration)
+  - [Commandes Docker utiles](#commandes-docker-utiles)
+  - [Mise à jour](#mise-à-jour)
+- [Configuration avancée](#configuration-avancée)
+  - [Variables d'environnement](#variables-denvironnement)
+  - [Interface d'administration](#interface-dadministration-1)
+- [Architecture du projet](#architecture-du-projet)
+  - [Structure des modules](#structure-des-modules)
+  - [Composants principaux](#composants-principaux)
+- [Spécifications techniques](#spécifications-techniques)
+  - [Base de données (SQLite)](#base-de-données-sqlite)
+  - [Architecture multi-thread](#architecture-multi-thread)
+  - [Dépendances principales](#dépendances-principales)
+- [Développement](#développement)
+  - [Installation locale](#installation-locale)
+  - [Contribution](#contribution)
 
 ## Vue d'ensemble
 
@@ -107,29 +136,61 @@ docker compose up --build -d
 
 > ⚠️ **Important** : Après avoir configuré le token Discord, les humeurs et autres fonctionnalités via l'interface web, **redémarrez le conteneur** pour que les changements soient pris en compte :
 > ```bash
-> docker compose restart mamiehenriette
+> docker compose restart MamieHenriette
 > ```
 
 ### Commandes Docker utiles
 
 ```bash
 # Logs en temps réel
-docker compose logs -f mamiehenriette
+docker compose logs -f MamieHenriette
 ```
 
 ```bash
 # Logs d'un conteneur en cours d'exécution
-docker logs -f mamiehenriette
+docker logs -f MamieHenriette
 ```
 
 ```bash
 # Redémarrer
-docker compose restart mamiehenriette
+docker compose restart MamieHenriette
 ```
 
 ```bash
 # Arrêter
 docker compose down
+```
+
+### Mise à jour
+
+#### Avec Docker (recommandé)
+```bash
+# 1. Arrêter les conteneurs
+docker compose down
+
+# 2. Récupérer les dernières modifications
+git pull origin main
+
+# 3. Mettre à jour l'image Docker
+docker compose pull
+
+# 4. Reconstruire et relancer
+docker compose up --build -d
+```
+
+#### Sans Docker (installation locale)
+```bash
+# 1. Arrêter l'application
+# (Ctrl+C si elle tourne en premier plan)
+
+# 2. Récupérer les modifications
+git pull origin main
+
+# 3. Mettre à jour les dépendances
+pip install -r requirements.txt
+
+# 4. Relancer
+python run-web.py
 ```
 
 ## Configuration avancée
