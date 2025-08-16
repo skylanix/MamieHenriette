@@ -82,4 +82,4 @@ async def on_message(message: Message):
 			msg = f'{mention} J\'ai trouvé {len(games)} jeux :\n'
 			for game in games: 
 				msg += f'- [{game.get('name')}](https://www.protondb.com/app/{game.get('id')}) classé **{game.get('tier')}**\n'
-		await message.channel.send(msg)
+		await message.channel.send(msg, suppress_embeds=True)
