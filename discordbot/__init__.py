@@ -80,6 +80,15 @@ async def on_message(message: Message):
 			msg = f'{mention} Je n\'ai pas trouvé de jeux correspondant à **{name}**'
 		else :
 			msg = f'{mention} J\'ai trouvé {len(games)} jeux :\n'
-			for game in games: 
+			ite = iter(games)
+			while (game := next(ite, None)) is not None and len(msg) < 1900 :
+				print(game)
 				msg += f'- [{game.get('name')}](https://www.protondb.com/app/{game.get('id')}) classé **{game.get('tier')}**\n'
-		await message.channel.send(msg, suppress_embeds=True)
+			rest = sum(1 for _ in ite)
+			if (rest > 0): 
+				msg += f'- et encore {rest} autres jeux'
+		try : 
+			await message.channel.send(msg, suppress_embeds=True)
+		except Exception as e:
+			logging.error(e)
+		
