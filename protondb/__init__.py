@@ -1,6 +1,7 @@
 
 import logging
 import requests
+import re
 
 from algoliasearch.search.client import SearchClientSync, SearchConfig
 from database.helpers import ConfigurationHelper
@@ -24,8 +25,10 @@ def _call_summary(id):
 	logging.error(f'{response.status_code} on {id}')
 	return None
 
-def _is_name_match(name:str, search_name:str) -> bool: 
-	return name.lower().find(search_name.lower()) >= 0
+def _is_name_match(name:str, search_name:str) -> bool:
+	normalized_game_name = re.sub("[^a-z0-9]", "", name.lower())
+	normalized_search_name = re.sub("[^a-z0-9]", "", search_name.lower())
+	return normalized_game_name.find(normalized_search_name.lower()) >= 0
 
 def searhProtonDb(search_name:str): 
 	results = []

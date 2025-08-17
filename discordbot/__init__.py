@@ -81,8 +81,7 @@ async def on_message(message: Message):
 		else :
 			msg = f'{mention} J\'ai trouvé {len(games)} jeux :\n'
 			ite = iter(games)
-			while (game := next(ite, None)) is not None and len(msg) < 1900 :
-				print(game)
+			while (game := next(ite, None)) is not None and len(msg) < 1850 :
 				msg += f'- [{game.get('name')}](https://www.protondb.com/app/{game.get('id')}) classé **{game.get('tier')}**\n'
 			rest = sum(1 for _ in ite)
 			if (rest > 0): 
