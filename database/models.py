@@ -19,3 +19,11 @@ class Message(db.Model):
 	enable = db.Column(db.Boolean, default=False)
 	text = db.Column(db.String(256))
 	periodicity = db.Column(db.Integer)
+
+class Commande(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	discord_enable = db.Column(db.Boolean, default=True)
+	twitch_enable = db.Column(db.Boolean, default=True)
+	trigger = db.Column(db.String(32), unique=True)
+	response = db.Column(db.String(2000))
+

@@ -1,6 +1,55 @@
 {% extends "template.html" %}
 
 {% block content %}
-<h1>Configuration des Commandes.</h1>
-<p>TODO</p>
+<h1>Commandes de Mamie</h1>
+<p>Gérez les commandes personnalisées du bot. Ces commandes peuvent être activées sur Discord et/ou Twitch selon vos besoins.</p>
+<table>
+	<thead>
+		<tr>
+			<th class="table_td">Commande</th>
+			<th class="table_td">Réponse</th>
+			<th class="table_td">Discord</th>
+			<th class="table_td">Twitch</th>
+			<th class="table_td">Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for commande in commandes %}
+		<tr>
+			<td class="table_td">{{ commande.trigger }}</td>
+			<td class="table_td">{{ commande.response }}</td>
+			<td class="table_td">
+				<a href="{{ url_for('toggle_discord_commande', commande_id = commande.id) }}" style="text-decoration: none; font-size: 1.2em;">
+					{{ '✅' if commande.discord_enable else '❌' }}
+				</a>
+			</td>
+			<td class="table_td">
+				<a href="{{ url_for('toggle_twitch_commande', commande_id = commande.id) }}" style="text-decoration: none; font-size: 1.2em;">
+					{{ '✅' if commande.twitch_enable else '❌' }}
+				</a>
+			</td>
+			<td class="table_td">
+				<a href="{{ url_for('delete_commande', commande_id = commande.id) }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette commande ?')">Supprimer</a>
+			</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+
+<h2>Ajouter une commande</h2>
+<form action="{{ url_for('add_commande') }}" method="POST">
+	<label for="trigger">Commande</label>
+	<input name="trigger" type="text" />
+	<label for="response">Réponse</label>
+	<textarea name="response" rows="5" cols="50"></textarea>
+	<div>
+		<label for="discord_enable">Discord</label>
+		<input name="discord_enable" type="checkbox" checked />
+	</div>
+	<div>
+		<label for="twitch_enable">Twitch</label>
+		<input name="twitch_enable" type="checkbox" unchecked />
+	</div>
+	<input type="Submit" value="Ajouter">
+</form>
 {% endblock %}
