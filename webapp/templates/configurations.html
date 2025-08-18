@@ -32,17 +32,38 @@
 	<label for="proton_db_api_key">Api KEY</label>
 	<input name="proton_db_api_key" type="text" value="{{ configuration.getValue('proton_db_api_key') }}" />
 	<input type="Submit" value="Définir">
-	<p>Pour trouver les clefs, dans votre navigateur avec l'outil d'inspection ouvert (F12 ou clic droit > Inspecter l'élément dans Firefox/Chrome) faites une recherche de jeux sur protondb,
+	<p>Pour trouver les clefs, dans votre navigateur avec l'outil d'inspection ouvert (F12 ou clic droit > Inspecter
+		l'élément dans Firefox/Chrome) faites une recherche de jeux sur protondb,
 		puis chercher les clef dans les requetes (onglet Réseau/Network),
 		<a href="/static/img/algolia-key.jpg" target="_blank">comme le montre cet exemple</a>
 	</p>
 </form>
 
-<h2>Api</h2>
+<h2>Api Discord</h2>
 <form action="{{ url_for('updateConfiguration') }}" method="POST">
 	<label for="discord_token">Api Discord (cachée)</label>
 	<input name="discord_token" type="password" />
 	<input type="Submit" value="Définir">
+	<p>Nécéssite un redémarrage</p>
+</form>
+
+<h2>Api Twitch</h2>
+<form action="{{ url_for('updateConfiguration') }}" method="POST">
+	<label for="twitch_client_id">Client id</label>
+	<input name="twitch_client_id" type="text" value="{{ configuration.getValue('twitch_client_id') }}" />
+	<label for="twitch_client_secret">Client Secret</label>
+	<input name="twitch_client_secret" type="text" value="{{ configuration.getValue('twitch_client_secret') }}" />
+	<label for="twitch_access_token">Access Token</label>
+	<input name="twitch_access_token" type="text" value="{{ configuration.getValue('twitch_access_token') }}" />
+	<label for="twitch_refresh_token">Refresh Token</label>
+	<input name="twitch_refresh_token" type="text" value="{{ configuration.getValue('twitch_refresh_token') }}" />
+	<label for="twitch_channel">Chaine à rejoindre</label>
+	<input name="twitch_channel" type="text" value="{{ configuration.getValue('twitch_channel') }}"
+		placeholder="#machinTruc" />
+	<input type="Submit" value="Définir">
+	<p>
+		<a href="{{ url_for('twitchConfigurationHelp') }}">Aide</a>
+	</p>
 	<p>Nécéssite un redémarrage</p>
 </form>
 {% endblock %}
