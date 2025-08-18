@@ -24,3 +24,7 @@ def updateConfiguration():
 		ConfigurationHelper().createOrUpdate('proton_db_enable_enable', False)
 	db.session.commit()
 	return redirect(url_for('openConfigurations'))
+
+@webapp.route("/configurations/help/twitch") 
+def twitchConfigurationHelp():
+	return render_template("twitch-aide.html")
