@@ -7,6 +7,7 @@ ENV LANG=fr_FR.UTF-8
 ENV LC_ALL=fr_FR.UTF-8
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+
     apt-utils \
     locales \
     python3 \
@@ -21,7 +22,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && locale-gen \
     && rm -rf /var/lib/apt/lists/* \
     && rm zabbix-release_latest_7.4+debian12_all.deb
-
 COPY requirements.txt .
 COPY run-web.py .
 COPY ./database ./database

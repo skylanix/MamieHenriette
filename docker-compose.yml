@@ -4,27 +4,27 @@ services:
   mamiehenriette:
     # Nom du conteneur
     container_name: MamieHenriette
-    
+
     # Image hébergée sur GitHub Container Registry
     image: ghcr.io/skylanix/mamiehenriette:latest
-    
+
     # Build du conteneur à partir d'un Dockerfile local
     # build: .
     # image: mamiehenriette
-    
+
     # Redémarrage automatique en cas d'erreur
     restart: on-failure
-    
+
     environment:
-      - TZ=Europe/Zurich              # Fuseau horaire
+      - TZ=Europe/Paris               # Fuseau horaire
       - ENABLE_ZABBIX=false           # Surveillance désactivée
       - ZABBIX_SERVER=zabbix-server.example.com
       - ZABBIX_HOSTNAME=mamie-henriette-bot
-    
+
     volumes:
       # Base de données et configuration persistante
       - ./instance:/app/instance
-    
+
     ports:
       # Interface web sur http://localhost:8000
       - 5000:5000
