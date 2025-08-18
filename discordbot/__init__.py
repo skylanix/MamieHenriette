@@ -8,7 +8,7 @@ import requests
 
 from database import db
 from database.helpers import ConfigurationHelper
-from database.models import Configuration, GameBundle, Humeur
+from database.models import Configuration, GameBundle, Humeur, Commande
 from protondb import searhProtonDb
 from discord import Message
 
@@ -67,8 +67,20 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = DiscordBot(intents=intents)
 
+# https://discordpy.readthedocs.io/en/stable/quickstart.html
 @bot.event
 async def on_message(message: Message):
+	if message.author == bot.user:
+		return
+	commandes = Commande.query.filter_by(discord_enable=True).all()
+	for commande in commandes:
+		if message.content.find(commande.trigger) == 0:
+			try:
+				await message.channel.send(commande.response, suppress_embeds=True)
+				return
+			except Exception as e:
+				logging.error(e)
+
 	if(ConfigurationHelper().getValue('proton_db_enable_enable') and message.content.find('!protondb')==0) :
 		if (message.content.find('<@')>0) :
 			mention = message.content[message.content.find('<@'):]
