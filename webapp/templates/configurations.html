@@ -1,7 +1,8 @@
 {% extends "template.html" %}
 
 {% block content %}
-<h1>Configuration de Mamie.</h1>
+<h1>Configuration de Mamie</h1>
+<p>Configurez les tokens Discord, les notifications Humble Bundle et l'API ProtonDB pour la commande !protondb.</p>
 
 <h2>Humble Bundle</h2>
 <form action="{{ url_for('updateConfiguration') }}" method="POST">
