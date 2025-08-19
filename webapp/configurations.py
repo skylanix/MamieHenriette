@@ -25,6 +25,6 @@ def updateConfiguration():
 	db.session.commit()
 	return redirect(url_for('openConfigurations'))
 
-@webapp.route("/configurations/help/twitch") 
+@webapp.route("/configurations/twitch/help") 
 def twitchConfigurationHelp():
 	return render_template("twitch-aide.html")
