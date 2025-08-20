@@ -12,8 +12,8 @@ def commandes():
 def add_commande():
 	trigger = request.form.get('trigger')
 	response = request.form.get('response')
-	discord_enable = request.form.get('discord_enable') == 'on'
-	twitch_enable = request.form.get('twitch_enable') == 'on'
+	discord_enable = request.form.get('discord_enable') != None
+	twitch_enable = request.form.get('twitch_enable') != None
 	
 	if trigger and response:
 		if not trigger.startswith('!'):

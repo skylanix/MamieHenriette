@@ -72,14 +72,16 @@ bot = DiscordBot(intents=intents)
 async def on_message(message: Message):
 	if message.author == bot.user:
 		return
-	commandes = Commande.query.filter_by(discord_enable=True).all()
-	for commande in commandes:
-		if message.content.find(commande.trigger) == 0:
-			try:
-				await message.channel.send(commande.response, suppress_embeds=True)
-				return
-			except Exception as e:
-				logging.error(e)
+	if not message.content.startswith('!'):
+		return
+	command_name = message.content.split()[0]
+	commande = Commande.query.filter_by(discord_enable=True, trigger=command_name).first()
+	if commande:
+		try:
+			await message.channel.send(commande.response, suppress_embeds=True)
+			return
+		except Exception as e:
+			logging.error(e)
 
 	if(ConfigurationHelper().getValue('proton_db_enable_enable') and message.content.find('!protondb')==0) :
 		if (message.content.find('<@')>0) :
