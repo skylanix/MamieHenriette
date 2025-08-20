@@ -6,29 +6,29 @@
 <table>
 	<thead>
 		<tr>
-			<th class="table_td">Commande</th>
-			<th class="table_td">Réponse</th>
-			<th class="table_td">Discord</th>
-			<th class="table_td">Twitch</th>
-			<th class="table_td">Actions</th>
+			<th>Commande</th>
+			<th>Réponse</th>
+			<th>Discord</th>
+			<th>Twitch</th>
+			<th>Actions</th>
 		</tr>
 	</thead>
 	<tbody>
 		{% for commande in commandes %}
 		<tr>
-			<td class="table_td">{{ commande.trigger }}</td>
-			<td class="table_td">{{ commande.response }}</td>
-			<td class="table_td">
+			<td>{{ commande.trigger }}</td>
+			<td>{{ commande.response }}</td>
+			<td>
 				<a href="{{ url_for('toggle_discord_commande', commande_id = commande.id) }}" style="text-decoration: none; font-size: 1.2em;">
 					{{ '✅' if commande.discord_enable else '❌' }}
 				</a>
 			</td>
-			<td class="table_td">
+			<td>
 				<a href="{{ url_for('toggle_twitch_commande', commande_id = commande.id) }}" style="text-decoration: none; font-size: 1.2em;">
 					{{ '✅' if commande.twitch_enable else '❌' }}
 				</a>
 			</td>
-			<td class="table_td">
+			<td>
 				<a href="{{ url_for('delete_commande', commande_id = commande.id) }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette commande ?')">Supprimer</a>
 			</td>
 		</tr>
