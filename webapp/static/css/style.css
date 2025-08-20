@@ -2,11 +2,12 @@ header nav img {
 	border-radius: 50%;
 }
 
-.table_td {
+table th,
+table td {
+	text-align: left;
+	vertical-align: top;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: normal;
 	max-width: 250px;
-	text-align: left;
-	vertical-align: top;
 }
