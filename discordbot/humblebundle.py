@@ -43,5 +43,5 @@ async def checkHumbleBundleAndNotify(bot: Client):
 		except Exception as e:
 			logging.error(f"Erreur de connexion {e}")
 	else: 
-		logging.info('Humble bundle est désactivé')
+		logging.info('Humble Bundle est désactivé')
 
