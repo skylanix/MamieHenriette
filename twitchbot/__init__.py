@@ -1,6 +1,7 @@
 
+import asyncio
+
 from twitchAPI.twitch import Twitch
-from twitchAPI.oauth import UserAuthenticator
 from twitchAPI.type import AuthScope, ChatEvent
 from twitchAPI.chat import Chat, ChatEvent, ChatMessage, EventData
 
@@ -9,41 +10,38 @@ CLIENT_SECRET='TODO'
 
 USER_SCOPE = [AuthScope.CHAT_READ, AuthScope.CHAT_EDIT]
 
-CHANNEL = "#TODO"
+CHANNEL = "#gshionn"
 
 ACCESS_TOKEN = 'TODO'
 REFRESH_TOKEN = 'TODO'
 
 
-async def on_ready(ready_event: EventData):
+async def _onReady(ready_event: EventData):
 	print('Bot is ready for work, joining channels')
 	await ready_event.chat.join_room(CHANNEL)
 
-async def on_message(msg: ChatMessage):
+async def _onMessage(msg: ChatMessage):
 	print(f'in {msg.room.name}, {msg.user.name} said: {msg.text}')
 
-async def start() : 
-	twitch = await Twitch(CLIENT_ID, CLIENT_SECRET)
+class TwitchBot() : 
 
-	# auth = UserAuthenticator(twitch, USER_SCOPE, url='todo')
-	# print(f'{auth.return_auth_url()}')
-	# token, refresh_token = await auth.authenticate( use_browser=False)
-	# token, refresh_token = await auth.authenticate()
-	# print(f'{token} :: {refresh_token}')
+	async def _connect(self):
+		self.twitch = await Twitch(CLIENT_ID, CLIENT_SECRET)
+		await self.twitch.set_user_authentication(ACCESS_TOKEN, USER_SCOPE, REFRESH_TOKEN)
+		self.chat = await Chat(self.twitch)
+		self.chat.register_event(ChatEvent.READY, _onReady)
+		self.chat.register_event(ChatEvent.MESSAGE, _onMessage)
+		# chat.register_event(ChatEvent.SUB, on_sub)
+		# chat.register_command('reply', test_command)
+		self.chat.start()
 	
-	await twitch.set_user_authentication(ACCESS_TOKEN, USER_SCOPE, REFRESH_TOKEN)
-	# await twitch.set_user_authentication(token, USER_SCOPE, refresh_token)
+	def begin(self): 
+		asyncio.run(self._connect())
 
-	chat = await Chat(twitch)
-	chat.register_event(ChatEvent.READY, on_ready)
-	chat.register_event(ChatEvent.MESSAGE, on_message)
-	# chat.register_event(ChatEvent.SUB, on_sub)
-	# chat.register_command('reply', test_command)
-	chat.start()
+	# je sais pas encore comment appeller ca
+	async def _close(self):
+		self.chat.stop()
+		await self.twitch.close()
 
-	try:
-		input('press ENTER to stop\n')
-	finally:
-		# now we can close the chat bot and the twitch api client
-		chat.stop()
-		await twitch.close()
+twitchBot = TwitchBot()
+
