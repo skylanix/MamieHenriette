@@ -1,36 +1,40 @@
 {% extends "template.html" %}
 
 {% block content %}
-<h1>Procedure configuration de Twitch</h1>
+<h1>Procédure de configuration de Twitch</h1>
 <p>
-	Rendez vous sur <a href="https://dev.twitch.tv/console" target="_blank">la console d'application twitch</a> et
-	ajouter une application. Renseigner :
+	<strong>Avant toute chose, activez l'authentification à deux facteurs (2FA) :</strong> 
+	<a href="https://help.twitch.tv/s/article/two-factor-authentication?language=en_US" target="_blank">Guide officiel Twitch pour la 2FA</a>
+</p>
+<p>
+	Rendez-vous sur <a href="https://dev.twitch.tv/console" target="_blank">la console d'applications Twitch</a> et
+	ajoutez une application. Renseignez :
 <ul>
-	<li>url de redirection : https://twitchtokengenerator.com</li>
-	<li>catégorie : Chat Bot</li>
+	<li>URL de redirection : https://twitchtokengenerator.com</li>
+	<li>Catégorie : Chat Bot</li>
 </ul>
 </p>
 
 <img src="/static/img/twitch-api-01.jpg">
 
 <p>
-	Creer le bot. Puis de retour à la liste, editer le en cliquant sur Gérer. Puis cliquer sur <strong>Nouveau
-		Secret</strong>. Vous trouvez ici le <strong>Client ID</strong> et <strong>Client Secret</strong>.
+	Créez le bot. Puis, de retour à la liste, éditez-le en cliquant sur Gérer. Puis cliquez sur <strong>Nouveau
+		Secret</strong>. Vous trouverez ici le <strong>Client ID</strong> et le <strong>Client Secret</strong>.
 </p>
 
 <img src="/static/img/twitch-api-02.jpg">
 
 <p>
-	Ensuite rendez vous sur <a href="https://twitchtokengenerator.com/" target="_blank">twitchtokengenerator.com</a> et
-	selectionner <strong>Custum Scope Target</strong>. Dans la section <strong>Use My Client Secret and Client
-		ID</strong>, renseigner les deux champs.
+	Ensuite, rendez-vous sur <a href="https://twitchtokengenerator.com/" target="_blank">twitchtokengenerator.com</a> et
+	sélectionnez <strong>Custom Scope Target</strong>. Dans la section <strong>Use My Client Secret and Client
+		ID</strong>, renseignez les deux champs.
 </p>
 
 <img src="/static/img/twitch-api-03.jpg">
 
 <p>
-	Ensuite dans la section <strong>Available Token Scopes</strong>, cocher <em>chat:read</em> et <em>chat:edit</em>.
-	Puis, dans la même section, cliquer sur <strong>Generate token</strong>.
+	Ensuite, dans la section <strong>Available Token Scopes</strong>, cochez <em>chat:read</em> et <em>chat:edit</em>.
+	Puis, dans la même section, cliquez sur <strong>Generate token</strong>.
 </p>
 
 <img src="/static/img/twitch-api-04.jpg">
