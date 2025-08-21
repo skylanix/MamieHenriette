@@ -1,5 +1,6 @@
 
 import asyncio
+import logging
 
 from twitchAPI.twitch import Twitch
 from twitchAPI.type import AuthScope, ChatEvent
@@ -10,18 +11,21 @@ CLIENT_SECRET='TODO'
 
 USER_SCOPE = [AuthScope.CHAT_READ, AuthScope.CHAT_EDIT]
 
-CHANNEL = "#gshionn"
+CHANNEL = "#TODO"
 
 ACCESS_TOKEN = 'TODO'
 REFRESH_TOKEN = 'TODO'
 
 
 async def _onReady(ready_event: EventData):
-	print('Bot is ready for work, joining channels')
+	logging.info('Twitch bot ready')
 	await ready_event.chat.join_room(CHANNEL)
 
 async def _onMessage(msg: ChatMessage):
 	print(f'in {msg.room.name}, {msg.user.name} said: {msg.text}')
+
+async def _helloCommand(msg: ChatMessage):
+	await msg.reply(f'Bonjour {msg.user.name}')
 
 class TwitchBot() : 
 
@@ -32,7 +36,7 @@ class TwitchBot() :
 		self.chat.register_event(ChatEvent.READY, _onReady)
 		self.chat.register_event(ChatEvent.MESSAGE, _onMessage)
 		# chat.register_event(ChatEvent.SUB, on_sub)
-		# chat.register_command('reply', test_command)
+		self.chat.register_command('hello', _helloCommand)
 		self.chat.start()
 	
 	def begin(self): 
