@@ -1,17 +1,14 @@
 import asyncio
-import datetime
 import discord
-import json
 import logging
 import random
-import requests
 
 from database import db
 from database.helpers import ConfigurationHelper
-from database.models import Configuration, GameBundle, Humeur, Commande
-from protondb import searhProtonDb
+from database.models import Configuration, Humeur, Commande
 from discord import Message
-
+from discordbot.humblebundle import checkHumbleBundleAndNotify
+from protondb import searhProtonDb
 
 class DiscordBot(discord.Client):
 	async def on_ready(self):
@@ -35,24 +32,7 @@ class DiscordBot(discord.Client):
 
 	async def updateHumbleBundle(self):
 		while not self.is_closed():
-			if ConfigurationHelper().getValue('humble_bundle_enable') and ConfigurationHelper().getIntValue('humble_bundle_channel') != 0 :
-				response = requests.get("http://hexas.shionn.org/humble-bundle/json", headers={ "Content-Type": "application/json" })
-				if response.status_code == 200:
-					bundle = response.json()
-					if GameBundle.query.filter_by(id=bundle['id']).first() == None :
-						choice = bundle['choices'][0]
-						date = datetime.datetime.fromtimestamp(bundle['endDate']/1000,datetime.UTC).strftime("%d %B %Y")
-						message = f"@here **Humble Bundle** propose un pack de jeu [{bundle['name']}]({bundle['url']}) contenant :\n"
-						for game in choice["games"]:
-							message += f"- {game}\n"
-						message += f"Pour {choice['price']}€, disponible jusqu'au {date}."
-						await self.get_channel(ConfigurationHelper().getIntValue('humble_bundle_channel')).send(message)
-						db.session.add(GameBundle(id=bundle['id'], name=bundle['name'], json = json.dumps(bundle)))
-						db.session.commit()
-				else:
-					logging.error(f"Erreur de connexion {response.status_code}")
-			else: 
-				logging.info('Humble bundle est désactivé')
+			await checkHumbleBundleAndNotify(self)
 			# toute les 30 minutes
 			await asyncio.sleep(30*60)
 
