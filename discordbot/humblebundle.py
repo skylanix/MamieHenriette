@@ -35,7 +35,7 @@ async def checkHumbleBundleAndNotify(bot: Client):
 	if _isEnable() :
 		try : 
 			bundle = _callHexas()
-			if _isNotAlreadyNotified(bundle) :
+			if bundle != None and _isNotAlreadyNotified(bundle) :
 				message = _formatMessage(bundle)
 				await bot.get_channel(ConfigurationHelper().getIntValue('humble_bundle_channel')).send(message)
 				db.session.add(GameBundle(id=bundle['id'], name=bundle['name'], json = json.dumps(bundle)))
