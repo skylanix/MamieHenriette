@@ -21,24 +21,6 @@
 	<input type="Submit" value="Définir">
 </form>
 
-<h2>Proton DB</h2>
-<form action="{{ url_for('updateConfiguration') }}" method="POST">
-	<label for="proton_db_enable_enable">Activer</label>
-	<input type="checkbox" name="proton_db_enable_enable" {% if configuration.getValue('proton_db_enable_enable') %}
-		checked="checked" {% endif %}>
-	<label>Activer la commande Proton DB</label>
-	<label for="proton_db_api_id">Api ID</label>
-	<input name="proton_db_api_id" type="text" value="{{ configuration.getValue('proton_db_api_id') }}" />
-	<label for="proton_db_api_key">Api KEY</label>
-	<input name="proton_db_api_key" type="text" value="{{ configuration.getValue('proton_db_api_key') }}" />
-	<input type="Submit" value="Définir">
-	<p>Pour trouver les clés, dans votre navigateur avec l'outil d'inspection ouvert (F12 ou clic droit > Inspecter
-		l'élément dans Firefox/Chrome) faites une recherche de jeux sur protondb,
-		puis chercher les clés dans les requêtes (onglet Réseau/Network),
-		<a href="/static/img/algolia-key.jpg" target="_blank">comme le montre cet exemple</a>
-	</p>
-</form>
-
 <h2>Api Discord</h2>
 <form action="{{ url_for('updateConfiguration') }}" method="POST">
 	<label for="discord_token">Api Discord (cachée)</label>
