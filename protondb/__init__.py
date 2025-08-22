@@ -30,11 +30,11 @@ def _call_summary(id):
 def _is_name_match(name:str, search_name:str) -> bool:
 	normalized_game_name = re.sub("[^a-z0-9]", "", name.lower())
 	normalized_search_name = re.sub("[^a-z0-9]", "", search_name.lower())
-	return normalized_game_name.find(normalized_search_name.lower()) >= 0
+	return normalized_game_name.find(normalized_search_name) >= 0
 
 def _apply_game_aliases(search_name:str) -> str:
 	for alias in GameAlias.query.order_by(desc(func.length(GameAlias.alias))).all():
-		search_name = search_name.replace(alias.alias, alias.name)
+		search_name = re.sub(re.escape(alias.alias), alias.name, search_name, flags=re.IGNORECASE)
 	return search_name
 
 def searhProtonDb(search_name:str): 
