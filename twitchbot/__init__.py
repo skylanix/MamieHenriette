@@ -44,7 +44,7 @@ class TwitchBot() :
 					self.chat.register_command('hello', _helloCommand)
 					self.chat.start()
 				except Exception as e: 
-					logging.error(f'twitch auth error {e}')
+					logging.error(f'twitch auth error, check your ids and restart after correction {e}')
 			else: 
 				logging.info("Twitch is not configured")
 	
