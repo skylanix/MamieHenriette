@@ -54,10 +54,10 @@ def searhProtonDb(search_name:str):
 						'name' : name,
 						'tier' : tier
 					})
-					logging.info(f'found {name}({id} : {tier}')
+					logging.info(f'Trouvé {name}({id}) : {tier}')
 			except Exception as e:
 				logging.error(f'error on {name}({id}): {e}')
 		else:
-			logging.info(f'{name}({id} ne contient pas {search_name})')
+			logging.info(f'{name}({id}) ne contient pas {search_name}')
 	return results
 

@@ -13,14 +13,14 @@ from webapp import webapp
 USER_SCOPE = [AuthScope.CHAT_READ, AuthScope.CHAT_EDIT]
 
 async def _onReady(ready_event: EventData):
-	logging.info('Twitch bot ready')
+	logging.info('Bot Twitch prêt')
 	with webapp.app_context():
 		await ready_event.chat.join_room(ConfigurationHelper().getValue('twitch_channel'))
 
 async def _onMessage(msg: ChatMessage):
-	logging.info(f'in {msg.room.name}, {msg.user.name} said: {msg.text}')
+	logging.info(f'Dans {msg.room.name}, {msg.user.name} a dit : {msg.text}')
 
-# commande qui repond "bonjour" a "!hello"
+# commande qui répond "bonjour" à "!hello"
 async def _helloCommand(msg: ChatMessage):
 	await msg.reply(f'Bonjour {msg.user.name}')
 
@@ -43,12 +43,12 @@ class TwitchBot() :
 				self.chat.register_command('hello', _helloCommand)
 				self.chat.start()
 			else: 
-				logging.info("Twitch is not configured")
+				logging.info("Twitch n'est pas configuré")
 	
 	def begin(self): 
 		asyncio.run(self._connect())
 
-	# je sais pas encore comment appeller ca
+	# je ne sais pas encore comment appeler ça
 	async def _close(self):
 		self.chat.stop()
 		await self.twitch.close()
