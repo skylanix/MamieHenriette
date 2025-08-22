@@ -23,7 +23,7 @@ def start_twitch_bot():
         twitchBot.begin()
 
 if __name__ == '__main__':
-    locale.setlocale(locale.LC_TIME, 'fr_CH.UTF-8')
+    locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
 
     jobs = []
     jobs.append(threading.Thread(target=start_discord_bot))
