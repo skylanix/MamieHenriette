@@ -5,6 +5,7 @@ import re
 
 from algoliasearch.search.client import SearchClientSync, SearchConfig
 from database.helpers import ConfigurationHelper
+from database.models import GameAlias
 
 def _call_algoliasearch(search_name:str): 
 	config = SearchConfig(ConfigurationHelper().getValue('proton_db_api_id'), 
@@ -30,8 +31,14 @@ def _is_name_match(name:str, search_name:str) -> bool:
 	normalized_search_name = re.sub("[^a-z0-9]", "", search_name.lower())
 	return normalized_game_name.find(normalized_search_name.lower()) >= 0
 
+def _apply_game_aliases(search_name:str) -> str:
+	for alias in GameAlias.query.all():
+		search_name = search_name.replace(alias.alias, alias.name)
+	return search_name
+
 def searhProtonDb(search_name:str): 
 	results = []
+	search_name = _apply_game_aliases(search_name)
 	responses = _call_algoliasearch(search_name)
 	for hit in responses.model_dump().get('hits'): 
 		id = hit.get('object_id')
