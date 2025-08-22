@@ -1,0 +1,55 @@
+{% extends "template.html" %}
+
+{% block content %}
+<h1>Proton DB</h1>
+
+<h2>Game alias</h2>
+<table>
+	<thead>
+		<tr>
+			<th>Alias</th>
+			<th>Game</th>
+			<th>#</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for a in aliases %}
+		<tr>
+			<td>{{a.alias}}</td>
+			<td>{{a.name}}</td>
+			<td><a href="{{ url_for('delGameAlias', id = a.id) }}"
+					onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet alias ?')">Supprimer</a></td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+
+<h2>Ajouter un Alias</h2>
+<form action="{{ url_for('addGameAlias') }}" method="POST">
+	<label for="alias">Alias</label>
+	<input name="alias" type="text" maxlength="32" required="required" />
+	<label for="name">Nom</label>
+	<input name="name" type="text" maxlength="256" required="required" />
+	<input type="Submit" value="Ajouter">
+	<p>Si vous créer un *game alias* **GTA > Grand Theft Auto** alors si un utilisateur rentre la commande **!protondb
+		GTA 5** cela fera une recherche sur **Grand Theft Auto 5**.</p>
+</form>
+
+<h2>Configuration</h2>
+<form action="{{ url_for('updateConfiguration') }}" method="POST">
+	<label for="proton_db_enable_enable">Activer</label>
+	<input type="checkbox" name="proton_db_enable_enable" {% if configuration.getValue('proton_db_enable_enable') %}
+		checked="checked" {% endif %}>
+	<label>Activer la commande Proton DB</label>
+	<label for="proton_db_api_id">Api ID</label>
+	<input name="proton_db_api_id" type="text" value="{{ configuration.getValue('proton_db_api_id') }}" />
+	<label for="proton_db_api_key">Api KEY</label>
+	<input name="proton_db_api_key" type="text" value="{{ configuration.getValue('proton_db_api_key') }}" />
+	<input type="Submit" value="Définir">
+	<p>Pour trouver les clés, dans votre navigateur avec l'outil d'inspection ouvert (F12 ou clic droit > Inspecter
+		l'élément dans Firefox/Chrome) faites une recherche de jeux sur protondb,
+		puis chercher les clés dans les requêtes (onglet Réseau/Network),
+		<a href="/static/img/algolia-key.jpg" target="_blank">comme le montre cet exemple</a>
+	</p>
+</form>
+{% endblock %}

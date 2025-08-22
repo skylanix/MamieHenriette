@@ -23,7 +23,7 @@ def updateConfiguration():
 	if (request.form.get("proton_db_api_id") != None and request.form.get("proton_db_enable_enable") == None) :
 		ConfigurationHelper().createOrUpdate('proton_db_enable_enable', False)
 	db.session.commit()
-	return redirect(url_for('openConfigurations'))
+	return redirect(request.referrer)
 
 @webapp.route("/configurations/twitch/help") 
 def twitchConfigurationHelp():
