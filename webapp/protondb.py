@@ -20,5 +20,5 @@ def addGameAlias():
 def delGameAlias(id : int):
 	GameAlias.query.filter_by(id=id).delete()
 	db.session.commit()
-	return redirect(url_for('protondb'))
+	return redirect(url_for('openProtonDB'))
 
