@@ -44,9 +44,9 @@ class TwitchBot() :
 					self.chat.register_command('hello', _helloCommand)
 					self.chat.start()
 				except Exception as e: 
-					logging.error(f'twitch auth error, check your ids and restart after correction {e}')
+					logging.error(f'Échec de l\'authentification Twitch. Vérifiez vos identifiants et redémarrez après correction : {e}')
 			else: 
-				logging.info("Twitch is not configured")
+				logging.info("Twitch n'est pas configuré")
 	
 	def begin(self): 
 		asyncio.run(self._connect())
