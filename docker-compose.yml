@@ -1,5 +1,3 @@
-# Configuration Docker Compose pour MamieHenriette
-
 services:
   mamiehenriette:
     # Nom du conteneur
@@ -12,7 +10,7 @@ services:
     # build: .
     # image: mamiehenriette
 
-    # Redémarrage automatique en cas d'erreur
+    # Redémarrage automatique sauf si arrêté manuellement
     restart: unless-stopped
 
     environment:
