@@ -24,7 +24,7 @@ def _call_summary(id):
 	response = requests.get(f'http://jazzy-starlight-aeea19.netlify.app/api/v1/reports/summaries/{id}.json')
 	if (response.status_code == 200) :
 		return response.json()
-	logging.error(f'{response.status_code} on {id}')
+	logging.error(f'Échec de la récupération des données ProtonDB pour le jeu {id}. Code de statut HTTP : {response.status_code}')
 	return None
 
 def _is_name_match(name:str, search_name:str) -> bool:
@@ -56,7 +56,7 @@ def searhProtonDb(search_name:str):
 					})
 					logging.info(f'Trouvé {name}({id}) : {tier}')
 			except Exception as e:
-				logging.error(f'error on {name}({id}): {e}')
+				logging.error(f'Erreur lors du traitement du jeu {name} (ID: {id}) : {e}')
 		else:
 			logging.info(f'{name}({id}) ne contient pas {search_name}')
 	return results

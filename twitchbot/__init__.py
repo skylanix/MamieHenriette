@@ -33,15 +33,18 @@ class TwitchBot() :
 	async def _connect(self):
 		with webapp.app_context():
 			if _isConfigured() : 
-				helper = ConfigurationHelper()
-				self.twitch = await Twitch(helper.getValue('twitch_client_id'), helper.getValue('twitch_client_secret'))
-				await self.twitch.set_user_authentication(helper.getValue('twitch_access_token'), USER_SCOPE, helper.getValue('twitch_refresh_token'))
-				self.chat = await Chat(self.twitch)
-				self.chat.register_event(ChatEvent.READY, _onReady)
-				self.chat.register_event(ChatEvent.MESSAGE, _onMessage)
-				# chat.register_event(ChatEvent.SUB, on_sub)
-				self.chat.register_command('hello', _helloCommand)
-				self.chat.start()
+				try : 
+					helper = ConfigurationHelper()
+					self.twitch = await Twitch(helper.getValue('twitch_client_id'), helper.getValue('twitch_client_secret'))
+					await self.twitch.set_user_authentication(helper.getValue('twitch_access_token'), USER_SCOPE, helper.getValue('twitch_refresh_token'))
+					self.chat = await Chat(self.twitch)
+					self.chat.register_event(ChatEvent.READY, _onReady)
+					self.chat.register_event(ChatEvent.MESSAGE, _onMessage)
+					# chat.register_event(ChatEvent.SUB, on_sub)
+					self.chat.register_command('hello', _helloCommand)
+					self.chat.start()
+				except Exception as e: 
+					logging.error(f'Échec de l\'authentification Twitch. Vérifiez vos identifiants et redémarrez après correction : {e}')
 			else: 
 				logging.info("Twitch n'est pas configuré")
 	
