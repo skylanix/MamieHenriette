@@ -71,7 +71,7 @@ async def on_message(message: Message):
 		name = message.content.replace('!protondb', '').replace(f'{mention}', '').strip();
 		games = searhProtonDb(name)
 		if (len(games)==0) :
-			msg = f'{mention} Je n\'ai pas trouvé de jeux correspondant à **{name}**'
+			msg = f'{mention} Je n\'ai pas trouvé de jeux correspondant à **{name}**. Es-tu sûr que le jeu est disponible sur Steam ?'
 		else :
 			msg = f'{mention} J\'ai trouvé {len(games)} jeux :\n'
 			ite = iter(games)
