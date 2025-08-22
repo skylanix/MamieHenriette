@@ -41,7 +41,7 @@ class DiscordBot(discord.Client):
 		if token :
 			self.run(token.value)
 		else :
-			logging.error('Pas de token, on ne lance pas Discord')
+			logging.error('Aucun token Discord configuré. Le bot ne peut pas être démarré')
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -61,7 +61,7 @@ async def on_message(message: Message):
 			await message.channel.send(commande.response, suppress_embeds=True)
 			return
 		except Exception as e:
-			logging.error(e)
+			logging.error(f'Échec de l\'exécution de la commande Discord : {e}')
 
 	if(ConfigurationHelper().getValue('proton_db_enable_enable') and message.content.find('!protondb')==0) :
 		if (message.content.find('<@')>0) :
@@ -83,5 +83,5 @@ async def on_message(message: Message):
 		try : 
 			await message.channel.send(msg, suppress_embeds=True)
 		except Exception as e:
-			logging.error(e)
+			logging.error(f'Échec de l\'envoi du message ProtonDB : {e}')
 		

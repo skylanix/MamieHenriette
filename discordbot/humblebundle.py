@@ -16,7 +16,7 @@ def _callHexas():
 	response = requests.get("http://hexas.shionn.org/humble-bundle/json", headers={ "Content-Type": "application/json" })
 	if response.status_code == 200:
 		return response.json()
-	logging.error(f"Erreur de connexion {response.status_code}")
+	logging.error(f"Échec de la connexion à l'API Humble Bundle. Code de statut HTTP : {response.status_code}")
 	return None
 
 def _isNotAlreadyNotified(bundle):
@@ -41,7 +41,7 @@ async def checkHumbleBundleAndNotify(bot: Client):
 				db.session.add(GameBundle(id=bundle['id'], name=bundle['name'], json = json.dumps(bundle)))
 				db.session.commit()
 		except Exception as e:
-			logging.error(f"Erreur de connexion {e}")
+			logging.error(f"Échec de la vérification des offres Humble Bundle : {e}")
 	else: 
 		logging.info('Humble Bundle est désactivé')
 
