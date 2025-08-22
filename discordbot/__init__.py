@@ -12,7 +12,7 @@ from protondb import searhProtonDb
 
 class DiscordBot(discord.Client):
 	async def on_ready(self):
-		logging.info(f'Logged in as {self.user} (ID: {self.user.id})')
+		logging.info(f'Connecté en tant que {self.user} (ID: {self.user.id})')
 		for c in self.get_all_channels() :
 			logging.info(f'{c.id} {c.name}')
 		
@@ -25,7 +25,7 @@ class DiscordBot(discord.Client):
 			if len(humeurs)>0 :
 				humeur = random.choice(humeurs)
 				if humeur != None: 
-					logging.info(f'changement de status {humeur.text}')
+					logging.info(f'Changement de statut : {humeur.text}')
 					await self.change_presence(status = discord.Status.online,  activity = discord.CustomActivity(humeur.text))
 			# 10 minutes TODO à rendre configurable
 			await asyncio.sleep(10*60)
@@ -33,7 +33,7 @@ class DiscordBot(discord.Client):
 	async def updateHumbleBundle(self):
 		while not self.is_closed():
 			await checkHumbleBundleAndNotify(self)
-			# toute les 30 minutes
+			# toutes les 30 minutes
 			await asyncio.sleep(30*60)
 
 	def begin(self) : 
@@ -41,7 +41,7 @@ class DiscordBot(discord.Client):
 		if token :
 			self.run(token.value)
 		else :
-			logging.error('pas de token on ne lance pas discord')
+			logging.error('Pas de token, on ne lance pas Discord')
 
 intents = discord.Intents.default()
 intents.message_content = True

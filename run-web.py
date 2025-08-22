@@ -8,17 +8,17 @@ from twitchbot import twitchBot
 
 
 def start_server(): 
-    logging.info("Start Web Serveur")
+    logging.info("Démarrage du serveur web")
     from waitress import serve
     serve(webapp, host="0.0.0.0", port=5000)
 
 def start_discord_bot():
-    logging.info("Start Discord Bot")
+    logging.info("Démarrage du bot Discord")
     with webapp.app_context():
         bot.begin()
 
 def start_twitch_bot():
-    logging.info("Start Twitch Bot")
+    logging.info("Démarrage du bot Twitch")
     with webapp.app_context():
         twitchBot.begin()
 
