@@ -4,23 +4,6 @@
 <h1>Configuration de Mamie</h1>
 <p>Configurez les tokens Discord, les notifications Humble Bundle et l'API ProtonDB pour la commande !protondb.</p>
 
-<h2>Humble Bundle</h2>
-<form action="{{ url_for('updateConfiguration') }}" method="POST">
-	<label for="humble_bundle_enable">Activer</label>
-	<input type="checkbox" name="humble_bundle_enable" {% if configuration.getValue('humble_bundle_enable') %}
-		checked="checked" {% endif %}>
-	<label>Activer les notifications Humble bundle</label>
-	<label for="humble_bundle_channel">Canal de notification des packs Humble Bundle</label>
-	<select name="humble_bundle_channel">
-		{% for channel in channels %}
-		<option value="{{channel.id}}" {% if configuration.getIntValue('humble_bundle_channel')==channel.id %}
-			selected="selected" {% endif %}>
-			{{channel.name}}</option>
-		{% endfor %}
-	</select>
-	<input type="Submit" value="Définir">
-</form>
-
 <h2>Api Discord</h2>
 <form action="{{ url_for('updateConfiguration') }}" method="POST">
 	<label for="discord_token">Api Discord (cachée)</label>
@@ -47,5 +30,22 @@
 		<a href="{{ url_for('twitchConfigurationHelp') }}">Aide</a>
 	</p>
 	<p>Nécessite un redémarrage</p>
+</form>
+
+<h2>Humble Bundle</h2>
+<form action="{{ url_for('updateConfiguration') }}" method="POST">
+	<label for="humble_bundle_enable">Activer</label>
+	<input type="checkbox" name="humble_bundle_enable" {% if configuration.getValue('humble_bundle_enable') %}
+		checked="checked" {% endif %}>
+	<label>Activer les notifications Humble bundle</label>
+	<label for="humble_bundle_channel">Canal de notification des packs Humble Bundle</label>
+	<select name="humble_bundle_channel">
+		{% for channel in channels %}
+		<option value="{{channel.id}}" {% if configuration.getIntValue('humble_bundle_channel')==channel.id %}
+			selected="selected" {% endif %}>
+			{{channel.name}}</option>
+		{% endfor %}
+	</select>
+	<input type="Submit" value="Définir">
 </form>
 {% endblock %}
