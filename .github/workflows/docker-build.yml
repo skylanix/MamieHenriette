@@ -31,6 +31,14 @@ jobs:
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            # Toujours créer un tag 'latest' pour la branche main
+            type=raw,value=latest,enable={{is_default_branch}}
+            # Tag avec le nom de la branche pour les autres branches
+            type=raw,value={{branch}},enable=${{ github.ref_name != 'main' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
