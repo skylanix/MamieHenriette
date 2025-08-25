@@ -2,12 +2,10 @@ services:
   mamiehenriette:                                    
     container_name: MamieHenriette                  # Nom du conteneur
     image: ghcr.io/skylanix/mamiehenriette:latest   # Image hébergée sur GitHub Container Registry
-
-
-#  build: .                                         # Build du conteneur à partir d'un Dockerfile local (décommentez si nécessaire)
-#  image: mamiehenriette                            # Build du conteneur à partir d'un Dockerfile local (décommentez si nécessaire)
-
     restart: unless-stopped                         # Redémarre automatiquement sauf si arrêté manuellement
+
+#    build: .                                        # Build du conteneur à partir d'un Dockerfile local (décommentez si nécessaire)
+#    image: mamiehenriette                           # Build du conteneur à partir d'un Dockerfile local (décommentez si nécessaire)
 
     environment:
         TZ: Europe/Paris                            # Fuseau horaire
@@ -18,29 +16,26 @@ services:
       - ./instance:/app/instance                    # Base de données et configuration persistante
 
     ports:
-      # Interface web sur http://localhost:8000
-      - 5000:5000
-#      - "10050:10050"                          # Port Zabbix (décommentez si nécessaire)
-
-
+      - 5000:5000                                   # Interface web sur http://localhost:5000
+#      - "10050:10050"                               # Port Zabbix (décommentez si nécessaire)
 
   watchtower:                                       # Permet de mettre à jours automatiquement 
     image: containrrr/watchtower:latest
     container_name: watchtower                      # Nom du conteneur
     restart: unless-stopped                         # Redémarre automatiquement sauf si arrêté manuellement
     environment:
-      TZ: Europe/Paris
+        TZ: Europe/Paris                            # Fuseau horaire
                                                     # Liste des conteneurs à surveiller (séparés par des espaces)
-      WATCHTOWER_INCLUDE: "MamieHenriette"
-      WATCHTOWER_SCHEDULE: "0 */30 * * * *"         # Vérification toutes les 30 minutes
-      WATCHTOWER_MONITOR_ONLY: "false"              # Mode surveillance uniquement : détecte les mises à jour mais ne les applique pas
-      WATCHTOWER_CLEANUP: "true"                    # Supprime automatiquement les anciennes images après mise à jour
-      WATCHTOWER_INCLUDE_RESTARTING: "true"         # Inclut les conteneurs en cours de redémarrage dans la surveillance
+        WATCHTOWER_INCLUDE: "MamieHenriette"
+        WATCHTOWER_SCHEDULE: "0 */30 * * * *"       # Vérification toutes les 30 minutes
+        WATCHTOWER_MONITOR_ONLY: "false"            # Mode surveillance uniquement : détecte les mises à jour mais ne les applique pas
+        WATCHTOWER_CLEANUP: "true"                  # Supprime automatiquement les anciennes images après mise à jour
+        WATCHTOWER_INCLUDE_RESTARTING: "true"       # Inclut les conteneurs en cours de redémarrage dans la surveillance
                                                     # URL de notification Discord (webhook) pour recevoir les alertes
-      WATCHTOWER_NOTIFICATION_URL: "discord://token@id"
+        WATCHTOWER_NOTIFICATION_URL: "discord://token@id"
                                                     # Format personnalisé des messages de notification (date, niveau, message)
-      WATCHTOWER_NOTIFICATION_TEMPLATE: |-
-        {{range .}}{{.Time.Format "01-02-2006 15:04:05"}} ({{.Level}})':' {{.Message}}{{println}}{{end}}
-      WATCHTOWER_NOTIFICATIONS: shoutrrr            # Service de notification utilisé (Shoutrrr pour Discord)
+        WATCHTOWER_NOTIFICATION_TEMPLATE: |-
+          {{range .}}{{.Time.Format "01-02-2006 15:04:05"}} ({{.Level}})':' {{.Message}}{{println}}{{end}}
+        WATCHTOWER_NOTIFICATIONS: shoutrrr          # Service de notification utilisé (Shoutrrr pour Discord)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock   # Monte le socket Docker pour permettre à Watchtower de surveiller les conteneurs
