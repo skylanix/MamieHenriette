@@ -59,7 +59,7 @@ jobs:
     - name: Test container startup
       run: |
         echo "Testing if the container starts successfully..."
-        docker run --rm -d --name test-container -p 5001:5000 \
+        docker run --rm -d --name test-container -p 5000:5000 \
           -e TZ=Europe/Paris \
           -e ENABLE_ZABBIX=false \
           ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest

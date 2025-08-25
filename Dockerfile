@@ -23,12 +23,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && rm zabbix-release_latest_7.4+debian12_all.deb
 COPY requirements.txt .
-COPY run-web.py .
+#COPY run-web.py .
 COPY ./database ./database
 COPY ./discordbot ./discordbot
 COPY ./protondb ./protondb
 COPY ./webapp ./webapp
-#COPY ./twitchbot ./twitchbot
+COPY ./twitchbot ./twitchbot
 COPY zabbix_agent2.conf /etc/zabbix/zabbix_agent2.conf
 COPY start.sh /start.sh
 
