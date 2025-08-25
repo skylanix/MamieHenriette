@@ -28,7 +28,7 @@ COPY ./database ./database
 COPY ./discordbot ./discordbot
 COPY ./protondb ./protondb
 COPY ./webapp ./webapp
-COPY ./twitchbot ./twitchbot
+#COPY ./twitchbot ./twitchbot
 COPY zabbix_agent2.conf /etc/zabbix/zabbix_agent2.conf
 COPY start.sh /start.sh
 

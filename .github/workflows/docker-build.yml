@@ -65,7 +65,7 @@ jobs:
           ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
         
         # Wait for container to be ready
-        sleep 10
+        sleep 60
         
         # Check if container is still running
         if docker ps | grep test-container; then
