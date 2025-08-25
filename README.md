@@ -17,10 +17,8 @@
   - [Démarrage rapide](#démarrage-rapide)
   - [Commandes Docker utiles](#commandes-docker-utiles)
   - [Mise à jour](#mise-à-jour)
-- [Configuration avancée](#configuration-avancée)
-  - [Variables d'environnement](#variables-denvironnement)
-  - [Interface d'administration](#interface-dadministration-1)
 - [Architecture du projet](#architecture-du-projet)
+  - [Interface d'administration](#interface-dadministration-1)
   - [Structure des modules](#structure-des-modules)
   - [Composants principaux](#composants-principaux)
 - [Spécifications techniques](#spécifications-techniques)
@@ -184,16 +182,7 @@ pip install -r requirements.txt
 python run-web.py
 ```
 
-## Configuration avancée
-
-### Variables d'environnement
-
-```yaml
-environment:
-  - ENABLE_ZABBIX=false     # Surveillance (non testée)
-  - ZABBIX_SERVER=localhost
-  - ZABBIX_HOSTNAME=MamieHenriette
-```
+## Architecture du projet
 
 ### Interface d'administration
 
@@ -204,8 +193,6 @@ environment:
 | **Commandes** | Commandes personnalisées multi-plateformes |
 | **Messages** | Messages automatiques et notifications |
 | **Modération** | Outils de gestion communautaire |
-
-## Architecture du projet
 
 ### Structure des modules
 
@@ -244,8 +231,10 @@ environment:
 ### Base de données (SQLite)
 - **Configuration** : Paramètres et tokens
 - **Humeur** : Statuts Discord rotatifs
-- **Message** : Messages périodiques *(planifié)*
+- **Commande** : Commandes personnalisées Discord/Twitch
+- **GameAlias** : Alias pour améliorer les recherches ProtonDB
 - **GameBundle** : Historique Humble Bundle
+- **Message** : Messages périodiques *(structure définie, non implémenté)*
 
 ### Architecture multi-thread
 - **Thread 1** : Interface web Flask (port 5000)
