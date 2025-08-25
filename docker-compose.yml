@@ -28,7 +28,7 @@ services:
                                                     # Liste des conteneurs à surveiller (séparés par des espaces)
         WATCHTOWER_INCLUDE: "MamieHenriette"
         WATCHTOWER_SCHEDULE: "0 */30 * * * *"       # Vérification toutes les 30 minutes
-        WATCHTOWER_MONITOR_ONLY: ""            # Mode surveillance uniquement : détecte les mises à jour mais ne les applique pas
+        WATCHTOWER_MONITOR_ONLY: "false"            # Mode surveillance uniquement : détecte les mises à jour mais ne les applique pas
         WATCHTOWER_CLEANUP: "true"                  # Supprime automatiquement les anciennes images après mise à jour
         WATCHTOWER_INCLUDE_RESTARTING: "true"       # Inclut les conteneurs en cours de redémarrage dans la surveillance
                                                     # URL de notification Discord (webhook), (décommentez si nécessaire)
