@@ -93,7 +93,7 @@ Avant d'installer MamieHenriette, vous devez créer un bot Discord et obtenir so
 3. **Configurer le bot** :
    - Dans le menu latéral, cliquez sur "Bot"
    - Ajoutez une photo de profil et un pseudo à votre bot
-   - **Important activezez les intents** :
+   - **Important activez les intents** :
      - ☑️ Presence Intent
      - ☑️ Server Members Intent 
      - ☑️ Message Content Intent
