@@ -2,7 +2,7 @@ services:
   mamiehenriette:                                    
     container_name: MamieHenriette                  # Nom du conteneur
     image: ghcr.io/skylanix/mamiehenriette:latest   # Image hébergée sur GitHub Container Registry
-    restart: unless-stopped                         # Redémarre automatiquement sauf si arrêté manuellement
+    restart: "no"                                   # N'autorise pas le redémarrage automatique
 
 #    build: .                                        # Build du conteneur à partir d'un Dockerfile local (décommentez si nécessaire)
 #    image: mamiehenriette                           # Build du conteneur à partir d'un Dockerfile local (décommentez si nécessaire)
@@ -22,7 +22,7 @@ services:
   watchtower:                                       # Permet de mettre à jours automatiquement 
     image: containrrr/watchtower:latest
     container_name: watchtower                      # Nom du conteneur
-    restart: unless-stopped                         # Redémarre automatiquement sauf si arrêté manuellement
+    restart: "no"                                   # N'autorise pas le redémarrage automatique
     environment:
         TZ: Europe/Paris                            # Fuseau horaire
                                                     # Liste des conteneurs à surveiller (séparés par des espaces)
