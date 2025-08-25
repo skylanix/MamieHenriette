@@ -1,21 +1,22 @@
+# Gestion des variables d'environnement
 python-dotenv==1.0.0
 
-# necessaire pour l'api discord
+# Nécessaire pour l'API Discord
 discord.py==2.3.2
 aiohttp>=3.7.4,<4
 audioop-lts; python_version>='3.13'
 
-# api twitch
+# API Twitch
 twitchAPI>=4.5.0
 
-# necessaire pour l'hebergement du site web
+# Nécessaire pour l'hébergement du site web
 flask>=2.3.2
 flask-sqlalchemy>=3.0.3
 waitress>=3.0.2
 
-# necessaire pour l'appel à l'api humble bundle
+# Nécessaire pour l'appel à l'API Humble Bundle
 requests>=2.32.4
 
-# necessaire pour l'appel à protopn db
+# Nécessaire pour l'appel à ProtonDB
 algoliasearch>=4,<5
 

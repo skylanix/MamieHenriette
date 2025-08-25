@@ -7,7 +7,7 @@
 - [Vue d'ensemble](#vue-densemble)
 - [Fonctionnalités](#fonctionnalités)
   - [Discord](#discord)
-  - [Twitch](#twitch-en-développement)
+  - [Twitch](#twitch)
   - [YouTube Live](#youtube-live-en-développement)
   - [Interface d'administration](#interface-dadministration)
   - [Surveillance](#surveillance)
@@ -15,7 +15,6 @@
   - [Prérequis](#prérequis)
   - [Création du bot Discord](#création-du-bot-discord)
   - [Démarrage rapide](#démarrage-rapide)
-  - [Configuration](#configuration)
   - [Commandes Docker utiles](#commandes-docker-utiles)
   - [Mise à jour](#mise-à-jour)
 - [Configuration avancée](#configuration-avancée)
@@ -41,7 +40,7 @@ Mamie Henriette est un bot intelligent open-source développé spécifiquement p
 ### Caractéristiques principales
 
 - Interface web d'administration complète
-- Gestion multi-plateformes (Discord, Twitch, YouTube Live)
+- Gestion multi-plateformes (Discord opérationnel, Twitch intégré, YouTube Live en développement)
 - Système de notifications automatiques
 - Base de données intégrée pour la persistance
 - Surveillance optionnelle avec Zabbix *(non testée)*
@@ -55,9 +54,8 @@ Mamie Henriette est un bot intelligent open-source développé spécifiquement p
 - **Recherche ProtonDB** : Commande `!protondb <nom_du_jeu>` pour vérifier la compatibilité Linux/Steam Deck
 - **Modération** : Outils intégrés
 
-### Twitch *(en développement)*
-- **Chat bot** : Commandes et interactions
-- **Événements live** : Notifications de stream
+### Twitch
+- **Chat bot** : Commandes et interactions automatiques
 
 ### YouTube Live *(en développement)*
 - **Chat bot** : Modération et commandes
@@ -79,6 +77,7 @@ Mamie Henriette est un bot intelligent open-source développé spécifiquement p
 ### Prérequis
 - [Docker Engine](https://docs.docker.com/engine/install/) ou [Docker Desktop](https://docs.docker.com/desktop/)
 - Token Discord pour le bot
+- Token Twitch (optionnel) pour les fonctionnalités Twitch
 
 ### Création du bot Discord
 
@@ -94,7 +93,7 @@ Avant d'installer MamieHenriette, vous devez créer un bot Discord et obtenir so
 3. **Configurer le bot** :
    - Dans le menu latéral, cliquez sur "Bot"
    - Ajoutez une photo de profil et un pseudo à votre bot
-   - **Important** : Activez les "Privileged Gateway Intents" :
+   - **Important activez les intents** :
      - ☑️ Presence Intent
      - ☑️ Server Members Intent 
      - ☑️ Message Content Intent
@@ -126,15 +125,7 @@ cd MamieHenriette
 docker compose up --build -d
 ```
 
-### Configuration
-
-1. **Interface web** : Accédez à http://localhost
-2. **Token Discord** : Section "Configurations"
-3. **ProtonDB** : Configurer l'API Algolia dans "Configurations" pour activer `!protondb`
-4. **Humeurs** : Définir les statuts du bot
-5. **Canaux** : Configurer les notifications
-
-> ⚠️ **Important** : Après avoir configuré le token Discord, les humeurs et autres fonctionnalités via l'interface web, **redémarrez le conteneur** pour que les changements soient pris en compte :
+> ⚠️ **Important** : Après configuration via l'interface web http://localhost:5000, **redémarrez le conteneur** pour que les changements soient pris en compte :
 > ```bash
 > docker compose restart MamieHenriette
 > ```
@@ -208,10 +199,11 @@ environment:
 
 | Section | Fonction |
 |---------|----------|
-| **Configurations** | Tokens, paramètres généraux et configuration ProtonDB |
+| **Configurations** | Tokens Discord/Twitch, paramètres généraux et configuration ProtonDB |
 | **Humeurs** | Gestion des statuts Discord |
-| **Commandes** | Commandes personnalisées |
-| **Modération** | Outils de gestion |
+| **Commandes** | Commandes personnalisées multi-plateformes |
+| **Messages** | Messages automatiques et notifications |
+| **Modération** | Outils de gestion communautaire |
 
 ## Architecture du projet
 
@@ -225,6 +217,9 @@ environment:
 │
 ├── discordbot/        # Module Discord
 │   └── __init__.py    # Bot et handlers
+│
+├── twitchbot/         # Module Twitch  
+│   └── __init__.py    # Bot Twitch et handlers
 │
 ├── protondb/          # Module ProtonDB
 │   └── __init__.py    # API Algolia et recherche compatibilité
@@ -255,14 +250,18 @@ environment:
 ### Architecture multi-thread
 - **Thread 1** : Interface web Flask (port 5000)
 - **Thread 2** : Bot Discord et tâches automatisées
+- **Thread 3** : Bot Twitch et gestion du chat
 
 ### Dépendances principales
 ```
-discord.py         # API Discord
-flask              # Interface web
-requests           # Client HTTP
-waitress           # Serveur WSGI
-algoliasearch      # API ProtonDB/SteamDB
+discord.py>=2.3.2         # API Discord
+flask>=2.3.2              # Interface web
+flask-sqlalchemy>=3.0.3   # ORM SQLAlchemy
+requests>=2.32.4          # Client HTTP
+waitress>=3.0.2           # Serveur WSGI
+algoliasearch>=4          # API ProtonDB/SteamDB
+twitchAPI>=4.5.0          # API Twitch
+python-dotenv==1.0.0      # Variables d'environnement
 ```
 
 ## Développement
@@ -270,8 +269,14 @@ algoliasearch      # API ProtonDB/SteamDB
 ### Installation locale
 ```bash
 python3 -m venv venv
+```
+```bash
 source venv/bin/activate
+```
+```bash
 pip install -r requirements.txt
+```
+```bash
 python run-web.py
 ```
 

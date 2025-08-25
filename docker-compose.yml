@@ -1,30 +1,41 @@
 services:
-  mamiehenriette:
-    # Nom du conteneur
-    container_name: MamieHenriette
+  mamiehenriette:                                    
+    container_name: MamieHenriette                  # Nom du conteneur
+    image: ghcr.io/skylanix/mamiehenriette:latest   # Image hébergée sur GitHub Container Registry
+    restart: "no"                                   # N'autorise pas le redémarrage automatique
 
-    # Image hébergée sur GitHub Container Registry
-    image: ghcr.io/skylanix/mamiehenriette:latest
-
-    # Build du conteneur à partir d'un Dockerfile local
-    # build: .
-    # image: mamiehenriette
-
-    # Redémarrage automatique sauf si arrêté manuellement
-    restart: unless-stopped
+#    build: .                                        # Build du conteneur à partir d'un Dockerfile local (décommentez si nécessaire)
+#    image: mamiehenriette                           # Build du conteneur à partir d'un Dockerfile local (décommentez si nécessaire)
 
     environment:
-      - TZ=Europe/Paris               # Fuseau horaire
-      - ENABLE_ZABBIX=false           # Surveillance désactivée
-      - ZABBIX_SERVER=zabbix-server.example.com
-      - ZABBIX_HOSTNAME=mamie-henriette-bot
-
+        TZ: Europe/Paris                            # Fuseau horaire
+        ENABLE_ZABBIX: false                        # Surveillance désactivée
+        ZABBIX_SERVER: zabbix-server.example.com
+        ZABBIX_HOSTNAME: mamiehenriette
     volumes:
-      # Base de données et configuration persistante
-      - ./instance:/app/instance
+      - ./instance:/app/instance                    # Base de données et configuration persistante
 
     ports:
-      # Interface web sur http://localhost:8000
-      - 5000:5000
-      # Port Zabbix (décommentez si nécessaire)
-      #   - "10050:10050"
+      - 5000:5000                                   # Interface web sur http://localhost:5000
+#      - "10050:10050"                               # Port Zabbix (décommentez si nécessaire)
+
+  watchtower:                                       # Permet de mettre à jours automatiquement 
+    image: containrrr/watchtower:latest
+    container_name: watchtower                      # Nom du conteneur
+    restart: "no"                                   # N'autorise pas le redémarrage automatique
+    environment:
+        TZ: Europe/Paris                            # Fuseau horaire
+                                                    # Liste des conteneurs à surveiller (séparés par des espaces)
+        WATCHTOWER_INCLUDE: "MamieHenriette"
+        WATCHTOWER_SCHEDULE: "0 */30 * * * *"       # Vérification toutes les 30 minutes
+        WATCHTOWER_MONITOR_ONLY: "false"            # Mode surveillance uniquement : détecte les mises à jour mais ne les applique pas
+        WATCHTOWER_CLEANUP: "true"                  # Supprime automatiquement les anciennes images après mise à jour
+        WATCHTOWER_INCLUDE_RESTARTING: "true"       # Inclut les conteneurs en cours de redémarrage dans la surveillance
+                                                    # URL de notification Discord (webhook), (décommentez si nécessaire)
+#        WATCHTOWER_NOTIFICATION_URL: "discord://token@id"
+                                                    # Format personnalisé des messages de notification (décommentez si nécessaire)
+#        WATCHTOWER_NOTIFICATION_TEMPLATE: |-
+#          {{range .}}{{.Time.Format "01-02-2006 15:04:05"}} ({{.Level}})':' {{.Message}}{{println}}{{end}}
+#        WATCHTOWER_NOTIFICATIONS: shoutrrr          # Service de notification utilisé pour Discord (décommentez si nécessaire)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock   # Monte le socket Docker pour permettre à Watchtower de surveiller les conteneurs
