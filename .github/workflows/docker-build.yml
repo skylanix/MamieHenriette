@@ -55,3 +55,27 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+
+    - name: Test container startup
+      run: |
+        echo "Testing if the container starts successfully..."
+        docker run --rm -d --name test-container -p 5001:5000 \
+          -e TZ=Europe/Paris \
+          -e ENABLE_ZABBIX=false \
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        
+        # Wait for container to be ready
+        sleep 10
+        
+        # Check if container is still running
+        if docker ps | grep test-container; then
+          echo "✅ Container started successfully"
+          docker logs test-container
+        else
+          echo "❌ Container failed to start"
+          docker logs test-container
+          exit 1
+        fi
+        
+        # Stop the test container
+        docker stop test-container
