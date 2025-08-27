@@ -22,7 +22,7 @@ services:
   watchtower:                                       # Permet de mettre à jours automatiquement 
     image: containrrr/watchtower:latest
     container_name: watchtower                      # Nom du conteneur
-    restart: "no"                                   # N'autorise pas le redémarrage automatique
+    restart: unless-stopped                         # Redémarre automatiquement sauf si arrêté manuellement
     environment:
         TZ: Europe/Paris                            # Fuseau horaire
                                                     # Liste des conteneurs à surveiller (séparés par des espaces)
