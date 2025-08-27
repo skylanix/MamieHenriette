@@ -10,10 +10,12 @@ from discord import Client
 
 
 def _isEnable():
-	return ConfigurationHelper().getValue('humble_bundle_enable') and ConfigurationHelper().getIntValue('humble_bundle_channel') != 0
+	helper = ConfigurationHelper()
+	return helper.getValue('humble_bundle_enable') and helper.getIntValue('humble_bundle_channel') != 0 and helper.getValue('humble_bundle_api_key')
 
 def _callHexas():
-	response = requests.get("http://hexas.shionn.org/humble-bundle/json", headers={ "Content-Type": "application/json" })
+	headers = { "Content-Type": "application/json", "api-key":ConfigurationHelper().getValue('humble_bundle_api_key') }
+	response = requests.get("http://hexas.shionn.org/humble-bundle/json", headers=headers)
 	if response.status_code == 200:
 		return response.json()
 	logging.error(f"Échec de la connexion à l'API Humble Bundle. Code de statut HTTP : {response.status_code}")

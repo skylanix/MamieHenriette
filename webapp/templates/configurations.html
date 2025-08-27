@@ -46,6 +46,8 @@
 			{{channel.name}}</option>
 		{% endfor %}
 	</select>
+	<label for="humble_bundle_api_key">Client id</label>
+	<input name="humble_bundle_api_key" type="text" value="{{ configuration.getValue('humble_bundle_api_key') }}" />
 	<input type="Submit" value="Définir">
 </form>
 {% endblock %}
