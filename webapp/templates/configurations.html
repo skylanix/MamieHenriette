@@ -18,10 +18,6 @@
 	<input name="twitch_client_id" type="text" value="{{ configuration.getValue('twitch_client_id') }}" />
 	<label for="twitch_client_secret">Client Secret</label>
 	<input name="twitch_client_secret" type="text" value="{{ configuration.getValue('twitch_client_secret') }}" />
-	<label for="twitch_access_token">Access Token</label>
-	<input name="twitch_access_token" type="text" value="{{ configuration.getValue('twitch_access_token') }}" />
-	<label for="twitch_refresh_token">Refresh Token</label>
-	<input name="twitch_refresh_token" type="text" value="{{ configuration.getValue('twitch_refresh_token') }}" />
 	<label for="twitch_channel">Chaîne à rejoindre</label>
 	<input name="twitch_channel" type="text" value="{{ configuration.getValue('twitch_channel') }}"
 		placeholder="#machinTruc" />
@@ -29,6 +25,17 @@
 	<p>
 		<a href="{{ url_for('twitchConfigurationHelp') }}">Aide</a>
 	</p>
+	{% if configuration.getValue('twitch_client_secret') and configuration.getValue('twitch_client_id') %}
+	<p>
+		<a href="{{ url_for('twitchRequestToken') }}">Obtenir token et refresh token</a>
+	</p>
+	<label for="twitch_access_token">Access Token</label>
+	<input name="twitch_access_token" type="text" value="{{ configuration.getValue('twitch_access_token') }}"
+		readonly="readonly" />
+	<label for="twitch_refresh_token">Refresh Token</label>
+	<input name="twitch_refresh_token" type="text" value="{{ configuration.getValue('twitch_refresh_token') }}"
+		readonly="readonly" />
+	{% endif %}
 	<p>Nécessite un redémarrage</p>
 </form>
 
