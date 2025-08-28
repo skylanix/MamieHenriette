@@ -27,4 +27,4 @@ def updateConfiguration():
 
 @webapp.route("/configurations/twitch/help") 
 def twitchConfigurationHelp():
-	return render_template("twitch-aide.html")
+	return render_template("twitch-aide.html", token_redirect_url = f'{request.url_root[:-1]}{url_for('twitchReceiveToken')}')
