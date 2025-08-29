@@ -4,17 +4,17 @@
 <h1>Configuration de Mamie</h1>
 <p>Configurez les tokens Discord, les notifications Humble Bundle et l'API ProtonDB pour la commande !protondb.</p>
 
-<h2>Api Discord</h2>
+<h2>API Discord</h2>
 <form action="{{ url_for('updateConfiguration') }}" method="POST">
-	<label for="discord_token">Api Discord (cachée)</label>
+	<label for="discord_token">API Discord (cachée)</label>
 	<input name="discord_token" type="password" />
 	<input type="Submit" value="Définir">
 	<p>Nécessite un redémarrage</p>
 </form>
 
-<h2>Api Twitch</h2>
+<h2>API Twitch</h2>
 <form action="{{ url_for('updateConfiguration') }}" method="POST">
-	<label for="twitch_client_id">Client id</label>
+	<label for="twitch_client_id">Client ID</label>
 	<input name="twitch_client_id" type="text" value="{{ configuration.getValue('twitch_client_id') }}" />
 	<label for="twitch_client_secret">Client Secret</label>
 	<input name="twitch_client_secret" type="text" value="{{ configuration.getValue('twitch_client_secret') }}" />
@@ -44,7 +44,7 @@
 	<label for="humble_bundle_enable">Activer</label>
 	<input type="checkbox" name="humble_bundle_enable" {% if configuration.getValue('humble_bundle_enable') %}
 		checked="checked" {% endif %}>
-	<label>Activer les notifications Humble bundle</label>
+	<label>Activer les notifications Humble Bundle</label>
 	<label for="humble_bundle_channel">Canal de notification des packs Humble Bundle</label>
 	<select name="humble_bundle_channel">
 		{% for channel in channels %}
@@ -53,7 +53,7 @@
 			{{channel.name}}</option>
 		{% endfor %}
 	</select>
-	<label for="humble_bundle_api_key">Client id</label>
+	<label for="humble_bundle_api_key">Clé API</label>
 	<input name="humble_bundle_api_key" type="text" value="{{ configuration.getValue('humble_bundle_api_key') }}" />
 	<input type="Submit" value="Définir">
 </form>
