@@ -19,12 +19,12 @@
 			<td>{{ commande.trigger }}</td>
 			<td>{{ commande.response }}</td>
 			<td>
-				<a href="{{ url_for('toggle_discord_commande', commande_id = commande.id) }}" style="text-decoration: none; font-size: 1.2em;">
+				<a href="{{ url_for('toggle_discord_commande', commande_id = commande.id) }}" class="icon">
 					{{ '✅' if commande.discord_enable else '❌' }}
 				</a>
 			</td>
 			<td>
-				<a href="{{ url_for('toggle_twitch_commande', commande_id = commande.id) }}" style="text-decoration: none; font-size: 1.2em;">
+				<a href="{{ url_for('toggle_twitch_commande', commande_id = commande.id) }}" class="icon">
 					{{ '✅' if commande.twitch_enable else '❌' }}
 				</a>
 			</td>

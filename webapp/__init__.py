@@ -2,4 +2,4 @@ from flask import Flask
 
 webapp = Flask(__name__)
 
-from webapp import commandes, configurations, index, humeurs, protondb
+from webapp import commandes, configurations, index, humeurs, protondb, live_alert

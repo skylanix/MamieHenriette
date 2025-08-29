@@ -11,3 +11,7 @@ table td {
 	white-space: normal;
 	max-width: 250px;
 }
+
+a.icon {
+	text-decoration: none;
+}
