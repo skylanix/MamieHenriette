@@ -16,6 +16,8 @@ async def _onReady(ready_event: EventData):
 	logging.info('Bot Twitch prêt')
 	with webapp.app_context():
 		await ready_event.chat.join_room(ConfigurationHelper().getValue('twitch_channel'))
+	asyncio.get_event_loop().create_task(twitchBot._checkOnlineStreamers())
+	
 
 async def _onMessage(msg: ChatMessage):
 	logging.info(f'Dans {msg.room.name}, {msg.user.name} a dit : {msg.text}')
@@ -48,6 +50,17 @@ class TwitchBot() :
 			else: 
 				logging.info("Twitch n'est pas configuré")
 	
+	async def _checkOnlineStreamers(self): 
+		# pas bon faudrait faire un truc mieux
+		while True :
+			async for stream in  self.twitch.get_streams(user_login=['chainesteve']):
+				print(stream.user_id)
+			# toutes les 5 minutes
+			await asyncio.sleep(5*60)
+		
+		
+
+
 	def begin(self): 
 		asyncio.run(self._connect())
 
