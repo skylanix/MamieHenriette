@@ -4,24 +4,7 @@
 <h1>Proton DB</h1>
 <p>ProtonDB évalue la compatibilité des jeux Windows sur Linux via Steam Play.</p>
 
-<h2>Configuration</h2>
-<form action="{{ url_for('updateConfiguration') }}" method="POST">
-	<label for="proton_db_enable_enable">Activer</label>
-	<input type="checkbox" name="proton_db_enable_enable" {% if configuration.getValue('proton_db_enable_enable') %}
-		checked="checked" {% endif %}>
-	<label>Activer la commande Proton DB</label>
-	<label for="proton_db_api_id">API ID</label>
-	<input name="proton_db_api_id" type="text" value="{{ configuration.getValue('proton_db_api_id') }}" />
-	<label for="proton_db_api_key">Clé API</label>
-	<input name="proton_db_api_key" type="text" value="{{ configuration.getValue('proton_db_api_key') }}" />
-	<input type="Submit" value="Définir">
-	<p>Pour trouver les clés, dans votre navigateur avec l'outil d'inspection ouvert (F12 ou clic droit > Inspecter
-		l'élément dans Firefox/Chrome) faites une recherche de jeux sur protondb,
-		puis cherchez les clés dans les requêtes (onglet Réseau/Network),
-		<a href="/static/img/algolia-key.jpg" target="_blank">comme le montre cet exemple</a>
-	</p>
-</form>
-
+{% if configuration.getValue('proton_db_enable_enable') %}
 <h2>Game alias</h2>
 <table>
 	<thead>
@@ -54,5 +37,25 @@
 		<strong>!protondb GTA 5</strong> cela fera une recherche sur <strong>Grand Theft Auto 5</strong>.
 	</p>
 </form>
+{% endif %}
+
+<h2>Configuration</h2>
+<form action="{{ url_for('updateConfiguration') }}" method="POST">
+	<label for="proton_db_enable_enable">Activer</label>
+	<input type="checkbox" name="proton_db_enable_enable" {% if configuration.getValue('proton_db_enable_enable') %}
+		checked="checked" {% endif %}>
+	<label>Activer la commande Proton DB</label>
+	<label for="proton_db_api_id">API ID</label>
+	<input name="proton_db_api_id" type="text" value="{{ configuration.getValue('proton_db_api_id') }}" />
+	<label for="proton_db_api_key">Clé API</label>
+	<input name="proton_db_api_key" type="text" value="{{ configuration.getValue('proton_db_api_key') }}" />
+	<input type="Submit" value="Définir">
+	<p>Pour trouver les clés, dans votre navigateur avec l'outil d'inspection ouvert (F12 ou clic droit > Inspecter
+		l'élément dans Firefox/Chrome) faites une recherche de jeux sur protondb,
+		puis cherchez les clés dans les requêtes (onglet Réseau/Network),
+		<a href="/static/img/algolia-key.jpg" target="_blank">comme le montre cet exemple</a>
+	</p>
+</form>
+
 
 {% endblock %}
