@@ -21,7 +21,8 @@ class GameBundle(db.Model):
 
 class LiveAlert(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
-	enable = db.Column(db.Boolean, default=False)
+	enable = db.Column(db.Boolean, default=True)
+	online = db.Column(db.Boolean, default=False)
 	login = db.Column(db.String(128))
 	notify_channel = db.Column(db.Integer)
 	message = db.Column(db.String(2000))

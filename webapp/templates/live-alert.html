@@ -5,13 +5,12 @@
 
 {% if not alert %}
 <h2>Alertes</h2>
-<table>
+<table class="live-alert">
 	<thead>
 		<tr>
 			<th>Chaine</th>
 			<th>Canal</th>
 			<th>Message</th>
-			<th>Actif</th>
 			<th>#</th>
 		</tr>
 	</thead>
@@ -23,8 +22,6 @@
 			<td>{{alert.message}}</td>
 			<td>
 				<a href="{{ url_for('toggleLiveAlert', id = alert.id) }}" class="icon">{{ '✅' if alert.enable else '❌' }}</a>
-			</td>
-			<td>
 				<a href="{{ url_for('openEditLiveAlert', id = alert.id) }}" class="icon">✐</a>
 				<a href="{{ url_for('delLiveAlert', id = alert.id) }}"
 					onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette alerte ?')" class="icon">🗑</a>
@@ -53,7 +50,15 @@
 		La chaine est le login de la chaine, par exemple <strong>chainesteve</strong> pour <strong>https://www.twitch.tv/chainesteve</strong>.
 	</p>
 	<p>
-		Pour le message vous avez acces à ces variables : <strong>TODO</strong>
+		Pour le message vous avez acces à ces variables :
+		<ul>
+			<li>{0.user_login}</li>
+			<li>{0.user_name}</li>
+			<li>{0.game_name}</li>
+			<li>{0.title}</li>
+			<li>{0.language}</li>
+			<li>{0.thumbnail_url}</li>
+		</ul>
 	</p>
 </form>
 

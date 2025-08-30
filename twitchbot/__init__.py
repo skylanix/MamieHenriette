@@ -7,7 +7,7 @@ from twitchAPI.type import AuthScope, ChatEvent
 from twitchAPI.chat import Chat, ChatEvent, ChatMessage, EventData
 
 from database.helpers import ConfigurationHelper
-
+from twitchbot.live_alert import checkOnlineStreamer
 from webapp import webapp
 
 USER_SCOPE = [AuthScope.CHAT_READ, AuthScope.CHAT_EDIT]
@@ -53,13 +53,12 @@ class TwitchBot() :
 	async def _checkOnlineStreamers(self): 
 		# pas bon faudrait faire un truc mieux
 		while True :
-			async for stream in  self.twitch.get_streams(user_login=['chainesteve']):
-				print(stream.user_id)
+			try:
+				await checkOnlineStreamer(self.twitch)
+			except Exception as e:
+				logging.error(f'Erreur lors lors du check des streamers online : {e}')
 			# toutes les 5 minutes
 			await asyncio.sleep(5*60)
-		
-		
-
 
 	def begin(self): 
 		asyncio.run(self._connect())
