@@ -6,7 +6,7 @@ import random
 from database import db
 from database.helpers import ConfigurationHelper
 from database.models import Configuration, Humeur, Commande
-from discord import Message
+from discord import Message, TextChannel
 from discordbot.humblebundle import checkHumbleBundleAndNotify
 from protondb import searhProtonDb
 
@@ -35,6 +35,14 @@ class DiscordBot(discord.Client):
 			await checkHumbleBundleAndNotify(self)
 			# toutes les 30 minutes
 			await asyncio.sleep(30*60)
+
+	def getAllTextChannel(self) -> list[TextChannel]:
+		channels = []
+		for channel in self.get_all_channels():
+			if isinstance(channel, TextChannel):
+				channels.append(channel)
+		return channels
+
 
 	def begin(self) : 
 		token = Configuration.query.filter_by(key='discord_token').first()

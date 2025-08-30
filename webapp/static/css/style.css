@@ -7,7 +7,13 @@ table td {
 	text-align: left;
 	vertical-align: top;
 	overflow: hidden;
-	text-overflow: ellipsis;
 	white-space: normal;
-	max-width: 250px;
+}
+
+table.live-alert tr td:last-child {
+	white-space: nowrap;
+}
+
+a.icon {
+	text-decoration: none;
 }
