@@ -12,6 +12,7 @@ twitchAPI>=4.5.0
 # Nécessaire pour l'hébergement du site web
 flask>=2.3.2
 flask-sqlalchemy>=3.0.3
+flask[async]
 waitress>=3.0.2
 
 # Nécessaire pour l'appel à l'API Humble Bundle
