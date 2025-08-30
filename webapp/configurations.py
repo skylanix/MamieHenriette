@@ -20,6 +20,3 @@ def updateConfiguration():
 	db.session.commit()
 	return redirect(request.referrer)
 
-@webapp.route("/configurations/twitch/help") 
-def twitchConfigurationHelp():
-	return render_template("twitch-aide.html")
