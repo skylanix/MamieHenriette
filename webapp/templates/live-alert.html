@@ -3,6 +3,15 @@
 {% block content %}
 <h1>Alerte Live</h1>
 
+<p>
+	Liste des chaines surveillées pour les alertes de live twitch.
+
+	Le bot vérifie toutes les 5 minutes qui est en live dans la liste en dessous.
+	Le bot enregistre le status de stream toutes les 5 minutes, quand le status pass de "hors-ligne" à "en ligne" alors
+	le bot le notifiera sur discord.
+	Ne peu surveiller qu'au maximum 100 chaines.
+</p>
+
 {% if not alert %}
 <h2>Alertes</h2>
 <table class="live-alert">
@@ -52,13 +61,15 @@
 	<p>
 		Pour le message vous avez acces à ces variables :
 		<ul>
-			<li>{0.user_login}</li>
-			<li>{0.user_name}</li>
+			<li>{0.user_name} : pour le lien vers la chaine</li>
+			<li>{0.user_name} : à priviligier pour le text</li>
 			<li>{0.game_name}</li>
 			<li>{0.title}</li>
 			<li>{0.language}</li>
-			<li>{0.thumbnail_url}</li>
 		</ul>
+		Le message est au format <a href="https://commonmark.org/" target="_blank">common-mark</a> dans la limite de ce que
+		support discord.
+		Pour mettre un lien vers la chaine : [description](https://www.twitch.fr/{0.user_login})
 	</p>
 </form>
 
