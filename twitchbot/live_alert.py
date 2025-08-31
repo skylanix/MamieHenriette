@@ -9,12 +9,12 @@ from webapp import webapp
 
 async def checkOnlineStreamer(twitch: Twitch) :
 	with webapp.app_context() : 
-		alerts : list[LiveAlert] = LiveAlert.query.filter_by(enable = True).all()
+		alerts : list[LiveAlert] = LiveAlert.query.all()
 		streams = await _retreiveStreams(twitch, alerts)
 		for alert in alerts : 
 			stream = next((s for s in streams if s.user_login == alert.login), None)
 			if stream : 
-				if not alert.online :
+				if not alert.online and alert.enable :
 					await _notifyAlert(alert, stream)
 				alert.online = True
 			else :
