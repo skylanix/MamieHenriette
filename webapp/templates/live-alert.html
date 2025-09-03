@@ -1,0 +1,76 @@
+{% extends "template.html" %}
+
+{% block content %}
+<h1>Alerte Live</h1>
+
+<p>
+	Liste des chaines surveillées pour les alertes de live twitch.
+
+	Le bot vérifie toutes les 5 minutes qui est en live dans la liste en dessous.
+	Le bot enregistre le status de stream toutes les 5 minutes, quand le status pass de "hors-ligne" à "en ligne" alors
+	le bot le notifiera sur discord.
+	Ne peu surveiller qu'au maximum 100 chaines.
+</p>
+
+{% if not alert %}
+<h2>Alertes</h2>
+<table class="live-alert">
+	<thead>
+		<tr>
+			<th>Chaine</th>
+			<th>Canal</th>
+			<th>Message</th>
+			<th>#</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for alert in alerts %}
+		<tr>
+			<td>{{alert.login}}</td>
+			<td>{{alert.notify_channel_name}}</td>
+			<td>{{alert.message}}</td>
+			<td>
+				<a href="{{ url_for('toggleLiveAlert', id = alert.id) }}" class="icon">{{ '✅' if alert.enable else '❌' }}</a>
+				<a href="{{ url_for('openEditLiveAlert', id = alert.id) }}" class="icon">✐</a>
+				<a href="{{ url_for('delLiveAlert', id = alert.id) }}"
+					onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette alerte ?')" class="icon">🗑</a>
+			</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+{% endif %}
+
+<h2>{{ 'Editer une alerte' if alert else 'Ajouter une alerte de Live' }}</h2>
+<form action="{{ url_for('submitEditLiveAlert', id = alert.id) if alert else url_for('addLiveAlert') }}" method="POST">
+	<label for="login">Chaine</label>
+	<input name="login" type="text" maxlength="32" required="required" value="{{alert.login if alert}}"/>
+	<label for="notify_channel">Canal de Notification</label>
+	<select name="notify_channel">
+		{% for channel in channels %}
+		<option value="{{channel.id}}"{% if alert and alert.notify_channel == channel.id %}
+			selected="selected" {% endif %}>{{channel.name}}</option>
+		{% endfor %}
+	</select>
+	<label for="message">Message</label>
+	<textarea name="message" rows="5" cols="50" required="required">{{alert.message if alert}}</textarea>
+	<input type="Submit" value="Ajouter">
+	<p>
+		La chaine est le login de la chaine, par exemple <strong>chainesteve</strong> pour <strong>https://www.twitch.tv/chainesteve</strong>.
+	</p>
+	<p>
+		Pour le message vous avez acces à ces variables :
+		<ul>
+			<li>{0.user_login} : pour le lien vers la chaine</li>
+			<li>{0.user_name} : à priviligier pour le text</li>
+			<li>{0.game_name}</li>
+			<li>{0.title}</li>
+			<li>{0.language}</li>
+		</ul>
+		Le message est au format <a href="https://commonmark.org/" target="_blank">common-mark</a> dans la limite de ce que
+		support discord.
+		Pour mettre un lien vers la chaine : [description](https://www.twitch.fr/{0.user_login})
+	</p>
+</form>
+
+{% endblock %}
