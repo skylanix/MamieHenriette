@@ -28,6 +28,7 @@
 - [Développement](#développement)
   - [Installation locale](#installation-locale)
   - [Contribution](#contribution)
+- [Licence](#licence)
 
 ## Vue d'ensemble
 
@@ -273,6 +274,24 @@ python run-web.py
 1. Fork du projet
 2. Branche feature
 3. Pull Request
+
+## Licence
+
+    MamieHenriette - Bot multi-plateformes pour Discord, Twitch et YouTube Live
+    Copyright (C) 2025 Philippe Favre
+
+    Ce programme est un logiciel libre : vous pouvez le redistribuer et/ou le modifier
+    selon les termes de la Licence Publique Générale GNU Affero telle que publiée
+    par la Free Software Foundation, soit la version 3 de la Licence, ou
+    (à votre choix) toute version ultérieure.
+
+    Ce programme est distribué dans l'espoir qu'il sera utile,
+    mais SANS AUCUNE GARANTIE ; sans même la garantie implicite de
+    COMMERCIALISATION ou d'ADÉQUATION À UN USAGE PARTICULIER. Voir la
+    Licence Publique Générale GNU Affero pour plus de détails.
+
+    Vous devriez avoir reçu une copie de la Licence Publique Générale GNU Affero
+    avec ce programme. Si ce n'est pas le cas, voir <https://www.gnu.org/licenses/>.
 
 ---
 
