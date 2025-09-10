@@ -46,3 +46,12 @@ CREATE TABLE IF NOT EXISTS `commande` (
 	`response` VARCHAR(2000) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS `averto` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	`user_id` VARCHAR(32) NOT NULL,
+	`date` DATE NOT NULL,
+	`time` TIME NOT NULL,
+	`sanctioned_by` VARCHAR(32) NOT NULL,
+	`reason` VARCHAR(512) NOT NULL
+);
+
