@@ -38,6 +38,7 @@ async def _sendMessage(channel : int, message : str) :
 
 async def _retreiveStreams(twitch: Twitch, alerts : list[LiveAlert]) -> list[Stream] : 
 	streams : list[Stream] = []
+	logging.info(f'Recherche de streams pour : {alerts}')
 	async for stream in twitch.get_streams(user_login = [alert.login for alert in alerts]):
 		streams.append(stream)
 	logging.info(f'Ces streams sont en ligne : {streams}')
