@@ -30,11 +30,12 @@ COPY ./webapp ./webapp
 COPY ./twitchbot ./twitchbot
 COPY zabbix_agent2.conf /etc/zabbix/zabbix_agent2.conf
 COPY start.sh /start.sh
+COPY healthcheck.py .
 
 RUN python3 -m venv /app/venv && \
     /app/venv/bin/pip install --no-cache-dir -r requirements.txt && \
     chmod +x /start.sh
 
-HEALTHCHECK --interval=5m --timeout=1m --start-period=2m CMD /app/venv/bin/python /app/healthcheck.py --show-success --config-dir /app/config/ --hook-dir /app/config/healthcheck/
+HEALTHCHECK --interval=30s --timeout=10s --start-period=2m CMD /app/venv/bin/python /app/healthcheck.py
 
 CMD ["/start.sh"]
