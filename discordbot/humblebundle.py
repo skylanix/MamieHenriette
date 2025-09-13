@@ -11,7 +11,7 @@ from discord import Client
 
 def _isEnable():
 	helper = ConfigurationHelper()
-	return helper.getValue('humble_bundle_enable') and helper.getIntValue('humble_bundle_channel') != 0 and helper.getValue('humble_bundle_api_key')
+	return helper.getValue('humble_bundle_enable') and helper.getIntValue('humble_bundle_channel') != 0 
 
 def _callGithub(): 
 	response = requests.get("https://raw.githubusercontent.com/shionn/HumbleBundleGamePack/refs/heads/master/data/game-bundles.json")
