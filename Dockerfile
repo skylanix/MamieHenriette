@@ -35,6 +35,6 @@ RUN python3 -m venv /app/venv && \
     mkdir -p /app/logs
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD pgrep python > /dev/null && ! (tail -n 1000 $(ls -t /app/logs/*.log 2>/dev/null | head -1) 2>/dev/null | grep -iE "(ERROR|CRITICAL|Exception|sqlite3\.OperationalError)") || (echo "Healthcheck échoué, arrêt du conteneur" && pkill -TERM -f python && sleep 2 && pkill -KILL -f python)
+  CMD pgrep python > /dev/null && ! (tail -n 1000 $(ls -t /app/logs/*.log 2>/dev/null | head -1) 2>/dev/null | grep -iE "(ERROR|CRITICAL|Exception|sqlite3\.OperationalError)")
 
 CMD ["/start.sh"]
