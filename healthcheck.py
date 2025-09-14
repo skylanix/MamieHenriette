@@ -7,9 +7,9 @@ import os
 def check_process():
     """Vérifie si le processus Python principal est en cours d'exécution"""
     try:
-        # Vérifier si le processus run-web.py est actif
+        # Vérifier si un processus python est actif
         result = subprocess.run(
-            ["pgrep", "-f", "run-web.py"], 
+            ["pgrep", "python"], 
             capture_output=True, 
             text=True
         )
