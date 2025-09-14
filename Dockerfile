@@ -35,6 +35,6 @@ RUN python3 -m venv /app/venv && \
     mkdir -p /app/logs
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD pgrep python > /dev/null && ! (find /app/logs -name "app.log.*" -exec tail -n 20 {} \; 2>/dev/null | grep -E "ERROR|CRITICAL|Exception") || exit 1
+  CMD pgrep python > /dev/null && ! (tail -n 20 /app/logs/$(hostname).log 2>/dev/null | grep -E "ERROR|CRITICAL|Exception|sqlite3\.OperationalError") || exit 1
 
 CMD ["/start.sh"]
