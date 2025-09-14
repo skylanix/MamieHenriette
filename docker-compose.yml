@@ -9,15 +9,12 @@ services:
 
     environment:
         TZ: Europe/Paris                            # Fuseau horaire
-        ENABLE_ZABBIX: false                        # Surveillance désactivée
-        ZABBIX_SERVER: zabbix-server.example.com
-        ZABBIX_HOSTNAME: mamiehenriette
     volumes:
       - ./instance:/app/instance                    # Base de données et configuration persistante
+      - ./logs:/app/logs                            # Logs de l'application
 
     ports:
       - 5000:5000                                   # Interface web sur http://localhost:5000
-#      - "10050:10050"                               # Port Zabbix (décommentez si nécessaire)
 
   watchtower:                                       # Permet de mettre à jours automatiquement 
     image: containrrr/watchtower:latest

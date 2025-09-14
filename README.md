@@ -10,11 +10,11 @@
   - [Twitch](#twitch)
   - [YouTube Live](#youtube-live-en-développement)
   - [Interface d'administration](#interface-dadministration)
-  - [Surveillance](#surveillance)
 - [Installation](#installation)
   - [Prérequis](#prérequis)
   - [Création du bot Discord](#création-du-bot-discord)
   - [Démarrage rapide](#démarrage-rapide)
+  - [Volumes persistants](#volumes-persistants)
   - [Commandes Docker utiles](#commandes-docker-utiles)
   - [Mise à jour](#mise-à-jour)
 - [Architecture du projet](#architecture-du-projet)
@@ -24,6 +24,7 @@
 - [Spécifications techniques](#spécifications-techniques)
   - [Base de données (SQLite)](#base-de-données-sqlite)
   - [Architecture multi-thread](#architecture-multi-thread)
+  - [Monitoring et logging](#monitoring-et-logging)
   - [Dépendances principales](#dépendances-principales)
 - [Développement](#développement)
   - [Installation locale](#installation-locale)
@@ -42,7 +43,6 @@ Mamie Henriette est un bot intelligent open-source développé spécifiquement p
 - Gestion multi-plateformes (Discord opérationnel, Twitch intégré, YouTube Live en développement)
 - Système de notifications automatiques
 - Base de données intégrée pour la persistance
-- Surveillance optionnelle avec Zabbix *(non testée)*
 
 ## Fonctionnalités
 
@@ -55,6 +55,11 @@ Mamie Henriette est un bot intelligent open-source développé spécifiquement p
 
 ### Twitch
 - **Chat bot** : Commandes et interactions automatiques
+- **Alertes Live** : Surveillance automatique des streamers (vérification toutes les 5 minutes)
+  - Support jusqu'à 100 chaînes simultanément
+  - Notifications Discord avec aperçu du stream
+  - Gestion via interface d'administration
+  - Détection automatique des débuts/fins de stream
 
 ### YouTube Live *(en développement)*
 - **Chat bot** : Modération et commandes
@@ -67,9 +72,6 @@ Mamie Henriette est un bot intelligent open-source développé spécifiquement p
 - **Commandes** : Édition des commandes personnalisées
 - **Modération** : Outils de gestion communautaire
 
-### Surveillance
-- **Zabbix Agent 2** : Monitoring avancé *(non testé)*
-- **Métriques** : Santé du bot et uptime
 
 ## Installation
 
@@ -128,6 +130,10 @@ docker compose up --build -d
 > ```bash
 > docker compose restart MamieHenriette
 > ```
+
+### Volumes persistants
+- `./instance/` : Base de données SQLite et configuration
+- `./logs/` : Logs applicatifs rotatifs (50MB max par fichier)
 
 ### Commandes Docker utiles
 
@@ -190,9 +196,10 @@ python run-web.py
 | Section | Fonction |
 |---------|----------|
 | **Configurations** | Tokens Discord/Twitch, paramètres généraux et configuration ProtonDB |
-| **Humeurs** | Gestion des statuts Discord |
-| **Commandes** | Commandes personnalisées multi-plateformes |
-| **Messages** | Messages automatiques et notifications |
+| **Humeurs** | Gestion des statuts Discord rotatifs |
+| **Commandes** | Commandes personnalisées multi-plateformes (Discord/Twitch) |
+| **Alertes Live** | Configuration surveillance streamers Twitch avec notifications Discord |
+| **Messages** | Messages automatiques et notifications périodiques |
 | **Modération** | Outils de gestion communautaire |
 
 ### Structure des modules
@@ -204,18 +211,22 @@ python run-web.py
 │   └── schema.sql     # Structure initiale
 │
 ├── discordbot/        # Module Discord
-│   └── __init__.py    # Bot et handlers
+│   ├── __init__.py    # Bot et handlers principaux
+│   └── humblebundle.py # Surveillance Humble Bundle
 │
 ├── twitchbot/         # Module Twitch  
-│   └── __init__.py    # Bot Twitch et handlers
+│   ├── __init__.py    # Bot Twitch et handlers
+│   └── live_alert.py  # Surveillance des streams live
 │
 ├── protondb/          # Module ProtonDB
 │   └── __init__.py    # API Algolia et recherche compatibilité
 │
 └── webapp/            # Interface d'administration
-    ├── static/        # Assets statiques
-    ├── templates/     # Vues HTML
-    └── *.py           # Contrôleurs par section
+    ├── static/        # Assets statiques (CSS, JS, images)
+    ├── templates/     # Vues HTML Jinja2
+    ├── live_alert.py  # Gestion des alertes Twitch
+    ├── twitch_auth.py # Authentification Twitch OAuth
+    └── *.py           # Autres contrôleurs par section
 ```
 
 ### Composants principaux
@@ -230,28 +241,37 @@ python run-web.py
 ## Spécifications techniques
 
 ### Base de données (SQLite)
-- **Configuration** : Paramètres et tokens
-- **Humeur** : Statuts Discord rotatifs
-- **Commande** : Commandes personnalisées Discord/Twitch
+- **Configuration** : Paramètres et tokens des plateformes
+- **Humeur** : Statuts Discord rotatifs avec gestion automatique
+- **Commande** : Commandes personnalisées multi-plateformes (Discord/Twitch)
+- **LiveAlert** : Configuration surveillance streamers Twitch (nom, canal Discord, statut)
 - **GameAlias** : Alias pour améliorer les recherches ProtonDB
-- **GameBundle** : Historique Humble Bundle
-- **Message** : Messages périodiques *(structure définie, non implémenté)*
+- **GameBundle** : Historique et notifications Humble Bundle
+- **Message** : Messages automatiques périodiques (implémenté)
 
 ### Architecture multi-thread
-- **Thread 1** : Interface web Flask (port 5000)
-- **Thread 2** : Bot Discord et tâches automatisées
-- **Thread 3** : Bot Twitch et gestion du chat
+- **Thread 1** : Interface web Flask (port 5000) avec logging rotatif
+- **Thread 2** : Bot Discord et tâches automatisées (humeurs, Humble Bundle)
+- **Thread 3** : Bot Twitch et surveillance live streams (vérification 5min)
+
+### Monitoring et logging
+- **Healthcheck Docker** : Surveillance processus Python + détection erreurs logs
+- **Logs rotatifs** : Fichiers limités à 50MB avec rotation automatique
+- **Persistance** : Logs sauvegardés sur l'hôte dans `./logs/`
 
 ### Dépendances principales
 ```
-discord.py>=2.3.2         # API Discord
-flask>=2.3.2              # Interface web
-flask-sqlalchemy>=3.0.3   # ORM SQLAlchemy
-requests>=2.32.4          # Client HTTP
-waitress>=3.0.2           # Serveur WSGI
-algoliasearch>=4          # API ProtonDB/SteamDB
-twitchAPI>=4.5.0          # API Twitch
-python-dotenv==1.0.0      # Variables d'environnement
+discord.py==2.3.2         # API Discord avec support async
+flask>=2.3.2              # Interface web et API REST
+flask-sqlalchemy>=3.0.3   # ORM SQLAlchemy pour base de données
+flask[async]              # Extensions async pour Flask
+requests>=2.32.4          # Client HTTP pour APIs externes
+waitress>=3.0.2           # Serveur WSGI de production
+algoliasearch>=4,<5       # API ProtonDB via Algolia
+twitchAPI>=4.5.0          # API Twitch pour streams et chat
+python-dotenv==1.0.0      # Gestion variables d'environnement
+aiohttp>=3.7.4,<4         # Client HTTP async (requis par discord.py)
+audioop-lts               # Compatibilité audio Python 3.13+
 ```
 
 ## Développement
