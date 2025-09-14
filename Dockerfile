@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     locales \
     python3 \
     python3-pip \
-    python3-venv 
+    python3-venv \
+    procps 
 
 RUN wget https://repo.zabbix.com/zabbix/7.4/release/debian/pool/main/z/zabbix-release/zabbix-release_latest_7.4+debian13_all.deb; \
     dpkg -i zabbix-release*; \
