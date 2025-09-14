@@ -13,7 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     python3-venv \
     procps \
-    apache2-utils 
+    apache2-utils \
+    bash 
 
 RUN sed -i 's/# fr_FR.UTF-8 UTF-8/fr_FR.UTF-8 UTF-8/' /etc/locale.gen; \
     locale-gen; \
