@@ -1,21 +1,7 @@
-#!/bin/sh
-
-# Script de démarrage conditionnel pour Zabbix et le bot Discord
-
-# Vérifier si Zabbix est activé
-if [ "$ENABLE_ZABBIX" = "true" ]; then
-    echo "Zabbix activé - Configuration de l'agent..."
-    
-    # Remplacer les variables dans la config Zabbix
-    sed -i "s/Server=.*/Server=$ZABBIX_SERVER/" /etc/zabbix/zabbix_agent2.conf
-    sed -i "s/ServerActive=.*/ServerActive=$ZABBIX_SERVER:10051/" /etc/zabbix/zabbix_agent2.conf
-    sed -i "s/Hostname=.*/Hostname=$ZABBIX_HOSTNAME/" /etc/zabbix/zabbix_agent2.conf
-    
-    zabbix_agent2 -f &
-    echo "Zabbix Agent démarré"
-else
-    echo "Zabbix désactivé"
-fi
+#!/bin/bash
 
 echo "Démarrage du bot Discord..."
-exec /app/venv/bin/python run-web.py
+LOG_FILE="/app/logs/$(date '+%Y%m%d_%H%M%S').log"
+exec /app/venv/bin/python run-web.py 2>&1 | while IFS= read -r line; do
+    echo "$(date '+%Y-%m-%d %H:%M:%S%z') $line" | tee -a "$LOG_FILE" # RFC 3339 / ISO 8601
+done

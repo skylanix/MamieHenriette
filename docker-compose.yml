@@ -2,22 +2,19 @@ services:
   mamiehenriette:                                    
     container_name: MamieHenriette                  # Nom du conteneur
     image: ghcr.io/skylanix/mamiehenriette:latest   # Image hébergée sur GitHub Container Registry
-    restart: "no"                                   # N'autorise pas le redémarrage automatique
+    restart: unless-stopped                         # Redémarre automatiquement sauf si arrêté manuellement
 
 #    build: .                                        # Build du conteneur à partir d'un Dockerfile local (décommentez si nécessaire)
 #    image: mamiehenriette                           # Build du conteneur à partir d'un Dockerfile local (décommentez si nécessaire)
 
     environment:
         TZ: Europe/Paris                            # Fuseau horaire
-        ENABLE_ZABBIX: false                        # Surveillance désactivée
-        ZABBIX_SERVER: zabbix-server.example.com
-        ZABBIX_HOSTNAME: mamiehenriette
     volumes:
       - ./instance:/app/instance                    # Base de données et configuration persistante
+      - ./logs:/app/logs                            # Logs de l'application
 
     ports:
       - 5000:5000                                   # Interface web sur http://localhost:5000
-#      - "10050:10050"                               # Port Zabbix (décommentez si nécessaire)
 
   watchtower:                                       # Permet de mettre à jours automatiquement 
     image: containrrr/watchtower:latest
@@ -39,3 +36,13 @@ services:
 #        WATCHTOWER_NOTIFICATIONS: shoutrrr          # Service de notification utilisé pour Discord (décommentez si nécessaire)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock   # Monte le socket Docker pour permettre à Watchtower de surveiller les conteneurs
+
+#  sqlite-web:                                       # Interface web pour visualiser et éditer la base de données SQLite
+#    image: ghcr.io/coleifer/sqlite-web:latest       # Image officielle sqlite-web
+#    container_name: sqlite_web                      # Nom du conteneur
+#    ports:
+#      - "5001:8080"                                 # Accès web via localhost:8080
+#    volumes:
+#      - ./instance/database.db:/data/database.db    # Monte la base de données locale dans le conteneur
+#    environment:
+#      - SQLITE_DATABASE=/data/database.db           # Chemin vers la base de données dans le conteneur
