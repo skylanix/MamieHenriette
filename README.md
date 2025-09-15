@@ -138,11 +138,6 @@ docker compose up --build -d
 ### Commandes Docker utiles
 
 ```bash
-# Logs en temps réel
-docker compose logs -f MamieHenriette
-```
-
-```bash
 # Logs d'un conteneur en cours d'exécution
 docker logs -f MamieHenriette
 ```
