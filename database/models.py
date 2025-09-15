@@ -15,9 +15,9 @@ class GameAlias(db.Model):
 	name = db.Column(db.String(256))
 
 class GameBundle(db.Model):
-	id = db.Column(db.Integer, primary_key=True)
+	url = db.Column(db.String(2048), primary_key=True)
 	name = db.Column(db.String(256))
-	json = db.Column(db.String(1024))
+	json = db.Column(db.String(2048))
 
 class LiveAlert(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
