@@ -40,3 +40,11 @@ class Commande(db.Model):
 	trigger = db.Column(db.String(32), unique=True)
 	response = db.Column(db.String(2000))
 
+class Averto(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	user_id = db.Column(db.String(32))
+	date = db.Column(db.Date)
+	time = db.Column(db.Time)
+	sanctioned_by = db.Column(db.String(32))
+	reason = db.Column(db.String(512))
+
