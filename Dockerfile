@@ -5,6 +5,7 @@ WORKDIR /app
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=fr_FR.UTF-8
 ENV LC_ALL=fr_FR.UTF-8
+ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-utils \
@@ -34,7 +35,7 @@ RUN python3 -m venv /app/venv && \
     chmod +x /start.sh && \
     mkdir -p /app/logs
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=1s --timeout=10s --start-period=5s --retries=3 \
   CMD pgrep python > /dev/null && ! (tail -n 1000 $(ls -t /app/logs/*.log 2>/dev/null | head -1) 2>/dev/null | grep -iE "(ERROR|CRITICAL|Exception|sqlite3\.OperationalError)")
 
 CMD ["/start.sh"]

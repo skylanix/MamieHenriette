@@ -37,14 +37,16 @@ class TwitchBot() :
 			if _isConfigured() : 
 				try : 
 					helper = ConfigurationHelper()
-					self.twitch = await Twitch(helper.getValue('twitch_client_id'), helper.getValue('twitch_client_secret'))
-					await self.twitch.set_user_authentication(helper.getValue('twitch_access_token'), USER_SCOPE, helper.getValue('twitch_refresh_token'))
-					self.chat = await Chat(self.twitch)
+					self.twitch = await asyncio.wait_for(Twitch(helper.getValue('twitch_client_id'), helper.getValue('twitch_client_secret')), timeout=30.0)
+					await asyncio.wait_for(self.twitch.set_user_authentication(helper.getValue('twitch_access_token'), USER_SCOPE, helper.getValue('twitch_refresh_token')), timeout=30.0)
+					self.chat = await asyncio.wait_for(Chat(self.twitch), timeout=30.0)
 					self.chat.register_event(ChatEvent.READY, _onReady)
 					self.chat.register_event(ChatEvent.MESSAGE, _onMessage)
 					# chat.register_event(ChatEvent.SUB, on_sub)
 					self.chat.register_command('hello', _helloCommand)
 					self.chat.start()
+				except asyncio.TimeoutError:
+					logging.error('Timeout lors de la connexion à Twitch. Vérifiez votre connexion réseau.')
 				except Exception as e: 
 					logging.error(f'Échec de l\'authentification Twitch. Vérifiez vos identifiants et redémarrez après correction : {e}')
 			else: 

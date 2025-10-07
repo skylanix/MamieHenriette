@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import logging
 import json
@@ -14,11 +15,18 @@ def _isEnable():
 	return helper.getValue('humble_bundle_enable') and helper.getIntValue('humble_bundle_channel') != 0 
 
 def _callGithub(): 
-	response = requests.get("https://raw.githubusercontent.com/shionn/HumbleBundleGamePack/refs/heads/master/data/game-bundles.json")
-	if response.status_code == 200:
-		return response.json()
-	logging.error(f"Échec de la connexion à la ressource Humble Bundle. Code de statut HTTP : {response.status_code}")
-	return None
+	try:
+		response = requests.get("https://raw.githubusercontent.com/shionn/HumbleBundleGamePack/refs/heads/master/data/game-bundles.json", timeout=30)
+		if response.status_code == 200:
+			return response.json()
+		logging.error(f"Échec de la connexion à la ressource Humble Bundle. Code de statut HTTP : {response.status_code}")
+		return None
+	except (requests.exceptions.SSLError, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+		logging.error(f"Erreur de connexion à la ressource Humble Bundle : {e}")
+		return None
+	except Exception as e:
+		logging.error(f"Erreur inattendue lors de la récupération des bundles : {e}")
+		return None
 
 def _isNotAlreadyNotified(bundle):
 	return GameBundle.query.filter_by(url=bundle['url']).first() == None
@@ -46,9 +54,14 @@ async def checkHumbleBundleAndNotify(bot: Client):
 			bundle = _findFirstNotNotified(bundles)
 			if bundle != None :
 				message = _formatMessage(bundle)
-				await bot.get_channel(ConfigurationHelper().getIntValue('humble_bundle_channel')).send(message)
-				db.session.add(GameBundle(url=bundle['url'], name=bundle['name'], json = json.dumps(bundle)))
-				db.session.commit()
+				try:
+					await asyncio.wait_for(bot.get_channel(ConfigurationHelper().getIntValue('humble_bundle_channel')).send(message), timeout=30.0)
+					db.session.add(GameBundle(url=bundle['url'], name=bundle['name'], json = json.dumps(bundle)))
+					db.session.commit()
+				except asyncio.TimeoutError:
+					logging.error(f'Timeout lors de l\'envoi du message Humble Bundle')
+				except Exception as send_error:
+					logging.error(f'Erreur lors de l\'envoi du message Humble Bundle : {send_error}')
 		except Exception as e:
 			logging.error(f"Échec de la vérification des offres Humble Bundle : {e}")
 	else: 

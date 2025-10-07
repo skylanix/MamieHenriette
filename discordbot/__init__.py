@@ -44,10 +44,13 @@ class DiscordBot(discord.Client):
 		return channels
 
 
-	def begin(self) : 
+	def begin(self) :
 		token = Configuration.query.filter_by(key='discord_token').first()
 		if token :
-			self.run(token.value)
+			try:
+				self.run(token.value)
+			except Exception as e:
+				logging.error(f'Erreur fatale lors du démarrage du bot Discord : {e}')
 		else :
 			logging.error('Aucun token Discord configuré. Le bot ne peut pas être démarré')
 
@@ -66,8 +69,10 @@ async def on_message(message: Message):
 	commande = Commande.query.filter_by(discord_enable=True, trigger=command_name).first()
 	if commande:
 		try:
-			await message.channel.send(commande.response, suppress_embeds=True)
+			await asyncio.wait_for(message.channel.send(commande.response, suppress_embeds=True), timeout=30.0)
 			return
+		except asyncio.TimeoutError:
+			logging.error(f'Timeout lors de l\'envoi de la commande Discord : {command_name}')
 		except Exception as e:
 			logging.error(f'Échec de l\'exécution de la commande Discord : {e}')
 
@@ -89,7 +94,9 @@ async def on_message(message: Message):
 			if (rest > 0): 
 				msg += f'- et encore {rest} autres jeux'
 		try : 
-			await message.channel.send(msg, suppress_embeds=True)
+			await asyncio.wait_for(message.channel.send(msg, suppress_embeds=True), timeout=30.0)
+		except asyncio.TimeoutError:
+			logging.error(f'Timeout lors de l\'envoi du message ProtonDB')
 		except Exception as e:
 			logging.error(f'Échec de l\'envoi du message ProtonDB : {e}')
 		
