@@ -8,6 +8,7 @@ from database.helpers import ConfigurationHelper
 from database.models import Configuration, Humeur, Commande
 from discord import Message, TextChannel
 from discordbot.humblebundle import checkHumbleBundleAndNotify
+from discordbot.command import handle_warning_command
 from protondb import searhProtonDb
 
 class DiscordBot(discord.Client):
@@ -63,6 +64,12 @@ async def on_message(message: Message):
 	if not message.content.startswith('!'):
 		return
 	command_name = message.content.split()[0]
+	
+	if command_name in ['!averto', '!av', '!avertissement', '!warn']:
+		await handle_warning_command(message, bot)
+		return
+
+	
 	commande = Commande.query.filter_by(discord_enable=True, trigger=command_name).first()
 	if commande:
 		try:

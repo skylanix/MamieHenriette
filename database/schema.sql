@@ -45,3 +45,13 @@ CREATE TABLE IF NOT EXISTS `commande` (
 	`trigger` VARCHAR(16) UNIQUE NOT NULL,
 	`response` VARCHAR(2000) NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS `warning` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	`username` VARCHAR(256) NOT NULL,
+	`discord_id` VARCHAR(64) NOT NULL,
+	`created_at` DATETIME NOT NULL,
+	`reason` VARCHAR(1024) NOT NULL,
+	`staff_id` VARCHAR(64) NOT NULL,
+	`staff_name` VARCHAR(256) NOT NULL
+);

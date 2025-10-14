@@ -1,0 +1,30 @@
+{% extends "template.html" %}
+
+{% block content %}
+<h1>Modération Discord</h1>
+<p>Liste des avertissements émis sur le serveur Discord.</p>
+<table>
+	<thead>
+		<tr>
+			<th>Utilisateur</th>
+			<th>Discord ID</th>
+			<th>Date & Heure</th>
+			<th>Raison</th>
+			<th>Staff</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for warning in warnings %}
+		<tr>
+			<td>{{ warning.username }}</td>
+			<td>{{ warning.discord_id }}</td>
+			<td>{{ warning.created_at.strftime('%d/%m/%Y %H:%M') if warning.created_at else 'N/A' }}</td>
+			<td>{{ warning.reason }}</td>
+			<td>{{ warning.staff_name }}</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+{% endblock %}
+
+
