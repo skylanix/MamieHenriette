@@ -4,12 +4,80 @@
 <h1>Configuration de Mamie</h1>
 <p>Configurez les tokens Discord, les notifications Humble Bundle et l'API ProtonDB pour la commande !protondb.</p>
 
-<h2>API Discord</h2>
+<h2>Discord</h2>
+
+<h3>API Discord</h3>
 <form action="{{ url_for('updateConfiguration') }}" method="POST">
 	<label for="discord_token">API Discord (cachée)</label>
 	<input name="discord_token" type="password" />
 	<input type="Submit" value="Définir">
 	<p>Nécessite un redémarrage</p>
+</form>
+
+<h3>Message de bienvenue Discord</h3>
+<form action="{{ url_for('updateConfiguration') }}" method="POST">
+	<label for="welcome_enable">Activer</label>
+	<input type="checkbox" name="welcome_enable" {% if configuration.getValue('welcome_enable') %}
+		checked="checked" {% endif %}>
+	<label>Activer le message de bienvenue pour les nouveaux membres</label>
+	<label for="welcome_channel_id">Canal de bienvenue</label>
+	<select name="welcome_channel_id">
+		{% for channel in channels %}
+		<option value="{{channel.id}}" {% if configuration.getIntValue('welcome_channel_id')==channel.id %}
+			selected="selected" {% endif %}>
+			{{channel.name}}</option>
+		{% endfor %}
+	</select>
+	<label for="welcome_message">Message personnalisé</label>
+	<textarea name="welcome_message" rows="4" placeholder="Bienvenue sur le serveur !">{{ configuration.getValue('welcome_message') }}</textarea>
+	<input type="Submit" value="Définir">
+</form>
+
+<h3>Message de départ Discord</h3>
+<form action="{{ url_for('updateConfiguration') }}" method="POST">
+	<label for="leave_enable">Activer</label>
+	<input type="checkbox" name="leave_enable" {% if configuration.getValue('leave_enable') %}
+		checked="checked" {% endif %}>
+	<label>Activer le message de départ quand un membre quitte le serveur</label>
+	<label for="leave_channel_id">Canal de départ</label>
+	<select name="leave_channel_id">
+		{% for channel in channels %}
+		<option value="{{channel.id}}" {% if configuration.getIntValue('leave_channel_id')==channel.id %}
+			selected="selected" {% endif %}>
+			{{channel.name}}</option>
+		{% endfor %}
+	</select>
+	<label for="leave_message">Message personnalisé</label>
+	<textarea name="leave_message" rows="4" placeholder="Un membre a quitté le serveur.">{{ configuration.getValue('leave_message') }}</textarea>
+	<input type="Submit" value="Définir">
+</form>
+
+<h3>Modération Discord</h3>
+<form action="{{ url_for('updateConfiguration') }}" method="POST">
+	<label for="moderation_enable">Activer les avertissements</label>
+	<input type="checkbox" name="moderation_enable" {% if configuration.getValue('moderation_enable') %}
+		checked="checked" {% endif %}>
+	<label>Activer les commandes d'avertissement (!averto, !delaverto, !listaverto)</label>
+	
+	<label for="moderation_ban_enable">Activer le ban</label>
+	<input type="checkbox" name="moderation_ban_enable" {% if configuration.getValue('moderation_ban_enable') %}
+		checked="checked" {% endif %}>
+	<label>Activer les commandes de bannissement (!ban, !unban)</label>
+	
+	<label for="moderation_kick_enable">Activer le kick</label>
+	<input type="checkbox" name="moderation_kick_enable" {% if configuration.getValue('moderation_kick_enable') %}
+		checked="checked" {% endif %}>
+	<label>Activer la commande d'expulsion (!kick)</label>
+	
+	<label for="moderation_staff_role_id">ID du rôle Staff</label>
+	<input name="moderation_staff_role_id" type="text" value="{{ configuration.getValue('moderation_staff_role_id') }}"
+		placeholder="581990740431732738" />
+	
+	<label for="moderation_embed_delete_delay">Délai de suppression des embeds (en secondes, 0 = ne pas supprimer)</label>
+	<input name="moderation_embed_delete_delay" type="number" value="{{ configuration.getValue('moderation_embed_delete_delay') or '0' }}"
+		placeholder="0" min="0" />
+	
+	<input type="Submit" value="Définir">
 </form>
 
 <h2>API Twitch</h2>
@@ -53,34 +121,6 @@
 			{{channel.name}}</option>
 		{% endfor %}
 	</select>
-	<input type="Submit" value="Définir">
-</form>
-
-<h2>Modération Discord</h2>
-<form action="{{ url_for('updateConfiguration') }}" method="POST">
-	<label for="moderation_enable">Activer les avertissements</label>
-	<input type="checkbox" name="moderation_enable" {% if configuration.getValue('moderation_enable') %}
-		checked="checked" {% endif %}>
-	<label>Activer les commandes d'avertissement (!averto, !delaverto, !listaverto)</label>
-	
-	<label for="moderation_ban_enable">Activer le ban</label>
-	<input type="checkbox" name="moderation_ban_enable" {% if configuration.getValue('moderation_ban_enable') %}
-		checked="checked" {% endif %}>
-	<label>Activer les commandes de bannissement (!ban, !unban)</label>
-	
-	<label for="moderation_kick_enable">Activer le kick</label>
-	<input type="checkbox" name="moderation_kick_enable" {% if configuration.getValue('moderation_kick_enable') %}
-		checked="checked" {% endif %}>
-	<label>Activer la commande d'expulsion (!kick)</label>
-	
-	<label for="moderation_staff_role_id">ID du rôle Staff</label>
-	<input name="moderation_staff_role_id" type="text" value="{{ configuration.getValue('moderation_staff_role_id') }}"
-		placeholder="581990740431732738" />
-	
-	<label for="moderation_embed_delete_delay">Délai de suppression des embeds (en secondes, 0 = ne pas supprimer)</label>
-	<input name="moderation_embed_delete_delay" type="number" value="{{ configuration.getValue('moderation_embed_delete_delay') or '0' }}"
-		placeholder="0" min="0" />
-	
 	<input type="Submit" value="Définir">
 </form>
 {% endblock %}

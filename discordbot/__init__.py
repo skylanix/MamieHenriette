@@ -6,9 +6,10 @@ import random
 from database import db
 from database.helpers import ConfigurationHelper
 from database.models import Configuration, Humeur, Commande
-from discord import Message, TextChannel
+from discord import Message, TextChannel, Member
 from discordbot.humblebundle import checkHumbleBundleAndNotify
 from discordbot.command import handle_warning_command, handle_remove_warning_command, handle_list_warnings_command, handle_ban_command, handle_kick_command, handle_unban_command
+from discordbot.welcome import sendWelcomeMessage, sendLeaveMessage, updateInviteCache
 from protondb import searhProtonDb
 
 class DiscordBot(discord.Client):
@@ -16,6 +17,9 @@ class DiscordBot(discord.Client):
 		logging.info(f'Connecté en tant que {self.user} (ID: {self.user.id})')
 		for c in self.get_all_channels() :
 			logging.info(f'{c.id} {c.name}')
+		
+		for guild in self.guilds:
+			await updateInviteCache(guild)
 		
 		self.loop.create_task(self.updateStatus())
 		self.loop.create_task(self.updateHumbleBundle())
@@ -54,6 +58,8 @@ class DiscordBot(discord.Client):
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
+intents.invites = True
 bot = DiscordBot(intents=intents)
 
 # https://discordpy.readthedocs.io/en/stable/quickstart.html
@@ -121,4 +127,20 @@ async def on_message(message: Message):
 			await message.channel.send(msg, suppress_embeds=True)
 		except Exception as e:
 			logging.error(f'Échec de l\'envoi du message ProtonDB : {e}')
-		
+
+@bot.event
+async def on_member_join(member: Member):
+	await sendWelcomeMessage(bot, member)
+
+@bot.event
+async def on_member_remove(member: Member):
+	await sendLeaveMessage(bot, member)
+
+@bot.event
+async def on_invite_create(invite):
+	await updateInviteCache(invite.guild)
+
+@bot.event
+async def on_invite_delete(invite):
+	await updateInviteCache(invite.guild)
+

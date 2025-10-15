@@ -23,6 +23,10 @@ def updateConfiguration():
 		ConfigurationHelper().createOrUpdate('moderation_ban_enable', False)
 	if (request.form.get("moderation_staff_role_id") != None and request.form.get("moderation_kick_enable") == None) :
 		ConfigurationHelper().createOrUpdate('moderation_kick_enable', False)
+	if (request.form.get("welcome_channel_id") != None and request.form.get("welcome_enable") == None) :
+		ConfigurationHelper().createOrUpdate('welcome_enable', False)
+	if (request.form.get("leave_channel_id") != None and request.form.get("leave_enable") == None) :
+		ConfigurationHelper().createOrUpdate('leave_enable', False)
 	db.session.commit()
 	return redirect(request.referrer)
 
