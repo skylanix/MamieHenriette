@@ -46,12 +46,14 @@ CREATE TABLE IF NOT EXISTS `commande` (
 	`response` VARCHAR(2000) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS `warning` (
+CREATE TABLE IF NOT EXISTS `moderation_event` (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	`type` VARCHAR(32) NOT NULL,
 	`username` VARCHAR(256) NOT NULL,
 	`discord_id` VARCHAR(64) NOT NULL,
 	`created_at` DATETIME NOT NULL,
 	`reason` VARCHAR(1024) NOT NULL,
 	`staff_id` VARCHAR(64) NOT NULL,
-	`staff_name` VARCHAR(256) NOT NULL
+	`staff_name` VARCHAR(256) NOT NULL,
+	`duration` INTEGER NULL
 );

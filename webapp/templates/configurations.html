@@ -55,4 +55,32 @@
 	</select>
 	<input type="Submit" value="Définir">
 </form>
+
+<h2>Modération Discord</h2>
+<form action="{{ url_for('updateConfiguration') }}" method="POST">
+	<label for="moderation_enable">Activer les avertissements</label>
+	<input type="checkbox" name="moderation_enable" {% if configuration.getValue('moderation_enable') %}
+		checked="checked" {% endif %}>
+	<label>Activer les commandes d'avertissement (!averto, !delaverto, !listaverto)</label>
+	
+	<label for="moderation_ban_enable">Activer le ban</label>
+	<input type="checkbox" name="moderation_ban_enable" {% if configuration.getValue('moderation_ban_enable') %}
+		checked="checked" {% endif %}>
+	<label>Activer les commandes de bannissement (!ban, !unban)</label>
+	
+	<label for="moderation_kick_enable">Activer le kick</label>
+	<input type="checkbox" name="moderation_kick_enable" {% if configuration.getValue('moderation_kick_enable') %}
+		checked="checked" {% endif %}>
+	<label>Activer la commande d'expulsion (!kick)</label>
+	
+	<label for="moderation_staff_role_id">ID du rôle Staff</label>
+	<input name="moderation_staff_role_id" type="text" value="{{ configuration.getValue('moderation_staff_role_id') }}"
+		placeholder="581990740431732738" />
+	
+	<label for="moderation_embed_delete_delay">Délai de suppression des embeds (en secondes, 0 = ne pas supprimer)</label>
+	<input name="moderation_embed_delete_delay" type="number" value="{{ configuration.getValue('moderation_embed_delete_delay') or '0' }}"
+		placeholder="0" min="0" />
+	
+	<input type="Submit" value="Définir">
+</form>
 {% endblock %}

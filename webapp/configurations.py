@@ -17,6 +17,12 @@ def updateConfiguration():
 		ConfigurationHelper().createOrUpdate('humble_bundle_enable', False)
 	if (request.form.get("proton_db_api_id") != None and request.form.get("proton_db_enable_enable") == None) :
 		ConfigurationHelper().createOrUpdate('proton_db_enable_enable', False)
+	if (request.form.get("moderation_staff_role_id") != None and request.form.get("moderation_enable") == None) :
+		ConfigurationHelper().createOrUpdate('moderation_enable', False)
+	if (request.form.get("moderation_staff_role_id") != None and request.form.get("moderation_ban_enable") == None) :
+		ConfigurationHelper().createOrUpdate('moderation_ban_enable', False)
+	if (request.form.get("moderation_staff_role_id") != None and request.form.get("moderation_kick_enable") == None) :
+		ConfigurationHelper().createOrUpdate('moderation_kick_enable', False)
 	db.session.commit()
 	return redirect(request.referrer)
 

@@ -40,12 +40,14 @@ class Commande(db.Model):
 	trigger = db.Column(db.String(32), unique=True)
 	response = db.Column(db.String(2000))
 
-class Warning(db.Model):
+class ModerationEvent(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
+	type = db.Column(db.String(32))
 	username = db.Column(db.String(256))
 	discord_id = db.Column(db.String(64))
 	created_at = db.Column(db.DateTime)
 	reason = db.Column(db.String(1024))
 	staff_id = db.Column(db.String(64))
 	staff_name = db.Column(db.String(256))
+	duration = db.Column(db.Integer)
 

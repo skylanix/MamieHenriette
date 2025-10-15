@@ -8,7 +8,7 @@ from database.helpers import ConfigurationHelper
 from database.models import Configuration, Humeur, Commande
 from discord import Message, TextChannel
 from discordbot.humblebundle import checkHumbleBundleAndNotify
-from discordbot.command import handle_warning_command
+from discordbot.command import handle_warning_command, handle_remove_warning_command, handle_list_warnings_command, handle_ban_command, handle_kick_command, handle_unban_command
 from protondb import searhProtonDb
 
 class DiscordBot(discord.Client):
@@ -65,10 +65,32 @@ async def on_message(message: Message):
 		return
 	command_name = message.content.split()[0]
 	
-	if command_name in ['!averto', '!av', '!avertissement', '!warn']:
-		await handle_warning_command(message, bot)
-		return
+	if ConfigurationHelper().getValue('moderation_enable'):
+		if command_name in ['!averto', '!av', '!avertissement', '!warn']:
+			await handle_warning_command(message, bot)
+			return
 
+		if command_name in ['!delaverto', '!removewarn', '!unwarn']:
+			await handle_remove_warning_command(message, bot)
+			return
+
+		if command_name in ['!listevent', '!listwarn', '!warnings']:
+			await handle_list_warnings_command(message, bot)
+			return
+	
+	if ConfigurationHelper().getValue('moderation_ban_enable'):
+		if command_name == '!ban':
+			await handle_ban_command(message, bot)
+			return
+		
+		if command_name == '!unban':
+			await handle_unban_command(message, bot)
+			return
+	
+	if ConfigurationHelper().getValue('moderation_kick_enable'):
+		if command_name == '!kick':
+			await handle_kick_command(message, bot)
+			return
 	
 	commande = Commande.query.filter_by(discord_enable=True, trigger=command_name).first()
 	if commande:

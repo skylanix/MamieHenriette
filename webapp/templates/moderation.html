@@ -2,25 +2,39 @@
 
 {% block content %}
 <h1>Modération Discord</h1>
-<p>Liste des avertissements émis sur le serveur Discord.</p>
+<p>Historique des actions de modération sur le serveur Discord.</p>
 <table>
 	<thead>
 		<tr>
+			<th>ID</th>
+			<th>Type</th>
 			<th>Utilisateur</th>
 			<th>Discord ID</th>
 			<th>Date & Heure</th>
 			<th>Raison</th>
 			<th>Staff</th>
+			<th>Actions</th>
 		</tr>
 	</thead>
 	<tbody>
-		{% for warning in warnings %}
+		{% for event in events %}
 		<tr>
-			<td>{{ warning.username }}</td>
-			<td>{{ warning.discord_id }}</td>
-			<td>{{ warning.created_at.strftime('%d/%m/%Y %H:%M') if warning.created_at else 'N/A' }}</td>
-			<td>{{ warning.reason }}</td>
-			<td>{{ warning.staff_name }}</td>
+			<td>{{ event.id }}</td>
+			<td>{{ event.type }}</td>
+			<td>{{ event.username }}</td>
+			<td>{{ event.discord_id }}</td>
+			<td>{{ event.created_at.strftime('%d/%m/%Y %H:%M') if event.created_at else 'N/A' }}</td>
+			<td>
+				<form action="{{ url_for('update_moderation_event', event_id = event.id) }}" method="POST" style="margin: 0;">
+					<input name="reason" type="text" value="{{ event.reason }}" style="width: 100%;" />
+				</form>
+			</td>
+			<td>{{ event.staff_name }}</td>
+			<td>
+				<a href="javascript:void(0)" onclick="this.parentElement.parentElement.querySelector('form').submit()">Modifier</a>
+				| 
+				<a href="{{ url_for('delete_moderation_event', event_id = event.id) }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')">🗑️ Supprimer</a>
+			</td>
 		</tr>
 		{% endfor %}
 	</tbody>
