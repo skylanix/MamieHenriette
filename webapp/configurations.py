@@ -10,23 +10,23 @@ def openConfigurations():
 
 @webapp.route("/configurations/update", methods=['POST']) 
 def updateConfiguration():
-	for key in request.form : 
+	checkboxes = {
+		'humble_bundle_enable': 'humble_bundle_channel',
+		'proton_db_enable_enable': 'proton_db_api_id',
+		'moderation_enable': 'moderation_staff_role_id',
+		'moderation_ban_enable': 'moderation_staff_role_id',
+		'moderation_kick_enable': 'moderation_staff_role_id',
+		'welcome_enable': 'welcome_channel_id',
+		'leave_enable': 'leave_channel_id'
+	}
+	
+	for key in request.form:
 		ConfigurationHelper().createOrUpdate(key, request.form.get(key))
-	# Je fais ça car HTML n'envoie pas le paramètre de checkbox quand il est décoché
-	if (request.form.get("humble_bundle_channel") != None and request.form.get("humble_bundle_enable") == None) :
-		ConfigurationHelper().createOrUpdate('humble_bundle_enable', False)
-	if (request.form.get("proton_db_api_id") != None and request.form.get("proton_db_enable_enable") == None) :
-		ConfigurationHelper().createOrUpdate('proton_db_enable_enable', False)
-	if (request.form.get("moderation_staff_role_id") != None and request.form.get("moderation_enable") == None) :
-		ConfigurationHelper().createOrUpdate('moderation_enable', False)
-	if (request.form.get("moderation_staff_role_id") != None and request.form.get("moderation_ban_enable") == None) :
-		ConfigurationHelper().createOrUpdate('moderation_ban_enable', False)
-	if (request.form.get("moderation_staff_role_id") != None and request.form.get("moderation_kick_enable") == None) :
-		ConfigurationHelper().createOrUpdate('moderation_kick_enable', False)
-	if (request.form.get("welcome_channel_id") != None and request.form.get("welcome_enable") == None) :
-		ConfigurationHelper().createOrUpdate('welcome_enable', False)
-	if (request.form.get("leave_channel_id") != None and request.form.get("leave_enable") == None) :
-		ConfigurationHelper().createOrUpdate('leave_enable', False)
+	
+	for checkbox, reference_field in checkboxes.items():
+		if request.form.get(reference_field) is not None and request.form.get(checkbox) is None:
+			ConfigurationHelper().createOrUpdate(checkbox, False)
+	
 	db.session.commit()
 	return redirect(request.referrer)
 
