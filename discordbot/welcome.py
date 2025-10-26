@@ -112,17 +112,19 @@ async def sendLeaveMessage(bot: discord.Client, member: Member):
 	reason = 'Départ volontaire'
 	try:
 		async for entry in member.guild.audit_logs(limit=5):
-			if entry.target and entry.target.id == member.id:
-				if entry.action == discord.AuditLogAction.kick:
-					reason = f'Expulsé par {entry.user.mention}'
-					if entry.reason:
-						reason += f' - Raison: {entry.reason}'
-					break
-				elif entry.action == discord.AuditLogAction.ban:
-					reason = f'Banni par {entry.user.mention}'
-					if entry.reason:
-						reason += f' - Raison: {entry.reason}'
-					break
+			if not (entry.target and entry.target.id == member.id):
+				continue
+			
+			if entry.action == discord.AuditLogAction.kick:
+				reason = f'Expulsé par {entry.user.mention}'
+				if entry.reason:
+					reason += f' - Raison: {entry.reason}'
+				break
+			elif entry.action == discord.AuditLogAction.ban:
+				reason = f'Banni par {entry.user.mention}'
+				if entry.reason:
+					reason += f' - Raison: {entry.reason}'
+				break
 	except:
 		pass
 	

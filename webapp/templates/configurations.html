@@ -70,8 +70,87 @@
 			Activer la commande d'expulsion (!kick)
 		</label>
 		
-		<label for="moderation_staff_role_id">ID du rôle Staff</label>
-		<input name="moderation_staff_role_id" type="text" value="{{ configuration.getValue('moderation_staff_role_id') }}" placeholder="581990740431732738" />
+		<label>Rôles Staff autorisés</label>
+		{% set selected_roles = (configuration.getValue('moderation_staff_role_ids') or '').split(',') %}
+		
+		{% if roles|length > 1 %}
+		<div class="tabs">
+			{% for guild_data in roles %}
+			<button type="button" class="tab-button" onclick="openTab(event, 'guild-{{guild_data.guild_id}}')" {% if loop.first %}id="defaultOpen"{% endif %}>
+				{{ guild_data.guild_name }}
+			</button>
+			{% endfor %}
+		</div>
+		{% endif %}
+		
+		{% for guild_data in roles %}
+		<div id="guild-{{guild_data.guild_id}}" class="tab-content" {% if not loop.first %}style="display: none;"{% endif %}>
+			<div style="max-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 5px;">
+				{% for role in guild_data.roles %}
+				<label style="display: block; margin: 5px 0;">
+					<input type="checkbox" name="moderation_staff_role_ids" value="{{role.id}}" {% if role.id|string in selected_roles %}checked="checked"{% endif %}>
+					{% if role.color.value != 0 %}
+					<span style="color:#{{ '%06x' % role.color.value }}">●</span>
+					{% else %}
+					<span>○</span>
+					{% endif %}
+					{{role.name}}
+				</label>
+				{% endfor %}
+			</div>
+		</div>
+		{% endfor %}
+		
+		<small>Sélectionnez un ou plusieurs rôles qui peuvent utiliser les commandes de modération</small>
+		
+		<script>
+		function openTab(evt, tabName) {
+			var i, tabcontent, tabbuttons;
+			tabcontent = document.getElementsByClassName("tab-content");
+			for (i = 0; i < tabcontent.length; i++) {
+				tabcontent[i].style.display = "none";
+			}
+			tabbuttons = document.getElementsByClassName("tab-button");
+			for (i = 0; i < tabbuttons.length; i++) {
+				tabbuttons[i].className = tabbuttons[i].className.replace(" active", "");
+			}
+			document.getElementById(tabName).style.display = "block";
+			evt.currentTarget.className += " active";
+		}
+		document.getElementById("defaultOpen")?.click();
+		</script>
+		
+		<style>
+		.tabs {
+			overflow: hidden;
+			border-bottom: 2px solid #ccc;
+			margin-bottom: 10px;
+		}
+		.tab-button {
+			background-color: #f1f1f1;
+			border: none;
+			outline: none;
+			cursor: pointer;
+			padding: 10px 20px;
+			transition: 0.3s;
+			font-size: 14px;
+			margin-right: 2px;
+		}
+		.tab-button:hover {
+			background-color: #ddd;
+		}
+		.tab-button.active {
+			background-color: #ccc;
+			font-weight: bold;
+		}
+		.tab-content {
+			animation: fadeEffect 0.3s;
+		}
+		@keyframes fadeEffect {
+			from {opacity: 0;}
+			to {opacity: 1;}
+		}
+		</style>
 		
 		<label for="moderation_embed_delete_delay">Délai de suppression des embeds (en secondes)</label>
 		<input name="moderation_embed_delete_delay" type="number" value="{{ configuration.getValue('moderation_embed_delete_delay') or '0' }}" placeholder="0" min="0" />
@@ -113,7 +192,9 @@
 	<label for="humble_bundle_enable">Activer</label>
 	<input type="checkbox" name="humble_bundle_enable" {% if configuration.getValue('humble_bundle_enable') %}
 		checked="checked" {% endif %}>
-	<label>Activer les notifications Humble Bundle</label>
+	<label>Activer les notifications Humble Bundle</label> 
+	<p>Humble Bundle est un service qui propose des bundles de jeux vidéo à des prix réduits. Il est utile pour trouver des jeux vidéo à des prix intéressants.</p>
+	<p>Il est possible de configurer un canal de notification pour recevoir les notifications des bundles Humble Bundle.</p>
 	<label for="humble_bundle_channel">Canal de notification des packs Humble Bundle</label>
 	<select name="humble_bundle_channel">
 		{% for channel in channels %}

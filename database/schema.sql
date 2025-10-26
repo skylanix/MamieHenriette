@@ -57,3 +57,13 @@ CREATE TABLE IF NOT EXISTS `moderation_event` (
 	`staff_name` VARCHAR(256) NOT NULL,
 	`duration` INTEGER NULL
 );
+
+CREATE TABLE IF NOT EXISTS `anticheat_cache` (
+	steam_id VARCHAR(32) PRIMARY KEY,
+	game_name VARCHAR(256) NOT NULL,
+	status VARCHAR(32) NOT NULL,
+	anticheats VARCHAR(512),
+	reference VARCHAR(512),
+	notes VARCHAR(1024),
+	updated_at DATETIME NOT NULL
+);

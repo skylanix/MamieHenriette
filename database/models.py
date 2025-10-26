@@ -51,3 +51,13 @@ class ModerationEvent(db.Model):
 	staff_name = db.Column(db.String(256))
 	duration = db.Column(db.Integer)
 
+class AntiCheatCache(db.Model):
+	__tablename__ = 'anticheat_cache'
+	steam_id = db.Column(db.String(32), primary_key=True)
+	game_name = db.Column(db.String(256))
+	status = db.Column(db.String(32))
+	anticheats = db.Column(db.String(512))
+	reference = db.Column(db.String(512))
+	notes = db.Column(db.String(1024))
+	updated_at = db.Column(db.DateTime)
+
