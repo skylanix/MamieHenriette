@@ -4,3 +4,4 @@
 __pycache__
 instance
 .tio.tokens.json
+**/logs
