@@ -6,7 +6,13 @@ from database.models import ModerationEvent
 @webapp.route("/moderation")
 def moderation():
 	events = ModerationEvent.query.order_by(ModerationEvent.created_at.desc()).all()
-	return render_template("moderation.html", events=events)
+	return render_template("moderation.html", events=events, event=None)
+
+@webapp.route("/moderation/edit/<int:event_id>")
+def open_edit_moderation_event(event_id):
+	event = ModerationEvent.query.get_or_404(event_id)
+	events = ModerationEvent.query.order_by(ModerationEvent.created_at.desc()).all()
+	return render_template("moderation.html", events=events, event=event)
 
 @webapp.route("/moderation/update/<int:event_id>", methods=['POST'])
 def update_moderation_event(event_id):

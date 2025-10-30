@@ -2,50 +2,69 @@
 
 {% block content %}
 <h1>Modération Discord</h1>
-<p>Les commandes de modération sont :</p>
-<ul>
-	<li>!kick @utilisateur [raison]</li>
-	<li>!ban @utilisateur [raison]</li>
-	<li>!warn @utilisateur [raison]</li>
-	<li>!unwarn @utilisateur</li>
-</ul>
-<p>Historique des actions de modération sur le serveur Discord.</p>
-<table>
+
+<p>
+	Historique des actions de modération effectuées sur le serveur Discord.
+
+	Le bot enregistre automatiquement les avertissements, exclusions et bannissements.
+	Exemples de commandes :
+	<ul>
+		<li><strong>!kick @utilisateur raison</strong> - !kick @Jean Spam de liens</li>
+		<li><strong>!ban @utilisateur raison</strong> - !ban @Marie Comportement toxique répété</li>
+		<li><strong>!warn @utilisateur raison</strong> - !warn @Paul Langage inapproprié</li>
+		<li><strong>!unwarn @utilisateur</strong> - !unwarn @Paul</li>
+	</ul>
+</p>
+
+{% if not event %}
+<h2>Événements de modération</h2>
+<table class="moderation">
 	<thead>
 		<tr>
-			<th>ID</th>
 			<th>Type</th>
 			<th>Utilisateur</th>
 			<th>Discord ID</th>
 			<th>Date & Heure</th>
 			<th>Raison</th>
 			<th>Staff</th>
-			<th>Actions</th>
+			<th>#</th>
 		</tr>
 	</thead>
 	<tbody>
-		{% for event in events %}
+		{% for mod_event in events %}
 		<tr>
-			<td>{{ event.id }}</td>
-			<td>{{ event.type }}</td>
-			<td>{{ event.username }}</td>
-			<td>{{ event.discord_id }}</td>
-			<td>{{ event.created_at.strftime('%d/%m/%Y %H:%M') if event.created_at else 'N/A' }}</td>
+			<td>{{ mod_event.type }}</td>
+			<td>{{ mod_event.username }}</td>
+			<td>{{ mod_event.discord_id }}</td>
+			<td>{{ mod_event.created_at.strftime('%d/%m/%Y %H:%M') if mod_event.created_at else 'N/A' }}</td>
+			<td>{{ mod_event.reason }}</td>
+			<td>{{ mod_event.staff_name }}</td>
 			<td>
-				<form action="{{ url_for('update_moderation_event', event_id = event.id) }}" method="POST" style="margin: 0;">
-					<input name="reason" type="text" value="{{ event.reason }}" style="width: 100%;" />
-				</form>
-			</td>
-			<td>{{ event.staff_name }}</td>
-			<td>
-				<a href="javascript:void(0)" onclick="this.parentElement.parentElement.querySelector('form').submit()">Modifier</a>
-				| 
-				<a href="{{ url_for('delete_moderation_event', event_id = event.id) }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')">🗑️ Supprimer</a>
+				<a href="{{ url_for('open_edit_moderation_event', event_id = mod_event.id) }}" class="icon">✐</a>
+				<a href="{{ url_for('delete_moderation_event', event_id = mod_event.id) }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')" class="icon">🗑</a>
 			</td>
 		</tr>
 		{% endfor %}
 	</tbody>
 </table>
+{% endif %}
+
+{% if event %}
+<h2>Editer un événement</h2>
+<form action="{{ url_for('update_moderation_event', event_id = event.id) }}" method="POST">
+	<label for="type">Type</label>
+	<input name="type" type="text" value="{{ event.type }}" disabled />
+	<label for="username">Utilisateur</label>
+	<input name="username" type="text" value="{{ event.username }}" disabled />
+	<label for="discord_id">Discord ID</label>
+	<input name="discord_id" type="text" value="{{ event.discord_id }}" disabled />
+	<label for="reason">Raison</label>
+	<input name="reason" type="text" value="{{ event.reason }}" required="required" />
+	<label for="staff_name">Staff</label>
+	<input name="staff_name" type="text" value="{{ event.staff_name }}" disabled />
+	<input type="Submit" value="Modifier">
+	<a href="{{ url_for('moderation') }}">Annuler</a>
+</form>
+{% endif %}
+
 {% endblock %}
-
-
