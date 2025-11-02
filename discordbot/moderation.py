@@ -1,12 +1,32 @@
 import asyncio
 import logging
 import time
+import os
 import discord
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from database import db
 from database.helpers import ConfigurationHelper
 from database.models import ModerationEvent
 from discord import Message
+
+def _get_local_tz():
+	tz_name = os.environ.get('APP_TZ') or os.environ.get('TZ') or 'Europe/Paris'
+	try:
+		return ZoneInfo(tz_name)
+	except Exception:
+		try:
+			return datetime.now().astimezone().tzinfo or timezone.utc
+		except Exception:
+			return timezone.utc
+
+def _to_local(dt: datetime) -> datetime | None:
+	if not dt:
+		return None
+	if dt.tzinfo is None:
+		# Assume stored in UTC if naive
+		dt = dt.replace(tzinfo=timezone.utc)
+	return dt.astimezone(_get_local_tz())
 
 def get_staff_role_ids():
 	staff_roles = ConfigurationHelper().getValue('moderation_staff_role_ids')
@@ -87,7 +107,7 @@ def create_warning_event(target_user, reason: str, staff_member):
 		type='warning',
 		username=target_user.name,
 		discord_id=str(target_user.id),
-		created_at=datetime.utcnow(),
+		created_at=datetime.now(timezone.utc),
 		reason=reason,
 		staff_id=str(staff_member.id),
 		staff_name=staff_member.name
@@ -177,7 +197,7 @@ async def send_event_deleted_confirmation(channel, event: ModerationEvent, moder
 		title="✅ Événement supprimé",
 		description=f"L'événement de type **{event.type}** pour **{event.username}** (ID: {event.id}) a été supprimé.",
 		color=discord.Color.green(),
-		timestamp=datetime.utcnow()
+		timestamp=datetime.now(timezone.utc)
 	)
 	embed.add_field(name="🛡️ Modérateur", value=f"{moderator.name}\n`{moderator.id}`", inline=True)
 	embed.set_footer(text="Mamie Henriette")
@@ -234,11 +254,12 @@ def create_events_list_embed(events: list, page_num: int, per_page: int):
 		title="📋 Liste des événements de modération",
 		description=f"Total : {len(events)} événement(s)",
 		color=discord.Color.blue(),
-		timestamp=datetime.utcnow()
+		timestamp=datetime.now(timezone.utc)
 	)
 	
 	for event in page_events:
-		date_str = event.created_at.strftime('%d/%m/%Y %H:%M') if event.created_at else 'N/A'
+		local_dt = _to_local(event.created_at)
+		date_str = local_dt.strftime('%d/%m/%Y %H:%M') if local_dt else 'N/A'
 		embed.add_field(
 			name=f"ID {event.id} - {event.type.upper()} - {event.username}",
 			value=f"**Discord ID:** `{event.discord_id}`\n**Date:** {date_str}\n**Raison:** {event.reason}\n**Staff:** {event.staff_name}",
@@ -351,7 +372,7 @@ def _create_ban_event(target_user, reason: str, staff_member):
 		type='ban',
 		username=target_user.name,
 		discord_id=str(target_user.id),
-		created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
 		reason=reason,
 		staff_id=str(staff_member.id),
 		staff_name=staff_member.name
@@ -364,7 +385,7 @@ async def _process_ban_success(message: Message, target_user, reason: str):
 	member = message.guild.get_member(target_user.id)
 	joined_days = None
 	if member and member.joined_at:
-		delta = datetime.utcnow() - member.joined_at.replace(tzinfo=None)
+		delta = datetime.now(timezone.utc) - (member.joined_at if member.joined_at.tzinfo else member.joined_at.replace(tzinfo=timezone.utc))
 		joined_days = delta.days
 	try:
 		await message.guild.ban(target_user, reason=reason)
@@ -473,7 +494,7 @@ async def _process_unban_success(message: Message, bot, target_user, discord_id:
 		type='unban',
 		username=username,
 		discord_id=discord_id,
-		created_at=datetime.utcnow(),
+		created_at=datetime.now(timezone.utc),
 		reason=reason,
 		staff_id=str(message.author.id),
 		staff_name=message.author.name
@@ -586,7 +607,7 @@ async def handle_ban_list_command(message: Message, bot):
 			title="🔨 Utilisateurs bannis",
 			description=f"Total : {len(bans)} utilisateur(s) banni(s)",
 			color=discord.Color.red(),
-			timestamp=datetime.utcnow()
+			timestamp=datetime.now(timezone.utc)
 		)
 		for entry in page_bans:
 			user = entry.user
@@ -632,67 +653,96 @@ async def handle_ban_list_command(message: Message, bot):
 	await safe_delete_message(message)
 
 async def handle_staff_help_command(message: Message, bot):
-	if not has_staff_role(message.author.roles):
-		embed = discord.Embed(
-			title="❌ Accès refusé",
-			description="Cette commande est réservée au staff.",
-			color=discord.Color.red()
-		)
-		await message.channel.send(embed=embed)
-		return
-
+	is_staff = has_staff_role(message.author.roles)
+	
 	embed = discord.Embed(
-		title="🛠️ Aide staff",
-		description="Commandes de modération disponibles",
+		title="📚 Aide - Commandes disponibles",
+		description="Liste de toutes les commandes disponibles",
 		color=discord.Color.blurple(),
-		timestamp=datetime.utcnow()
+		timestamp=datetime.now(timezone.utc)
 	)
+	embed.set_thumbnail(url=bot.user.display_avatar.url)
 	embed.set_footer(text=f"Demandé par {message.author.name}")
 
-	# Avertissements
-	if ConfigurationHelper().getValue('moderation_enable'):
-		value = (
-			"• `!averto @utilisateur [raison]`\n"
-			"• `!delaverto <id>`\n"
-			"• `!warnings` ou `!warnings @utilisateur`\n"
-			"Exemples:\n"
-			"`!averto @User Spam`\n"
-			"`!delaverto 12`\n"
-			"`!warnings @User`"
+	public_commands = []
+	
+	if ConfigurationHelper().getValue('proton_db_enable_enable'):
+		public_commands.append(
+			"**🎮 ProtonDB**\n"
+			"• `!protondb <nom du jeu>` ou `!pdb <nom du jeu>`\n"
+			"Recherche un jeu sur ProtonDB pour vérifier sa compatibilité Linux\n"
+			"Ex: `!pdb Elden Ring`"
 		)
-		embed.add_field(name="⚠️ Avertissements", value=value, inline=False)
-		# Inspect
+	
+	from database.models import Commande
+	custom_commands = Commande.query.filter_by(discord_enable=True).all()
+	if custom_commands:
+		commands_list = []
+		for cmd in custom_commands:
+			commands_list.append(f"• `{cmd.trigger}`")
+		custom_text = "\n".join(commands_list[:10])
+		if len(custom_commands) > 10:
+			custom_text += f"\n*... et {len(custom_commands) - 10} autres*"
+		public_commands.append(f"**🤖 Commandes personnalisées**\n{custom_text}")
+	
+	if public_commands:
+		for cmd_text in public_commands:
+			embed.add_field(name="\u200b", value=cmd_text, inline=False)
+	else:
 		embed.add_field(
-			name="🔎 Inspection",
-			value=("• `!inspect @utilisateur` ou `!inspect <id>`\n"
-					"Ex: `!inspect @User`"),
+			name="📝 Commandes publiques",
+			value="Aucune commande publique configurée pour le moment.",
 			inline=False
 		)
-
-	# Bans / Unban
-	if ConfigurationHelper().getValue('moderation_ban_enable'):
-		value = (
-			"• `!ban @utilisateur [raison]`\n"
-			"• `!unban <discord_id>` ou `!unban #<sanction_id> [raison]`\n"
-			"• `!banlist`\n"
-			"Exemples:\n"
-			"`!ban @User Toxicité`\n"
-			"`!unban 123456789012345678 Erreur`\n"
-			"`!unban #5 Appel accepté`"
+	
+	if is_staff:
+		embed.add_field(
+			name="━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+			value="**🛠️ COMMANDES STAFF**",
+			inline=False
 		)
-		embed.add_field(name="🔨 Ban / Unban", value=value, inline=False)
+		
+		if ConfigurationHelper().getValue('moderation_enable'):
+			value = (
+				"• `!averto @utilisateur [raison]`\n"
+				"• `!delaverto <id>`\n"
+				"• `!warnings` ou `!warnings @utilisateur`\n"
+				"Exemples:\n"
+				"`!averto @User Spam`\n"
+				"`!delaverto 12`\n"
+				"`!warnings @User`"
+			)
+			embed.add_field(name="⚠️ Avertissements", value=value, inline=False)
+			embed.add_field(
+				name="🔎 Inspection",
+				value=("• `!inspect @utilisateur` ou `!inspect <id>`\n"
+						"Ex: `!inspect @User`"),
+				inline=False
+			)
 
-	# Kick
-	if ConfigurationHelper().getValue('moderation_kick_enable'):
-		value = (
-			"• `!kick @utilisateur [raison]`\n"
-			"Exemple: `!kick @User Spam`"
-		)
-		embed.add_field(name="👢 Kick", value=value, inline=False)
+		if ConfigurationHelper().getValue('moderation_ban_enable'):
+			value = (
+				"• `!ban @utilisateur [raison]`\n"
+				"• `!unban <discord_id>` ou `!unban #<sanction_id> [raison]`\n"
+				"• `!banlist`\n"
+				"Exemples:\n"
+				"`!ban @User Toxicité`\n"
+				"`!unban 123456789012345678 Erreur`\n"
+				"`!unban #5 Appel accepté`"
+			)
+			embed.add_field(name="🔨 Ban / Unban", value=value, inline=False)
+
+		if ConfigurationHelper().getValue('moderation_kick_enable'):
+			value = (
+				"• `!kick @utilisateur [raison]`\n"
+				"Exemple: `!kick @User Spam`"
+			)
+			embed.add_field(name="👢 Kick", value=value, inline=False)
 
 	try:
 		sent = await message.channel.send(embed=embed)
-		asyncio.create_task(delete_after_delay(sent))
+		if is_staff:
+			asyncio.create_task(delete_after_delay(sent))
 	except Exception:
 		pass
 	await safe_delete_message(message)
@@ -729,7 +779,7 @@ async def _process_kick_success(message: Message, target_member, reason: str):
 		return
 	joined_days = None
 	if member_obj.joined_at:
-		delta = datetime.utcnow() - member_obj.joined_at.replace(tzinfo=None)
+		delta = datetime.now(timezone.utc) - (member_obj.joined_at if member_obj.joined_at.tzinfo else member_obj.joined_at.replace(tzinfo=timezone.utc))
 		joined_days = delta.days
 	try:
 		await message.guild.kick(member_obj, reason=reason)
@@ -745,7 +795,7 @@ async def _process_kick_success(message: Message, target_member, reason: str):
 		type='kick',
 		username=target_member.name,
 		discord_id=str(target_member.id),
-		created_at=datetime.utcnow(),
+		created_at=datetime.now(timezone.utc),
 		reason=reason,
 		staff_id=str(message.author.id),
 		staff_name=message.author.name
@@ -821,7 +871,7 @@ def create_inspect_embed(user, member, join_date, days_on_server, account_age, w
 	embed = discord.Embed(
 		title=f"🔍 Inspection de {user.name}",
 		color=discord.Color.blue(),
-		timestamp=datetime.utcnow()
+		timestamp=datetime.now(timezone.utc)
 	)
 	
 	embed.set_thumbnail(url=user.display_avatar.url)
@@ -830,14 +880,14 @@ def create_inspect_embed(user, member, join_date, days_on_server, account_age, w
 	if account_age is not None:
 		embed.add_field(
 			name="📅 Compte créé",
-			value=f"{user.created_at.strftime('%d/%m/%Y')}\n({format_days_to_age(account_age)})",
+			value=f"{_to_local(user.created_at).strftime('%d/%m/%Y')}\n({format_days_to_age(account_age)})",
 			inline=True
 		)
 	
 	if member and join_date:
 		embed.add_field(
 			name="📥 Rejoint le serveur",
-			value=f"{join_date.strftime('%d/%m/%Y à %H:%M')}\n({format_days_to_age(days_on_server)})",
+			value=f"{_to_local(join_date).strftime('%d/%m/%Y à %H:%M')}\n({format_days_to_age(days_on_server)})",
 			inline=True
 		)
 	
@@ -858,7 +908,7 @@ def create_inspect_embed(user, member, join_date, days_on_server, account_age, w
 		if warnings:
 			recent_warnings = warnings[:3]
 			warnings_detail = "\n".join([
-				f"• ID {w.id} - {w.created_at.strftime('%d/%m/%Y')} - {w.reason[:50]}{'...' if len(w.reason) > 50 else ''}"
+				f"• ID {w.id} - {_to_local(w.created_at).strftime('%d/%m/%Y')} - {w.reason[:50]}{'...' if len(w.reason) > 50 else ''}"
 				for w in recent_warnings
 			])
 			if len(warnings) > 3:

@@ -130,9 +130,10 @@ async def on_message(message: Message):
 		if command_name == '!inspect':
 			await handle_inspect_command(message, bot)
 			return
-		if command_name in ['!aide', '!help']:
-			await handle_staff_help_command(message, bot)
-			return
+	
+	if command_name in ['!aide', '!help']:
+		await handle_staff_help_command(message, bot)
+		return
 	
 	commande = Commande.query.filter_by(discord_enable=True, trigger=command_name).first()
 	if commande:
