@@ -115,6 +115,10 @@ async def sendLeaveMessage(bot: discord.Client, member: Member):
 			if not (entry.target and entry.target.id == member.id):
 				continue
 			
+			time_diff = (now - entry.created_at).total_seconds()
+			if time_diff > 3:
+				continue
+			
 			if entry.action == discord.AuditLogAction.kick:
 				reason = f'Expulsé par {entry.user.mention}'
 				if entry.reason:
