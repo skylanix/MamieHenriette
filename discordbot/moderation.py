@@ -669,7 +669,7 @@ async def handle_staff_help_command(message: Message, bot):
 	if ConfigurationHelper().getValue('proton_db_enable_enable'):
 		public_commands.append(
 			"**🎮 ProtonDB**\n"
-			"• `!protondb <nom du jeu>` ou `!pdb <nom du jeu>`\n"
+			"• `!protondb nom du jeu` ou `!pdb nom du jeu`\n"
 			"Recherche un jeu sur ProtonDB pour vérifier sa compatibilité Linux\n"
 			"Ex: `!pdb Elden Ring`"
 		)
