@@ -165,10 +165,10 @@ cd MamieHenriette
 services:
   MamieHenriette:
     container_name: MamieHenriette
-    # image: skylanix/mamiehenriette:latest  # ← Commentez cette ligne
     restart: unless-stopped
-    build:                                   # ← Décommentez cette lignes
+    build: .                                 # ← Décommentez cette lignes
     image: mamiehenriette                    # ← Décommentez cette lignes
+    # image: skylanix/mamiehenriette:latest  # ← Commentez cette ligne
     # ... reste de la configuration
 ```
 
