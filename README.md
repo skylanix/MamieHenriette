@@ -14,6 +14,8 @@
   - [Prérequis](#prérequis)
   - [Création du bot Discord](#création-du-bot-discord)
   - [Démarrage rapide](#démarrage-rapide)
+  - [Build local (développement)](#build-local-développement)
+  - [Déploiement avec Portainer](#déploiement-avec-portainer)
   - [Volumes persistants](#volumes-persistants)
   - [Commandes Docker utiles](#commandes-docker-utiles)
   - [Mise à jour](#mise-à-jour)
@@ -128,21 +130,122 @@ Avant d'installer MamieHenriette, vous devez créer un bot Discord et obtenir so
 ```bash
 # 1. Cloner le projet
 git clone https://github.com/skylanix/MamieHenriette.git
-```
-
-```bash
 cd MamieHenriette
 ```
 
 ```bash
-# 2. Lancer avec Docker
-docker compose up --build -d
+# 2. Récupérer l'image depuis Docker Hub et lancer
+docker compose pull
+docker compose up -d
 ```
 
-> ⚠️ **Important** : Après configuration via l'interface web http://localhost:5000, **redémarrez le conteneur** pour que les changements soient pris en compte :
+> 📝 L'interface web sera accessible sur http://localhost:5000
+>
+> ⚠️ **Important** : Après configuration via l'interface web, **redémarrez le conteneur** pour que les changements soient pris en compte :
 > ```bash
 > docker compose restart MamieHenriette
 > ```
+
+### Build local (développement)
+
+Si vous souhaitez modifier le code et builder l'image localement :
+
+```bash
+# 1. Cloner et accéder au projet
+git clone https://github.com/skylanix/MamieHenriette.git
+cd MamieHenriette
+```
+
+```bash
+# 2. Modifier le docker-compose.yml
+# Commentez la ligne 'image:' et décommentez la section 'build:' :
+```
+
+```yaml
+services:
+  MamieHenriette:
+    container_name: MamieHenriette
+    # image: skylanix/mamiehenriette:latest  # ← Commentez cette ligne
+    build:                                    # ← Décommentez ces lignes
+      context: .
+      dockerfile: Dockerfile
+    # ... reste de la configuration
+```
+
+```bash
+# 3. Builder et lancer
+docker compose up --build -d
+```
+
+### Déploiement avec Portainer
+
+Si vous utilisez Portainer pour gérer vos conteneurs Docker, voici la configuration Docker Compose à utiliser :
+
+```yaml
+services:
+  mamiehenriette:
+    container_name: MamieHenriette
+    image: ghcr.io/skylanix/mamiehenriette:latest
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Paris
+    volumes:
+      # Adaptez ces chemins selon votre configuration
+      - ./instance:/app/instance
+      - ./logs:/app/logs
+    ports:
+      - 5000:5000
+
+  watchtower:  # Mise à jour automatique de l'image
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Paris
+      WATCHTOWER_INCLUDE: "MamieHenriette"
+      WATCHTOWER_SCHEDULE: "0 */30 * * * *"  # Vérification toutes les 30 min
+      WATCHTOWER_MONITOR_ONLY: "false"
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_INCLUDE_RESTARTING: "true"
+      # Décommentez pour activer les notifications Discord :
+      # WATCHTOWER_NOTIFICATION_URL: "discord://token@id"
+      # WATCHTOWER_NOTIFICATIONS: shoutrrr
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # Décommentez pour accéder à la base de données via interface web (localhost:5001)
+  # sqlite-web:
+  #   image: ghcr.io/coleifer/sqlite-web:latest
+  #   container_name: sqlite_web
+  #   ports:
+  #     - "5001:8080"
+  #   volumes:
+  #     - ./instance/database.db:/data/database.db
+  #   environment:
+  #     - SQLITE_DATABASE=/data/database.db
+```
+
+**Étapes dans Portainer :**
+
+1. **Accéder à Portainer** : Ouvrez votre interface Portainer (généralement http://votre-serveur:9000)
+
+2. **Créer une Stack** :
+   - Allez dans "Stacks" → "Add stack"
+   - Donnez un nom : `MamieHenriette`
+   - Collez la configuration ci-dessus dans l'éditeur
+
+3. **Adapter les chemins** :
+   - Remplacez `/chemin/vers/instance` par le chemin absolu sur votre serveur (ex: `/opt/containers/MamieHenriette/instance`)
+   - Remplacez `/chemin/vers/logs` par le chemin absolu sur votre serveur (ex: `/opt/containers/MamieHenriette/logs`)
+
+4. **Déployer** :
+   - Cliquez sur "Deploy the stack"
+   - Attendez que le conteneur démarre
+
+5. **Accéder à l'interface** :
+   - Ouvrez http://votre-serveur:5000
+   - Configurez le bot via l'interface web
+   - Redémarrez le conteneur depuis Portainer après configuration
 
 ### Volumes persistants
 - `./instance/` : Base de données SQLite et configuration
