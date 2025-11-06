@@ -704,40 +704,48 @@ async def handle_staff_help_command(message: Message, bot):
 		
 		if ConfigurationHelper().getValue('moderation_enable'):
 			value = (
-				"• `!averto @utilisateur [raison]`\n"
-				"• `!delaverto <id>`\n"
+				"• `!averto @utilisateur raison`\n"
+				"  *Alias: !warn, !av, !avertissement*\n"
+				"• `!delaverto id`\n"
+				"  *Alias: !removewarn, !delwarn*\n"
 				"• `!warnings` ou `!warnings @utilisateur`\n"
+				"  *Alias: !listevent, !listwarn*\n"
 				"Exemples:\n"
-				"`!averto @User Spam`\n"
+				"`!averto @User Spam dans le chat`\n"
 				"`!delaverto 12`\n"
 				"`!warnings @User`"
 			)
 			embed.add_field(name="⚠️ Avertissements", value=value, inline=False)
 			embed.add_field(
 				name="🔎 Inspection",
-				value=("• `!inspect @utilisateur` ou `!inspect <id>`\n"
+				value=("• `!inspect @utilisateur` ou `!inspect id`\n"
+						"Affiche les infos détaillées et l'historique de modération\n"
 						"Ex: `!inspect @User`"),
 				inline=False
 			)
 
 		if ConfigurationHelper().getValue('moderation_ban_enable'):
 			value = (
-				"• `!ban @utilisateur [raison]`\n"
-				"• `!unban <discord_id>` ou `!unban #<sanction_id> [raison]`\n"
+				"• `!ban @utilisateur raison`\n"
+				"  Bannit définitivement un utilisateur\n"
+				"• `!unban discord_id` ou `!unban #sanction_id raison`\n"
+				"  Révoque le ban et envoie une invitation\n"
 				"• `!banlist`\n"
+				"  Affiche la liste des utilisateurs bannis\n"
 				"Exemples:\n"
-				"`!ban @User Toxicité`\n"
-				"`!unban 123456789012345678 Erreur`\n"
+				"`!ban @User Comportement toxique répété`\n"
+				"`!unban 123456789012345678 Erreur de modération`\n"
 				"`!unban #5 Appel accepté`"
 			)
-			embed.add_field(name="🔨 Ban / Unban", value=value, inline=False)
+			embed.add_field(name="🔨 Bannissement", value=value, inline=False)
 
 		if ConfigurationHelper().getValue('moderation_kick_enable'):
 			value = (
-				"• `!kick @utilisateur [raison]`\n"
-				"Exemple: `!kick @User Spam`"
+				"• `!kick @utilisateur raison`\n"
+				"  Expulse temporairement un utilisateur du serveur\n"
+				"Exemple: `!kick @User Spam de liens`"
 			)
-			embed.add_field(name="👢 Kick", value=value, inline=False)
+			embed.add_field(name="👢 Expulsion", value=value, inline=False)
 
 	try:
 		sent = await message.channel.send(embed=embed)

@@ -57,7 +57,7 @@
 		<legend>Modération</legend>
 		<label for="moderation_enable">
 			<input type="checkbox" name="moderation_enable" {% if configuration.getValue('moderation_enable') %}checked="checked"{% endif %}>
-			Activer les commandes d'avertissement (!averto, !delaverto, !listaverto)
+			Activer les commandes d'avertissement (!warn, !unwarn, !inspect)
 		</label>
 		
 		<label for="moderation_ban_enable">
@@ -169,7 +169,7 @@
 	<label for="twitch_channel">Chaîne à rejoindre</label>
 	<input name="twitch_channel" type="text" value="{{ configuration.getValue('twitch_channel') }}"
 		placeholder="#machinTruc" />
-	<input type="Submit" value="Définir">
+	<input type="Submit" value="Enregistrer la configuration Twitch">
 	<p>
 		<a href="{{ url_for('twitchConfigurationHelp') }}">Aide</a>
 	</p>
@@ -189,20 +189,22 @@
 
 <h2>Humble Bundle</h2>
 <form action="{{ url_for('updateConfiguration') }}" method="POST">
-	<label for="humble_bundle_enable">Activer</label>
-	<input type="checkbox" name="humble_bundle_enable" {% if configuration.getValue('humble_bundle_enable') %}
-		checked="checked" {% endif %}>
-	<label>Activer les notifications Humble Bundle</label> 
-	<p>Humble Bundle est un service qui propose des bundles de jeux vidéo à des prix réduits. Il est utile pour trouver des jeux vidéo à des prix intéressants.</p>
-	<p>Il est possible de configurer un canal de notification pour recevoir les notifications des bundles Humble Bundle.</p>
-	<label for="humble_bundle_channel">Canal de notification des packs Humble Bundle</label>
+	<p>Humble Bundle propose régulièrement des bundles de jeux vidéo à des prix réduits. Activez les notifications pour recevoir automatiquement les nouveaux packs disponibles sur votre serveur Discord.</p>
+
+	<label for="humble_bundle_enable">
+		<input type="checkbox" name="humble_bundle_enable" {% if configuration.getValue('humble_bundle_enable') %}checked="checked"{% endif %}>
+		Activer les notifications Humble Bundle
+	</label>
+
+	<label for="humble_bundle_channel">Canal de notification</label>
 	<select name="humble_bundle_channel">
 		{% for channel in channels %}
-		<option value="{{channel.id}}" {% if configuration.getIntValue('humble_bundle_channel')==channel.id %}
-			selected="selected" {% endif %}>
-			{{channel.name}}</option>
+		<option value="{{channel.id}}" {% if configuration.getIntValue('humble_bundle_channel')==channel.id %}selected="selected"{% endif %}>
+			{{channel.name}}
+		</option>
 		{% endfor %}
 	</select>
-	<input type="Submit" value="Définir">
+
+	<input type="Submit" value="Enregistrer la configuration Humble Bundle">
 </form>
 {% endblock %}

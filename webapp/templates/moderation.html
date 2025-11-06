@@ -7,13 +7,53 @@
 	Historique des actions de modération effectuées sur le serveur Discord.
 
 	Le bot enregistre automatiquement les avertissements, exclusions et bannissements.
-	Exemples de commandes :
-	<ul>
-		<li><strong>!kick @utilisateur raison</strong> - !kick @Jean Spam de liens</li>
-		<li><strong>!ban @utilisateur raison</strong> - !ban @Marie Comportement toxique répété</li>
-		<li><strong>!warn @utilisateur raison</strong> - !warn @Paul Langage inapproprié</li>
-		<li><strong>!unwarn @utilisateur</strong> - !unwarn @Paul</li>
-	</ul>
+
+	<table>
+		<thead>
+			<tr>
+				<th>Commande</th>
+				<th>Description</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td><strong>!averto @utilisateur raison</strong><br><small>Alias : !warn, !av, !avertissement</small></td>
+				<td>Avertit un utilisateur et enregistre l'avertissement dans la base de données</td>
+			</tr>
+			<tr>
+				<td><strong>!delaverto id</strong><br><small>Alias : !removewarn, !delwarn</small></td>
+				<td>Retire un avertissement en utilisant son numéro d'ID</td>
+			</tr>
+			<tr>
+				<td><strong>!warnings</strong> ou <strong>!warnings @utilisateur</strong><br><small>Alias : !listevent, !listwarn</small></td>
+				<td>Affiche la liste des événements de modération (tous ou pour un utilisateur spécifique)</td>
+			</tr>
+			<tr>
+				<td><strong>!inspect @utilisateur</strong> ou <strong>!inspect id</strong></td>
+				<td>Affiche des informations détaillées sur un utilisateur : création du compte, date d'arrivée, historique de modération</td>
+			</tr>
+			<tr>
+				<td><strong>!kick @utilisateur raison</strong></td>
+				<td>Expulse un utilisateur du serveur</td>
+			</tr>
+			<tr>
+				<td><strong>!ban @utilisateur raison</strong></td>
+				<td>Bannit définitivement un utilisateur du serveur</td>
+			</tr>
+			<tr>
+				<td><strong>!unban discord_id</strong> ou <strong>!unban #sanction_id raison</strong></td>
+				<td>Révoque le bannissement d'un utilisateur et lui envoie une invitation</td>
+			</tr>
+			<tr>
+				<td><strong>!banlist</strong></td>
+				<td>Affiche la liste des utilisateurs actuellement bannis du serveur</td>
+			</tr>
+			<tr>
+				<td><strong>!aide</strong><br><small>Alias : !help</small></td>
+				<td>Affiche l'aide avec toutes les commandes disponibles</td>
+			</tr>
+		</tbody>
+	</table>
 </p>
 
 {% if not event %}

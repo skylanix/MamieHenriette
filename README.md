@@ -50,12 +50,25 @@ Mamie Henriette est un bot intelligent open-source développé spécifiquement p
 - **Statuts dynamiques** : Rotation automatique des humeurs (10 min)
 - **Notifications Humble Bundle** : Surveillance et alertes automatiques (30 min)
 - **Commandes personnalisées** : Gestion via interface web
-- **Recherche ProtonDB** : Commande `!protondb <nom_du_jeu>` pour vérifier la compatibilité Linux/Steam Deck
-- **Modération** : Outils intégrés
+- **Recherche ProtonDB** :
+  - Commande `!protondb nom_du_jeu` ou `!pdb nom_du_jeu` pour vérifier la compatibilité Linux/Steam Deck
+  - Recherche intelligente avec support des alias de jeux
+  - Affichage du score de compatibilité, nombre de rapports et lien direct
+- **Modération** : Système complet de modération avec historique
+  - Avertissements : `!averto`, `!warn`, `!av`, `!avertissement`
+  - Gestion des avertissements : `!delaverto`, `!removewarn`, `!delwarn`
+  - Liste des événements : `!warnings`, `!listevent`, `!listwarn`
+  - Inspection utilisateur : `!inspect` (historique complet, date d'arrivée, compte)
+  - Bannissement : `!ban`, `!unban` (avec invitation automatique), `!banlist`
+  - Expulsion : `!kick`
+  - Aide : `!aide`, `!help`
+  - Messages de bienvenue et départ personnalisables
+  - Panneau d'administration web pour consulter l'historique
 
 ### Twitch
 - **Chat bot** : Commandes et interactions automatiques
-- **Alertes Live** : Surveillance automatique des streamers (vérification toutes les 5 minutes)
+- **Alertes Live** : 
+  - Surveillance automatique des streamers
   - Support jusqu'à 100 chaînes simultanément
   - Notifications Discord avec aperçu du stream
   - Gestion via interface d'administration
@@ -243,6 +256,7 @@ python run-web.py
 - **GameAlias** : Alias pour améliorer les recherches ProtonDB
 - **GameBundle** : Historique et notifications Humble Bundle
 - **Message** : Messages automatiques périodiques (implémenté)
+- **Moderation** : Historique complet des actions de modération (avertissements, bans, kicks, unbans) avec raison, staff et timestamp
 
 ### Architecture multi-thread
 - **Thread 1** : Interface web Flask (port 5000) avec logging rotatif
