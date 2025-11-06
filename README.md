@@ -166,9 +166,9 @@ services:
   MamieHenriette:
     container_name: MamieHenriette
     # image: skylanix/mamiehenriette:latest  # ← Commentez cette ligne
-    build:                                    # ← Décommentez ces lignes
-      context: .
-      dockerfile: Dockerfile
+    restart: unless-stopped
+    build:                                   # ← Décommentez cette lignes
+    image: mamiehenriette                    # ← Décommentez cette lignes
     # ... reste de la configuration
 ```
 
