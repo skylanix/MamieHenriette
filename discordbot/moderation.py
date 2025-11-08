@@ -752,9 +752,9 @@ async def handle_staff_help_command(message: Message, bot):
 
 		if ConfigurationHelper().getValue('moderation_kick_enable'):
 			value = (
-				"• `!kick @utilisateur raison`\n"
+				"• `!kick @utilisateur raison` ou `!kick <id> raison`\n"
 				"  Expulse temporairement un utilisateur du serveur\n"
-				"Exemple: `!kick @User Spam de liens`"
+				"Exemples: `!kick @User Spam de liens` ou `!kick 123456789012345678 Spam`"
 			)
 			embed.add_field(name="👢 Expulsion", value=value, inline=False)
 
@@ -770,20 +770,40 @@ async def handle_kick_command(message: Message, bot):
 	parts = message.content.split(maxsplit=2)
 	if not has_staff_role(message.author.roles):
 		await send_access_denied(message.channel)
-	elif len(parts) < 2 or not message.mentions:
+	elif len(parts) < 2:
 		await _send_kick_usage(message.channel)
 	else:
-		target_member = message.mentions[0]
-		reason = parts[2] if len(parts) > 2 else "Sans raison"
-		await _process_kick_success(message, target_member, reason)
+		target_user, reason = await _parse_kick_target_and_reason(message, bot, parts)
+		if not target_user:
+			await _send_user_not_found_for_kick(message.channel)
+		else:
+			await _process_kick_success(message, target_user, reason)
 
 async def _send_kick_usage(channel):
 	embed = discord.Embed(
 		title="📋 Utilisation de la commande",
-		description="**Syntaxe :** `!kick @utilisateur [raison]`",
+		description="**Syntaxe :** `!kick @utilisateur [raison]` ou `!kick <id> [raison]`",
 		color=discord.Color.blue()
 	)
-	embed.add_field(name="Exemples", value="• `!kick @User Spam dans le chat`\n• `!kick @User Comportement inapproprié`", inline=False)
+	embed.add_field(name="Exemples", value="• `!kick @User Spam dans le chat`\n• `!kick 123456789012345678 Comportement inapproprié`", inline=False)
+	await channel.send(embed=embed)
+
+async def _parse_kick_target_and_reason(message: Message, bot, parts: list):
+	if message.mentions:
+		return message.mentions[0], (parts[2] if len(parts) > 2 else "Sans raison")
+	try:
+		user_id = int(parts[1])
+		user = await bot.fetch_user(user_id)
+		return user, (parts[2] if len(parts) > 2 else "Sans raison")
+	except (ValueError, discord.NotFound):
+		return None, None
+
+async def _send_user_not_found_for_kick(channel):
+	embed = discord.Embed(
+		title="❌ Erreur",
+		description="Utilisateur introuvable. Vérifiez la mention ou l'ID Discord.",
+		color=discord.Color.red()
+	)
 	await channel.send(embed=embed)
 
 async def _process_kick_success(message: Message, target_member, reason: str):
