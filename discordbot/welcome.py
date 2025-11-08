@@ -28,19 +28,23 @@ async def updateInviteCache(guild):
 	except:
 		pass
 
-async def getUsedInvite(guild) -> str:
+async def getUsedInvite(guild):
 	try:
 		new_invites = await guild.invites()
 		for invite in new_invites:
 			old_uses = invite_cache.get(guild.id, {}).get(invite.code, 0)
 			if invite.uses > old_uses:
 				await updateInviteCache(guild)
-				inviter = f' (créée par {invite.inviter.name})' if invite.inviter else ''
-				return f'`{invite.code}`{inviter}'
+				invite_code = invite.code
+				inviter_name = invite.inviter.name if invite.inviter else None
+				display_text = f'`{invite_code}`'
+				if inviter_name:
+					display_text += f' (créée par {inviter_name})'
+				return (invite_code, inviter_name, display_text)
 		await updateInviteCache(guild)
 	except:
 		pass
-	return 'Inconnue'
+	return (None, None, 'Inconnue')
 
 async def sendWelcomeMessage(bot: discord.Client, member: Member):
 	config = ConfigurationHelper()
@@ -64,7 +68,24 @@ async def sendWelcomeMessage(bot: discord.Client, member: Member):
 	
 	welcome_message = replaceMessageVariables(welcome_message, member)
 	
-	invite_used = await getUsedInvite(member.guild)
+	invite_code, inviter_name, invite_display = await getUsedInvite(member.guild)
+	
+	try:
+		from database import db
+		from sqlalchemy import text
+		db.session.execute(
+			text("INSERT INTO member_invites (user_id, guild_id, invite_code, inviter_name, join_date) VALUES (:user_id, :guild_id, :invite_code, :inviter_name, :join_date)"),
+			{
+				'user_id': str(member.id),
+				'guild_id': str(member.guild.id),
+				'invite_code': invite_code,
+				'inviter_name': inviter_name,
+				'join_date': datetime.now(timezone.utc)
+			}
+		)
+		db.session.commit()
+	except Exception as e:
+		logging.error(f'Échec de la sauvegarde de l\'invitation : {e}')
 	
 	embed = discord.Embed(
 		title='🎉 Nouveau membre !',
@@ -75,7 +96,7 @@ async def sendWelcomeMessage(bot: discord.Client, member: Member):
 	embed.set_thumbnail(url=member.display_avatar.url)
 	embed.add_field(name='Membre', value=member.mention, inline=True)
 	embed.add_field(name='Nombre de membres', value=str(member.guild.member_count), inline=True)
-	embed.add_field(name='Invitation utilisée', value=invite_used, inline=False)
+	embed.add_field(name='Invitation utilisée', value=invite_display, inline=False)
 	embed.set_footer(text=f'ID: {member.id}')
 	
 	try:

@@ -67,3 +67,12 @@ CREATE TABLE IF NOT EXISTS `anticheat_cache` (
 	notes VARCHAR(1024),
 	updated_at DATETIME NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS `member_invites` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	`user_id` VARCHAR(64) NOT NULL,
+	`guild_id` VARCHAR(64) NOT NULL,
+	`invite_code` VARCHAR(256),
+	`inviter_name` VARCHAR(256),
+	`join_date` DATETIME NOT NULL
+);

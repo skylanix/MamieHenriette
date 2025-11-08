@@ -84,7 +84,8 @@ async def send_access_denied(channel):
 		description="Vous n'avez pas les permissions nécessaires pour utiliser cette commande.",
 		color=discord.Color.red()
 	)
-	await channel.send(embed=embed)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
 
 async def send_user_not_found(channel):
 	embed = discord.Embed(
@@ -92,7 +93,8 @@ async def send_user_not_found(channel):
 		description="Utilisateur introuvable. Vérifiez la mention ou l'ID Discord.",
 		color=discord.Color.red()
 	)
-	await channel.send(embed=embed)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
 
 async def parse_target_user_and_reason(message, bot, parts: list):
 	if message.mentions:
@@ -116,7 +118,8 @@ async def send_warning_usage(channel):
 	)
 	embed.add_field(name="Exemples", value="• `!averto @User Spam dans le chat`\n• `!warn 123456789012345678 Comportement inapproprié`\n• `!av @User`", inline=False)
 	embed.add_field(name="Aliases", value="`!averto`, `!av`, `!avertissement`, `!warn`", inline=False)
-	await channel.send(embed=embed)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
 
 def create_warning_event(target_user, reason: str, staff_member):
 	event = ModerationEvent(
@@ -191,7 +194,8 @@ async def send_remove_warning_usage(channel):
 	)
 	embed.add_field(name="Exemples", value="• `!delaverto 5`\n• `!removewarn 12`", inline=False)
 	embed.add_field(name="Aliases", value="`!delaverto`, `!removewarn`, `!delwarn`", inline=False)
-	await channel.send(embed=embed)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
 
 async def send_invalid_event_id(channel):
 	embed = discord.Embed(
@@ -199,7 +203,8 @@ async def send_invalid_event_id(channel):
 		description="L'ID doit être un nombre entier.",
 		color=discord.Color.red()
 	)
-	await channel.send(embed=embed)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
 
 async def send_event_not_found(channel, event_id: int):
 	embed = discord.Embed(
@@ -207,7 +212,8 @@ async def send_event_not_found(channel, event_id: int):
 		description=f"Aucun événement de modération trouvé avec l'ID `{event_id}`.",
 		color=discord.Color.red()
 	)
-	await channel.send(embed=embed)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
 
 def delete_moderation_event(event: ModerationEvent):
 	db.session.delete(event)
@@ -223,7 +229,8 @@ async def send_event_deleted_confirmation(channel, event: ModerationEvent, moder
 	embed.add_field(name="🛡️ Modérateur", value=f"{moderator.name}\n`{moderator.id}`", inline=True)
 	embed.set_footer(text="Mamie Henriette")
 	
-	await channel.send(embed=embed)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
 	await safe_delete_message(original_message)
 
 async def handle_remove_warning_command(message: Message, bot):
@@ -263,7 +270,8 @@ async def send_no_events_found(channel):
 		description="Aucun événement de modération trouvé.",
 		color=discord.Color.blue()
 	)
-	await channel.send(embed=embed)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
 
 def create_events_list_embed(events: list, page_num: int, per_page: int):
 	start = page_num * per_page
@@ -368,7 +376,8 @@ async def _send_ban_usage(channel):
 		color=discord.Color.blue()
 	)
 	embed.add_field(name="Exemples", value="• `!ban @User Spam répété`\n• `!ban 123456789012345678 Comportement toxique`", inline=False)
-	await channel.send(embed=embed)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
 
 async def _parse_ban_target_and_reason(message: Message, bot, parts: list):
 	if message.mentions:
@@ -386,7 +395,8 @@ async def _send_user_not_found_for_ban(channel):
 		description="Utilisateur introuvable. Vérifiez la mention ou l'ID Discord.",
 		color=discord.Color.red()
 	)
-	await channel.send(embed=embed)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
 
 def _create_ban_event(target_user, reason: str, staff_member):
 	event = ModerationEvent(
@@ -416,7 +426,8 @@ async def _process_ban_success(message: Message, target_user, reason: str, bot):
 			description="Je n'ai pas les permissions nécessaires pour bannir cet utilisateur.",
 			color=discord.Color.red()
 		)
-		await message.channel.send(embed=embed)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
 		return
 
 	event = _create_ban_event(target_user, reason, message.author)
@@ -459,7 +470,8 @@ async def _send_unban_usage(channel):
 		color=discord.Color.blue()
 	)
 	embed.add_field(name="Exemples", value="• `!unban 123456789012345678`\n• `!unban #5 Appel accepté`", inline=False)
-	await channel.send(embed=embed)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
 
 async def _parse_unban_target_and_reason(message: Message, bot, parts: list):
 	reason = parts[2] if len(parts) > 2 else "Sans raison"
@@ -492,7 +504,8 @@ async def _send_unban_invalid_id(channel):
 		description="ID Discord invalide ou utilisateur introuvable.",
 		color=discord.Color.red()
 	)
-	await channel.send(embed=embed)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
 
 async def _process_unban_success(message: Message, bot, target_user, discord_id: str, reason: str):
 	try:
@@ -503,7 +516,8 @@ async def _process_unban_success(message: Message, bot, target_user, discord_id:
 			description="Cet utilisateur n'est pas banni.",
 			color=discord.Color.red()
 		)
-		await message.channel.send(embed=embed)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
 		return
 	except discord.Forbidden:
 		embed = discord.Embed(
@@ -511,7 +525,8 @@ async def _process_unban_success(message: Message, bot, target_user, discord_id:
 			description="Je n'ai pas les permissions nécessaires pour débannir cet utilisateur.",
 			color=discord.Color.red()
 		)
-		await message.channel.send(embed=embed)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
 		return
 
 	username = target_user.name if target_user else f"ID: {discord_id}"
@@ -599,7 +614,8 @@ async def handle_ban_list_command(message: Message, bot):
 			description="Vous n'avez pas les permissions nécessaires pour utiliser cette commande.",
 			color=discord.Color.red()
 		)
-		await message.channel.send(embed=embed)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
 		return
 
 	# Récupérer la liste des bannis
@@ -806,7 +822,8 @@ async def _send_kick_usage(channel):
 		color=discord.Color.blue()
 	)
 	embed.add_field(name="Exemples", value="• `!kick @User Spam dans le chat`\n• `!kick 123456789012345678 Comportement inapproprié`", inline=False)
-	await channel.send(embed=embed)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
 
 async def _parse_kick_target_and_reason(message: Message, bot, parts: list):
 	if message.mentions:
@@ -824,7 +841,8 @@ async def _send_user_not_found_for_kick(channel):
 		description="Utilisateur introuvable. Vérifiez la mention ou l'ID Discord.",
 		color=discord.Color.red()
 	)
-	await channel.send(embed=embed)
+	msg = await channel.send(embed)
+	asyncio.create_task(delete_after_delay(msg))
 
 async def _process_kick_success(message: Message, target_member, reason: str, bot):
 	member_obj = message.guild.get_member(target_member.id)
@@ -834,7 +852,8 @@ async def _process_kick_success(message: Message, target_member, reason: str, bo
 			description="L'utilisateur n'est pas membre du serveur.",
 			color=discord.Color.red()
 		)
-		await message.channel.send(embed=embed)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
 		return
 	joined_days = None
 	if member_obj.joined_at:
@@ -848,7 +867,8 @@ async def _process_kick_success(message: Message, target_member, reason: str, bo
 			description="Je n'ai pas les permissions nécessaires pour expulser cet utilisateur.",
 			color=discord.Color.red()
 		)
-		await message.channel.send(embed=embed)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
 		return
 	create = ModerationEvent(
 		type='kick',
@@ -921,7 +941,8 @@ async def send_inspect_usage(channel):
 		color=discord.Color.blue()
 	)
 	embed.add_field(name="Exemples", value="• `!inspect @User`\n• `!inspect 123456789012345678`", inline=False)
-	await channel.send(embed=embed)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
 
 async def parse_target_user(message: Message, bot, parts: list):
 	if message.mentions:
@@ -999,17 +1020,25 @@ def create_inspect_embed(user, member, join_date, days_on_server, account_age, w
 
 async def get_invite_info_for_user(bot, guild, user_id: int):
 	try:
-		from discordbot.welcome import invite_cache
+		from database import db
+		from sqlalchemy import text
 		
-		audit_logs = [entry async for entry in guild.audit_logs(limit=100, action=discord.AuditLogAction.member_join)]
+		result = db.session.execute(
+			text("SELECT invite_code, inviter_name FROM member_invites WHERE user_id = :user_id AND guild_id = :guild_id ORDER BY join_date DESC LIMIT 1"),
+			{'user_id': str(user_id), 'guild_id': str(guild.id)}
+		).fetchone()
 		
-		for entry in audit_logs:
-			if entry.target and entry.target.id == user_id:
-				if hasattr(entry, 'extra') and entry.extra:
-					return f"Code: `{entry.extra}`"
+		if result and result[0]:
+			invite_code = result[0]
+			inviter_name = result[1]
+			display_text = f"`{invite_code}`"
+			if inviter_name:
+				display_text += f" (créée par {inviter_name})"
+			return display_text
 		
 		return None
-	except:
+	except Exception as e:
+		logging.error(f'Erreur lors de la récupération de l\'invitation : {e}')
 		return None
 
 async def handle_inspect_command(message: Message, bot):
