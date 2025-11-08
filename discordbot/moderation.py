@@ -937,6 +937,17 @@ def create_inspect_embed(user, member, join_date, days_on_server, account_age, w
 	else:
 		embed.add_field(name="🎫 Invitation", value="Inconnue", inline=True)
 	
+	if member and join_date and user.created_at:
+		join_dt = join_date if join_date.tzinfo else join_date.replace(tzinfo=timezone.utc)
+		created_dt = user.created_at if user.created_at.tzinfo else user.created_at.replace(tzinfo=timezone.utc)
+		days_diff = (join_dt - created_dt).days
+		if days_diff < 7:
+			embed.add_field(
+				name="⚠️ Utilisateur suspect",
+				value=f"Compte créé {days_diff} jour{'s' if days_diff > 1 else ''} avant de rejoindre le serveur",
+				inline=False
+			)
+	
 	warning_text = f"⚠️ **{len(warnings)}** avertissement{'s' if len(warnings) > 1 else ''}"
 	kick_text = f"👢 **{len(kicks)}** expulsion{'s' if len(kicks) > 1 else ''}"
 	ban_text = f"🔨 **{len(bans)}** ban{'s' if len(bans) > 1 else ''}"
