@@ -90,6 +90,16 @@
 			Activer la commande d'expulsion (!kick)
 		</label>
 		
+		<label for="moderation_log_channel_id">Canal de logs de modération</label>
+		<select name="moderation_log_channel_id">
+			{% for channel in channels %}
+			<option value="{{channel.id}}" {% if configuration.getIntValue('moderation_log_channel_id')==channel.id %}selected="selected"{% endif %}>
+				{{channel.name}}
+			</option>
+			{% endfor %}
+		</select>
+		<small>Toutes les actions de modération seront notifiées dans ce canal</small>
+		
 		<label>Rôles Staff autorisés</label>
 		{% set selected_roles = (configuration.getValue('moderation_staff_role_ids') or '').split(',') %}
 		

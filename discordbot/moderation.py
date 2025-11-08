@@ -62,14 +62,21 @@ async def safe_delete_message(message: Message):
 	except:
 		pass
 
-async def send_dm_to_moderator(moderator, embed):
-	"""Envoie un message privé au modérateur avec un embed de confirmation"""
+async def send_to_moderation_log_channel(bot, embed):
 	try:
-		await moderator.send(embed=embed)
-	except discord.Forbidden:
-		logging.warning(f"Impossible d'envoyer un MP à {moderator.name} - DMs fermés")
+		channel_id = ConfigurationHelper().getIntValue('moderation_log_channel_id')
+		if not channel_id:
+			logging.warning("Aucun canal de logs de modération configuré")
+			return
+		
+		channel = bot.get_channel(channel_id)
+		if not channel:
+			logging.warning(f"Canal de logs de modération introuvable (ID: {channel_id})")
+			return
+		
+		await channel.send(embed=embed)
 	except Exception as e:
-		logging.error(f"Erreur lors de l'envoi du MP au modérateur : {e}")
+		logging.error(f"Erreur lors de l'envoi dans le canal de logs : {e}")
 
 async def send_access_denied(channel):
 	embed = discord.Embed(
@@ -141,18 +148,22 @@ def _commit_with_retry(max_retries: int = 5, base_delay: float = 0.1):
 			db.session.rollback()
 			raise
 
-async def send_warning_confirmation(channel, target_user, reason: str, original_message: Message):
+async def send_warning_confirmation(channel, target_user, reason: str, original_message: Message, bot):
+	local_now = _to_local(datetime.now(timezone.utc))
 	embed = discord.Embed(
-		title="✅ Avertissement appliqué",
-		description=f"Vous avez averti **{target_user.name}** (`@{target_user.name}`).",
-		color=discord.Color.orange()
+		title="⚠️ Avertissement",
+		description=f"**{target_user.name}** (`{target_user.name}`) a reçu un avertissement",
+		color=discord.Color.orange(),
+		timestamp=datetime.now(timezone.utc)
 	)
+	embed.add_field(name="👤 Utilisateur", value=f"{target_user.mention}\n`{target_user.id}`", inline=True)
+	embed.add_field(name="🛡️ Modérateur", value=f"{original_message.author.mention}\n`{original_message.author.name}`", inline=True)
+	embed.add_field(name="📅 Date et heure", value=local_now.strftime('%d/%m/%Y à %H:%M'), inline=True)
 	if reason != "Sans raison":
-		embed.add_field(name="Raison", value=reason, inline=False)
-	embed.add_field(name="Serveur", value=original_message.guild.name, inline=False)
-	embed.set_footer(text=f"ID utilisateur: {target_user.id}")
+		embed.add_field(name="📝 Raison", value=reason, inline=False)
+	embed.set_footer(text=f"ID: {target_user.id} • Serveur: {original_message.guild.name}")
 	
-	await send_dm_to_moderator(original_message.author, embed)
+	await send_to_moderation_log_channel(bot, embed)
 	await safe_delete_message(original_message)
 
 async def handle_warning_command(message: Message, bot):
@@ -166,11 +177,11 @@ async def handle_warning_command(message: Message, bot):
 		if not target_user:
 			await send_user_not_found(message.channel)
 		else:
-			await _process_warning_success(message, target_user, reason)
+			await _process_warning_success(message, target_user, reason, bot)
 
-async def _process_warning_success(message: Message, target_user, reason: str):
+async def _process_warning_success(message: Message, target_user, reason: str, bot):
 	create_warning_event(target_user, reason, message.author)
-	await send_warning_confirmation(message.channel, target_user, reason, message)
+	await send_warning_confirmation(message.channel, target_user, reason, message, bot)
 
 async def send_remove_warning_usage(channel):
 	embed = discord.Embed(
@@ -348,7 +359,7 @@ async def handle_ban_command(message: Message, bot):
 		if not target_user:
 			await _send_user_not_found_for_ban(message.channel)
 		else:
-			await _process_ban_success(message, target_user, reason)
+			await _process_ban_success(message, target_user, reason, bot)
 
 async def _send_ban_usage(channel):
 	embed = discord.Embed(
@@ -391,7 +402,7 @@ def _create_ban_event(target_user, reason: str, staff_member):
 	_commit_with_retry()
 	return event
 
-async def _process_ban_success(message: Message, target_user, reason: str):
+async def _process_ban_success(message: Message, target_user, reason: str, bot):
 	member = message.guild.get_member(target_user.id)
 	joined_days = None
 	if member and member.joined_at:
@@ -409,20 +420,24 @@ async def _process_ban_success(message: Message, target_user, reason: str):
 		return
 
 	event = _create_ban_event(target_user, reason, message.author)
-
+	
+	local_now = _to_local(datetime.now(timezone.utc))
 	embed = discord.Embed(
-		title="✅ Bannissement appliqué",
-		description=f"Vous avez banni **{target_user.name}** (`@{target_user.name}`).",
-		color=discord.Color.red()
+		title="🔨 Bannissement",
+		description=f"**{target_user.name}** (`{target_user.name}`) a été banni du serveur",
+		color=discord.Color.red(),
+		timestamp=datetime.now(timezone.utc)
 	)
-	embed.add_field(name="ID Discord", value=f"`{target_user.id}`", inline=False)
+	embed.add_field(name="👤 Utilisateur", value=f"{target_user.mention}\n`{target_user.id}`", inline=True)
+	embed.add_field(name="🛡️ Modérateur", value=f"{message.author.mention}\n`{message.author.name}`", inline=True)
+	embed.add_field(name="📅 Date et heure", value=local_now.strftime('%d/%m/%Y à %H:%M'), inline=True)
 	if joined_days is not None:
-		embed.add_field(name="Membre depuis", value=format_days_to_age(joined_days), inline=False)
+		embed.add_field(name="⏱️ Membre depuis", value=format_days_to_age(joined_days), inline=True)
 	if reason != "Sans raison":
-		embed.add_field(name="Raison", value=reason, inline=False)
-	embed.add_field(name="Serveur", value=message.guild.name, inline=False)
+		embed.add_field(name="📝 Raison", value=reason, inline=False)
+	embed.set_footer(text=f"ID: {target_user.id} • Serveur: {message.guild.name}")
 
-	await send_dm_to_moderator(message.author, embed)
+	await send_to_moderation_log_channel(bot, embed)
 	await safe_delete_message(message)
 async def handle_unban_command(message: Message, bot):
 	parts = message.content.split(maxsplit=2)
@@ -517,17 +532,22 @@ async def _process_unban_success(message: Message, bot, target_user, discord_id:
 	except:
 		pass
 
+	local_now = _to_local(datetime.now(timezone.utc))
 	embed = discord.Embed(
-		title="✅ Débannissement appliqué",
-		description=f"Vous avez débanni **{username}** (`@{username}`).",
-		color=discord.Color.green()
+		title="✅ Débannissement",
+		description=f"**{username}** (`{username}`) a été débanni du serveur",
+		color=discord.Color.green(),
+		timestamp=datetime.now(timezone.utc)
 	)
+	user_mention = target_user.mention if target_user else username
+	embed.add_field(name="👤 Utilisateur", value=f"{user_mention}\n`{discord_id}`", inline=True)
+	embed.add_field(name="🛡️ Modérateur", value=f"{message.author.mention}\n`{message.author.name}`", inline=True)
+	embed.add_field(name="📅 Date et heure", value=local_now.strftime('%d/%m/%Y à %H:%M'), inline=True)
 	if reason != "Sans raison":
-		embed.add_field(name="Raison", value=reason, inline=False)
-	embed.add_field(name="Serveur", value=message.guild.name, inline=False)
-	embed.set_footer(text=f"ID utilisateur: {discord_id}")
+		embed.add_field(name="📝 Raison", value=reason, inline=False)
+	embed.set_footer(text=f"ID: {discord_id} • Serveur: {message.guild.name}")
 	
-	await send_dm_to_moderator(message.author, embed)
+	await send_to_moderation_log_channel(bot, embed)
 	await safe_delete_message(message)
 
 async def _send_unban_invite(message: Message, bot, target_user, discord_id: str):
@@ -777,7 +797,7 @@ async def handle_kick_command(message: Message, bot):
 		if not target_user:
 			await _send_user_not_found_for_kick(message.channel)
 		else:
-			await _process_kick_success(message, target_user, reason)
+			await _process_kick_success(message, target_user, reason, bot)
 
 async def _send_kick_usage(channel):
 	embed = discord.Embed(
@@ -806,7 +826,7 @@ async def _send_user_not_found_for_kick(channel):
 	)
 	await channel.send(embed=embed)
 
-async def _process_kick_success(message: Message, target_member, reason: str):
+async def _process_kick_success(message: Message, target_member, reason: str, bot):
 	member_obj = message.guild.get_member(target_member.id)
 	if not member_obj:
 		embed = discord.Embed(
@@ -841,19 +861,24 @@ async def _process_kick_success(message: Message, target_member, reason: str):
 	)
 	db.session.add(create)
 	_commit_with_retry()
-	embed = discord.Embed(
-		title="✅ Expulsion appliquée",
-		description=f"Vous avez expulsé **{target_member.name}** (`@{target_member.name}`).",
-		color=discord.Color.orange()
-	)
-	if joined_days is not None:
-		embed.add_field(name="Membre depuis", value=format_days_to_age(joined_days), inline=False)
-	if reason != "Sans raison":
-		embed.add_field(name="Raison", value=reason, inline=False)
-	embed.add_field(name="Serveur", value=message.guild.name, inline=False)
-	embed.set_footer(text=f"ID utilisateur: {target_member.id}")
 	
-	await send_dm_to_moderator(message.author, embed)
+	local_now = _to_local(datetime.now(timezone.utc))
+	embed = discord.Embed(
+		title="👢 Expulsion",
+		description=f"**{target_member.name}** (`{target_member.name}`) a été expulsé du serveur",
+		color=discord.Color.orange(),
+		timestamp=datetime.now(timezone.utc)
+	)
+	embed.add_field(name="👤 Utilisateur", value=f"{target_member.mention}\n`{target_member.id}`", inline=True)
+	embed.add_field(name="🛡️ Modérateur", value=f"{message.author.mention}\n`{message.author.name}`", inline=True)
+	embed.add_field(name="📅 Date et heure", value=local_now.strftime('%d/%m/%Y à %H:%M'), inline=True)
+	if joined_days is not None:
+		embed.add_field(name="⏱️ Membre depuis", value=format_days_to_age(joined_days), inline=True)
+	if reason != "Sans raison":
+		embed.add_field(name="📝 Raison", value=reason, inline=False)
+	embed.set_footer(text=f"ID: {target_member.id} • Serveur: {message.guild.name}")
+	
+	await send_to_moderation_log_channel(bot, embed)
 	await safe_delete_message(message)
 
 def format_days_to_age(days: int) -> str:
@@ -944,7 +969,7 @@ def create_inspect_embed(user, member, join_date, days_on_server, account_age, w
 		if days_diff < 7:
 			embed.add_field(
 				name="⚠️ Utilisateur suspect",
-				value=f"Compte créé {days_diff} jour{'s' if days_diff > 1 else ''} avant de rejoindre le serveur",
+				value=f"Raison de suspicion: Compte créé {days_diff} jour{'s' if days_diff > 1 else ''} avant de rejoindre le serveur",
 				inline=False
 			)
 	
