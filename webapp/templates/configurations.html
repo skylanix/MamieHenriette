@@ -29,8 +29,18 @@
 			{% endfor %}
 		</select>
 		
-		<label for="welcome_message">Message personnalisé de bienvenue. Pour mentionner un channel, utilisez la syntaxe &lt;#ID_DU_CHANNEL&gt; (ex : Bienvenue sur le serveur ! Rendez-vous sur &lt;#123456789012345678&gt;)</label>
-		<textarea name="welcome_message" rows="3" placeholder="Bienvenue sur le serveur !">{{ configuration.getValue('welcome_message') }}</textarea>
+		<label for="welcome_message">Message personnalisé de bienvenue</label>
+		<textarea name="welcome_message" rows="3" placeholder="Bienvenue {member.mention} sur le serveur !">{{ configuration.getValue('welcome_message') }}</textarea>
+		<small>
+			<strong>Syntaxes disponibles :</strong><br>
+			• <code>{member.mention}</code> - Mentionne l'utilisateur (@NomUtilisateur)<br>
+			• <code>{member.name}</code> - Nom d'utilisateur (sans mention)<br>
+			• <code>{member.display_name}</code> - Surnom sur le serveur<br>
+			• <code>{member.id}</code> - ID de l'utilisateur<br>
+			• <code>{server.name}</code> - Nom du serveur<br>
+			• <code>{server.member_count}</code> - Nombre total de membres<br>
+			• <code>&lt;#ID_DU_CHANNEL&gt;</code> - Mentionne un salon (ex: &lt;#123456789012345678&gt;)
+		</small>
 	</fieldset>
 
 	<fieldset>
@@ -50,7 +60,17 @@
 		</select>
 		
 		<label for="leave_message">Message personnalisé de départ</label>
-		<textarea name="leave_message" rows="3" placeholder="Un membre a quitté le serveur.">{{ configuration.getValue('leave_message') }}</textarea>
+		<textarea name="leave_message" rows="3" placeholder="{member.mention} a quitté le serveur.">{{ configuration.getValue('leave_message') }}</textarea>
+		<small>
+			<strong>Syntaxes disponibles :</strong><br>
+			• <code>{member.mention}</code> - Mentionne l'utilisateur (@NomUtilisateur)<br>
+			• <code>{member.name}</code> - Nom d'utilisateur (sans mention)<br>
+			• <code>{member.display_name}</code> - Surnom sur le serveur<br>
+			• <code>{member.id}</code> - ID de l'utilisateur<br>
+			• <code>{server.name}</code> - Nom du serveur<br>
+			• <code>{server.member_count}</code> - Nombre total de membres<br>
+			• <code>&lt;#ID_DU_CHANNEL&gt;</code> - Mentionne un salon (ex: &lt;#123456789012345678&gt;)
+		</small>
 	</fieldset>
 
 	<fieldset>

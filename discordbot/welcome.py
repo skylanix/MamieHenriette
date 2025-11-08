@@ -6,6 +6,21 @@ from datetime import datetime, timezone
 
 invite_cache = {}
 
+def replaceMessageVariables(message: str, member: Member) -> str:
+	replacements = {
+		'{member.mention}': member.mention,
+		'{member.name}': member.name,
+		'{member.display_name}': member.display_name,
+		'{member.id}': str(member.id),
+		'{server.name}': member.guild.name,
+		'{server.member_count}': str(member.guild.member_count)
+	}
+	
+	for variable, value in replacements.items():
+		message = message.replace(variable, value)
+	
+	return message
+
 async def updateInviteCache(guild):
 	try:
 		invites = await guild.invites()
@@ -46,6 +61,8 @@ async def sendWelcomeMessage(bot: discord.Client, member: Member):
 	welcome_message = config.getValue('welcome_message')
 	if not welcome_message:
 		welcome_message = 'Bienvenue sur le serveur !'
+	
+	welcome_message = replaceMessageVariables(welcome_message, member)
 	
 	invite_used = await getUsedInvite(member.guild)
 	
@@ -104,6 +121,8 @@ async def sendLeaveMessage(bot: discord.Client, member: Member):
 	leave_message = config.getValue('leave_message')
 	if not leave_message:
 		leave_message = 'Un membre a quitté le serveur.'
+	
+	leave_message = replaceMessageVariables(leave_message, member)
 	
 	now = datetime.now(timezone.utc)
 	duration_seconds = int((now - member.joined_at).total_seconds()) if member.joined_at else 0
