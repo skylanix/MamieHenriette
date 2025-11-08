@@ -62,6 +62,15 @@ async def safe_delete_message(message: Message):
 	except:
 		pass
 
+async def send_dm_to_moderator(moderator, embed):
+	"""Envoie un message privé au modérateur avec un embed de confirmation"""
+	try:
+		await moderator.send(embed=embed)
+	except discord.Forbidden:
+		logging.warning(f"Impossible d'envoyer un MP à {moderator.name} - DMs fermés")
+	except Exception as e:
+		logging.error(f"Erreur lors de l'envoi du MP au modérateur : {e}")
+
 async def send_access_denied(channel):
 	embed = discord.Embed(
 		title="❌ Accès refusé",
@@ -134,16 +143,17 @@ def _commit_with_retry(max_retries: int = 5, base_delay: float = 0.1):
 
 async def send_warning_confirmation(channel, target_user, reason: str, original_message: Message):
 	embed = discord.Embed(
-		title="⚠️ Sanction",
-		description=f"L'utilisateur **{target_user.name}** (`@{target_user.name}`) a été **averti**.",
+		title="✅ Avertissement appliqué",
+		description=f"Vous avez averti **{target_user.name}** (`@{target_user.name}`).",
 		color=discord.Color.orange()
 	)
 	if reason != "Sans raison":
 		embed.add_field(name="Raison", value=reason, inline=False)
+	embed.add_field(name="Serveur", value=original_message.guild.name, inline=False)
+	embed.set_footer(text=f"ID utilisateur: {target_user.id}")
 	
-	sent_message = await channel.send(embed=embed)
+	await send_dm_to_moderator(original_message.author, embed)
 	await safe_delete_message(original_message)
-	asyncio.create_task(delete_after_delay(sent_message))
 
 async def handle_warning_command(message: Message, bot):
 	parts = message.content.split(maxsplit=2)
@@ -401,8 +411,8 @@ async def _process_ban_success(message: Message, target_user, reason: str):
 	event = _create_ban_event(target_user, reason, message.author)
 
 	embed = discord.Embed(
-		title="⚠️ Sanction",
-		description=f"L'utilisateur **{target_user.name}** (`@{target_user.name}`) a été **banni**.",
+		title="✅ Bannissement appliqué",
+		description=f"Vous avez banni **{target_user.name}** (`@{target_user.name}`).",
 		color=discord.Color.red()
 	)
 	embed.add_field(name="ID Discord", value=f"`{target_user.id}`", inline=False)
@@ -410,10 +420,10 @@ async def _process_ban_success(message: Message, target_user, reason: str):
 		embed.add_field(name="Membre depuis", value=format_days_to_age(joined_days), inline=False)
 	if reason != "Sans raison":
 		embed.add_field(name="Raison", value=reason, inline=False)
+	embed.add_field(name="Serveur", value=message.guild.name, inline=False)
 
-	sent_message = await message.channel.send(embed=embed)
+	await send_dm_to_moderator(message.author, embed)
 	await safe_delete_message(message)
-	asyncio.create_task(delete_after_delay(sent_message))
 async def handle_unban_command(message: Message, bot):
 	parts = message.content.split(maxsplit=2)
 	if not has_staff_role(message.author.roles):
@@ -508,16 +518,17 @@ async def _process_unban_success(message: Message, bot, target_user, discord_id:
 		pass
 
 	embed = discord.Embed(
-		title="⚠️ Sanction",
-		description=f"L'utilisateur **{username}** (`@{username}`) a été **débanni**.",
+		title="✅ Débannissement appliqué",
+		description=f"Vous avez débanni **{username}** (`@{username}`).",
 		color=discord.Color.green()
 	)
 	if reason != "Sans raison":
 		embed.add_field(name="Raison", value=reason, inline=False)
+	embed.add_field(name="Serveur", value=message.guild.name, inline=False)
+	embed.set_footer(text=f"ID utilisateur: {discord_id}")
 	
-	sent_message = await message.channel.send(embed=embed)
+	await send_dm_to_moderator(message.author, embed)
 	await safe_delete_message(message)
-	asyncio.create_task(delete_after_delay(sent_message))
 
 async def _send_unban_invite(message: Message, bot, target_user, discord_id: str):
 	try:
@@ -811,17 +822,19 @@ async def _process_kick_success(message: Message, target_member, reason: str):
 	db.session.add(create)
 	_commit_with_retry()
 	embed = discord.Embed(
-		title="⚠️ Sanction",
-		description=f"L'utilisateur **{target_member.name}** (`@{target_member.name}`) a été **expulsé**.",
+		title="✅ Expulsion appliquée",
+		description=f"Vous avez expulsé **{target_member.name}** (`@{target_member.name}`).",
 		color=discord.Color.orange()
 	)
 	if joined_days is not None:
 		embed.add_field(name="Membre depuis", value=format_days_to_age(joined_days), inline=False)
 	if reason != "Sans raison":
 		embed.add_field(name="Raison", value=reason, inline=False)
-	sent_message = await message.channel.send(embed=embed)
+	embed.add_field(name="Serveur", value=message.guild.name, inline=False)
+	embed.set_footer(text=f"ID utilisateur: {target_member.id}")
+	
+	await send_dm_to_moderator(message.author, embed)
 	await safe_delete_message(message)
-	asyncio.create_task(delete_after_delay(sent_message))
 
 def format_days_to_age(days: int) -> str:
 	if days >= 365:
