@@ -1049,6 +1049,16 @@ async def handle_staff_help_command(message: Message, bot):
 				"Exemples: `!kick @User Spam de liens` ou `!kick 123456789012345678 Spam`"
 			)
 			embed.add_field(name="👢 Expulsion", value=value, inline=False)
+		
+		embed.add_field(
+			name="💬 Autres",
+			value=(
+				"• `!say #channel message`\n"
+				"  Envoie un message en tant que bot\n"
+				"  Ex: `!say #annonces Nouvelle fonctionnalité !`"
+			),
+			inline=False
+		)
 
 	try:
 		sent = await message.channel.send(embed=embed)
@@ -1334,4 +1344,49 @@ async def handle_inspect_command(message: Message, bot):
 	
 	await message.channel.send(embed=embed)
 	await safe_delete_message(message)
+
+async def handle_say_command(message: Message, bot):
+	if not has_staff_role(message.author.roles):
+		await send_access_denied(message.channel)
+		return
+	
+	parts = message.content.split(maxsplit=2)
+	
+	if len(parts) < 3:
+		embed = discord.Embed(
+			title="📋 Utilisation de la commande",
+			description="**Syntaxe :** `!say #channel message`",
+			color=discord.Color.blue()
+		)
+		embed.add_field(name="Exemple", value="`!say #general Bonjour à tous !`", inline=False)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
+		return
+	
+	if not message.channel_mentions:
+		embed = discord.Embed(
+			title="❌ Erreur",
+			description="Vous devez mentionner un canal avec #",
+			color=discord.Color.red()
+		)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
+		return
+	
+	target_channel = message.channel_mentions[0]
+	text_to_send = parts[2]
+	
+	try:
+		await target_channel.send(text_to_send)
+		await safe_delete_message(message)
+	except discord.Forbidden:
+		embed = discord.Embed(
+			title="❌ Erreur",
+			description="Je n'ai pas les permissions pour écrire dans ce canal.",
+			color=discord.Color.red()
+		)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
+	except Exception as e:
+		logging.error(f"Erreur lors de l'envoi du message: {e}")
 

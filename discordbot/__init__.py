@@ -18,7 +18,8 @@ from discordbot.moderation import (
 	handle_inspect_command,
 	handle_ban_list_command,
 	handle_staff_help_command,
-	handle_timeout_command
+	handle_timeout_command,
+	handle_say_command
 )
 from discordbot.welcome import sendWelcomeMessage, sendLeaveMessage, updateInviteCache
 from protondb import searhProtonDb
@@ -135,6 +136,10 @@ async def on_message(message: Message):
 		if command_name == '!inspect':
 			await handle_inspect_command(message, bot)
 			return
+	
+	if command_name == '!say':
+		await handle_say_command(message, bot)
+		return
 	
 	if command_name in ['!aide', '!help']:
 		await handle_staff_help_command(message, bot)
