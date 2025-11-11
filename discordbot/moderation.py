@@ -2,8 +2,9 @@ import asyncio
 import logging
 import time
 import os
+import re
 import discord
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 from database import db
 from database.helpers import ConfigurationHelper
@@ -96,27 +97,68 @@ async def send_user_not_found(channel):
 	msg = await channel.send(embed=embed)
 	asyncio.create_task(delete_after_delay(msg))
 
+def parse_timeout_duration(text: str):
+	match = re.search(r'--to(?:meout)?[= ]?(\d+)([smhj])?', text.lower())
+	if not match:
+		return None
+	
+	value = int(match.group(1))
+	unit = match.group(2) or 'm'
+	
+	if unit == 's':
+		return value
+	elif unit == 'm':
+		return value * 60
+	elif unit == 'h':
+		return value * 3600
+	elif unit == 'j':
+		return value * 86400
+	return None
+
+def format_timeout_duration(seconds: int) -> str:
+	if seconds < 60:
+		return f"{seconds} seconde{'s' if seconds > 1 else ''}"
+	elif seconds < 3600:
+		minutes = seconds // 60
+		return f"{minutes} minute{'s' if minutes > 1 else ''}"
+	elif seconds < 86400:
+		hours = seconds // 3600
+		return f"{hours} heure{'s' if hours > 1 else ''}"
+	else:
+		days = seconds // 86400
+		return f"{days} jour{'s' if days > 1 else ''}"
+
 async def parse_target_user_and_reason(message, bot, parts: list):
+	full_text = message.content
+	timeout_seconds = parse_timeout_duration(full_text)
+	
 	if message.mentions:
 		target_user = message.mentions[0]
-		reason = parts[2] if len(parts) > 2 else "Sans raison"
-		return target_user, reason
+		reason_text = parts[2] if len(parts) > 2 else "Sans raison"
+		reason_text = re.sub(r'--to(?:meout)?[= ]?\d+[smhj]?', '', reason_text, flags=re.IGNORECASE).strip()
+		if not reason_text:
+			reason_text = "Sans raison"
+		return target_user, reason_text, timeout_seconds
 	
 	try:
 		user_id = int(parts[1])
 		target_user = await bot.fetch_user(user_id)
-		reason = parts[2] if len(parts) > 2 else "Sans raison"
-		return target_user, reason
+		reason_text = parts[2] if len(parts) > 2 else "Sans raison"
+		reason_text = re.sub(r'--to(?:meout)?[= ]?\d+[smhj]?', '', reason_text, flags=re.IGNORECASE).strip()
+		if not reason_text:
+			reason_text = "Sans raison"
+		return target_user, reason_text, timeout_seconds
 	except (ValueError, discord.NotFound):
-		return None, None
+		return None, None, None
 
 async def send_warning_usage(channel):
 	embed = discord.Embed(
 		title="📋 Utilisation de la commande",
-		description="**Syntaxe :** `!averto @utilisateur [raison]` ou `!averto <id> [raison]`",
+		description="**Syntaxe :** `!averto @utilisateur raison` ou `!averto <id> raison`\n**Option :** Ajouter `--to durée` pour exclure temporairement l'utilisateur",
 		color=discord.Color.blue()
 	)
-	embed.add_field(name="Exemples", value="• `!averto @User Spam dans le chat`\n• `!warn 123456789012345678 Comportement inapproprié`\n• `!av @User`", inline=False)
+	embed.add_field(name="Exemples", value="• `!averto @User Spam dans le chat`\n• `!warn @User Comportement inapproprié --to 10m`\n• `!av @User --to 1h`\n• `!warn @User Spam --to 1j`", inline=False)
+	embed.add_field(name="Durées", value="`s` = secondes, `m` = minutes (défaut), `h` = heures, `j` = jours\nExemple: `--to 10m` ou `--to 60s`", inline=False)
 	embed.add_field(name="Aliases", value="`!averto`, `!av`, `!avertissement`, `!warn`", inline=False)
 	msg = await channel.send(embed=embed)
 	asyncio.create_task(delete_after_delay(msg))
@@ -151,11 +193,41 @@ def _commit_with_retry(max_retries: int = 5, base_delay: float = 0.1):
 			db.session.rollback()
 			raise
 
-async def send_warning_confirmation(channel, target_user, reason: str, original_message: Message, bot):
+async def send_dm_to_warned_user(target_user, reason: str, guild_name: str):
+	try:
+		dm_embed = discord.Embed(
+			title="⚠️ Avertissement",
+			description=f"Vous avez reçu un avertissement sur le serveur **{guild_name}**",
+			color=discord.Color.orange(),
+			timestamp=datetime.now(timezone.utc)
+		)
+		if reason != "Sans raison":
+			dm_embed.add_field(name="📝 Raison", value=reason, inline=False)
+		dm_embed.add_field(name="ℹ️ Information", value="Si vous avez des questions concernant cet avertissement, vous pouvez contacter l'équipe de modération.", inline=False)
+		await target_user.send(embed=dm_embed)
+		return True
+	except discord.Forbidden:
+		logging.warning(f"Impossible d'envoyer un MP à {target_user.name} ({target_user.id}) - MPs désactivés")
+		return False
+	except Exception as e:
+		logging.error(f"Erreur lors de l'envoi du MP à {target_user.name} ({target_user.id}): {e}")
+		return False
+
+async def send_warning_confirmation(channel, target_user, reason: str, original_message: Message, bot, timeout_info: tuple = None):
 	local_now = _to_local(datetime.now(timezone.utc))
+	dm_sent = await send_dm_to_warned_user(target_user, reason, original_message.guild.name)
+	
+	was_timed_out = timeout_info is not None and timeout_info[0]
+	timeout_duration = timeout_info[1] if timeout_info else None
+	
+	title = "⚠️ Avertissement + ⏱️ Exclusion temporaire" if was_timed_out else "⚠️ Avertissement"
+	description = f"**{target_user.name}** (`{target_user.name}`) a reçu un avertissement"
+	if was_timed_out:
+		description += f" et a été exclu temporairement ({format_timeout_duration(timeout_duration)})"
+	
 	embed = discord.Embed(
-		title="⚠️ Avertissement",
-		description=f"**{target_user.name}** (`{target_user.name}`) a reçu un avertissement",
+		title=title,
+		description=description,
 		color=discord.Color.orange(),
 		timestamp=datetime.now(timezone.utc)
 	)
@@ -164,6 +236,12 @@ async def send_warning_confirmation(channel, target_user, reason: str, original_
 	embed.add_field(name="📅 Date et heure", value=local_now.strftime('%d/%m/%Y à %H:%M'), inline=True)
 	if reason != "Sans raison":
 		embed.add_field(name="📝 Raison", value=reason, inline=False)
+	
+	if dm_sent:
+		embed.add_field(name="✅ Message privé", value="L'utilisateur a été notifié par MP", inline=False)
+	else:
+		embed.add_field(name="⚠️ Message privé", value=f"Il faut contacter {target_user.mention} pour l'informer de cet avertissement (MPs désactivés). {original_message.author.mention}", inline=False)
+	
 	embed.set_footer(text=f"ID: {target_user.id} • Serveur: {original_message.guild.name}")
 	
 	await send_to_moderation_log_channel(bot, embed)
@@ -176,15 +254,184 @@ async def handle_warning_command(message: Message, bot):
 	elif len(parts) < 2:
 		await send_warning_usage(message.channel)
 	else:
-		target_user, reason = await parse_target_user_and_reason(message, bot, parts)
+		target_user, reason, timeout_seconds = await parse_target_user_and_reason(message, bot, parts)
 		if not target_user:
 			await send_user_not_found(message.channel)
 		else:
-			await _process_warning_success(message, target_user, reason, bot)
+			await _process_warning_success(message, target_user, reason, bot, timeout_seconds)
 
-async def _process_warning_success(message: Message, target_user, reason: str, bot):
+async def _process_warning_success(message: Message, target_user, reason: str, bot, timeout_seconds: int = None):
 	create_warning_event(target_user, reason, message.author)
-	await send_warning_confirmation(message.channel, target_user, reason, message, bot)
+	
+	timeout_info = None
+	if timeout_seconds:
+		member_obj = message.guild.get_member(target_user.id)
+		if member_obj:
+			try:
+				until = discord.utils.utcnow() + timedelta(seconds=timeout_seconds)
+				await member_obj.timeout(until, reason=reason)
+				timeout_info = (True, timeout_seconds)
+				
+				timeout_event = ModerationEvent(
+					type='timeout',
+					username=target_user.name,
+					discord_id=str(target_user.id),
+					created_at=datetime.now(timezone.utc),
+					reason=reason,
+					staff_id=str(message.author.id),
+					staff_name=message.author.name,
+					duration=timeout_seconds
+				)
+				db.session.add(timeout_event)
+				_commit_with_retry()
+			except discord.Forbidden:
+				logging.error(f"Permissions insuffisantes pour timeout {target_user.name}")
+			except Exception as e:
+				logging.error(f"Erreur lors du timeout de {target_user.name}: {e}")
+	
+	await send_warning_confirmation(message.channel, target_user, reason, message, bot, timeout_info)
+
+async def send_timeout_usage(channel):
+	embed = discord.Embed(
+		title="📋 Utilisation de la commande",
+		description="**Syntaxe :** `!to @utilisateur durée raison` ou `!timeout @utilisateur durée raison`",
+		color=discord.Color.blue()
+	)
+	embed.add_field(name="Exemples", value="• `!to @User 10m Spam`\n• `!timeout @User 1h Comportement inapproprié`\n• `!to @User 30s Flood`\n• `!timeout @User 1j Toxicité`", inline=False)
+	embed.add_field(name="Durées", value="`s` = secondes, `m` = minutes (défaut), `h` = heures, `j` = jours\nExemple: `10m`, `1h`, `60s`", inline=False)
+	embed.add_field(name="Aliases", value="`!to`, `!timeout`", inline=False)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
+
+def parse_timeout_from_args(duration_str: str):
+	match = re.match(r'^(\d+)([smhj])?$', duration_str.lower())
+	if not match:
+		return None
+	
+	value = int(match.group(1))
+	unit = match.group(2) or 'm'
+	
+	if unit == 's':
+		return value
+	elif unit == 'm':
+		return value * 60
+	elif unit == 'h':
+		return value * 3600
+	elif unit == 'j':
+		return value * 86400
+	return None
+
+async def parse_timeout_target_and_params(message, bot, parts: list):
+	if len(parts) < 3:
+		return None, None, None
+	
+	if message.mentions:
+		target_user = message.mentions[0]
+		timeout_seconds = parse_timeout_from_args(parts[2])
+		reason = " ".join(parts[3:]) if len(parts) > 3 else "Sans raison"
+		return target_user, timeout_seconds, reason
+	
+	try:
+		user_id = int(parts[1])
+		target_user = await bot.fetch_user(user_id)
+		timeout_seconds = parse_timeout_from_args(parts[2])
+		reason = " ".join(parts[3:]) if len(parts) > 3 else "Sans raison"
+		return target_user, timeout_seconds, reason
+	except (ValueError, discord.NotFound):
+		return None, None, None
+
+async def send_timeout_confirmation(channel, target_user, reason: str, timeout_seconds: int, original_message: Message, bot):
+	local_now = _to_local(datetime.now(timezone.utc))
+	
+	embed = discord.Embed(
+		title="⏱️ Exclusion temporaire",
+		description=f"**{target_user.name}** (`{target_user.name}`) a été exclu temporairement ({format_timeout_duration(timeout_seconds)})",
+		color=discord.Color.orange(),
+		timestamp=datetime.now(timezone.utc)
+	)
+	embed.add_field(name="👤 Utilisateur", value=f"{target_user.mention}\n`{target_user.id}`", inline=True)
+	embed.add_field(name="🛡️ Modérateur", value=f"{original_message.author.mention}\n`{original_message.author.name}`", inline=True)
+	embed.add_field(name="📅 Date et heure", value=local_now.strftime('%d/%m/%Y à %H:%M'), inline=True)
+	embed.add_field(name="⏱️ Durée", value=format_timeout_duration(timeout_seconds), inline=True)
+	if reason != "Sans raison":
+		embed.add_field(name="📝 Raison", value=reason, inline=False)
+	
+	embed.set_footer(text=f"ID: {target_user.id} • Serveur: {original_message.guild.name}")
+	
+	await send_to_moderation_log_channel(bot, embed)
+	await safe_delete_message(original_message)
+
+async def send_invalid_timeout_duration(channel):
+	embed = discord.Embed(
+		title="❌ Erreur",
+		description="Durée invalide. Utilisez un format valide comme `10m`, `1h`, `60s`, etc.",
+		color=discord.Color.red()
+	)
+	msg = await channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(msg))
+
+async def handle_timeout_command(message: Message, bot):
+	parts = message.content.split()
+	if not has_staff_role(message.author.roles):
+		await send_access_denied(message.channel)
+	elif len(parts) < 3:
+		await send_timeout_usage(message.channel)
+	else:
+		target_user, timeout_seconds, reason = await parse_timeout_target_and_params(message, bot, parts)
+		if not target_user:
+			await send_user_not_found(message.channel)
+		elif not timeout_seconds:
+			await send_invalid_timeout_duration(message.channel)
+		else:
+			await _process_timeout_success(message, target_user, reason, timeout_seconds, bot)
+
+async def _process_timeout_success(message: Message, target_user, reason: str, timeout_seconds: int, bot):
+	member_obj = message.guild.get_member(target_user.id)
+	if not member_obj:
+		embed = discord.Embed(
+			title="❌ Erreur",
+			description="L'utilisateur n'est pas membre du serveur.",
+			color=discord.Color.red()
+		)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
+		return
+	
+	try:
+		until = discord.utils.utcnow() + timedelta(seconds=timeout_seconds)
+		await member_obj.timeout(until, reason=reason)
+		
+		timeout_event = ModerationEvent(
+			type='timeout',
+			username=target_user.name,
+			discord_id=str(target_user.id),
+			created_at=datetime.now(timezone.utc),
+			reason=reason,
+			staff_id=str(message.author.id),
+			staff_name=message.author.name,
+			duration=timeout_seconds
+		)
+		db.session.add(timeout_event)
+		_commit_with_retry()
+		
+		await send_timeout_confirmation(message.channel, target_user, reason, timeout_seconds, message, bot)
+	except discord.Forbidden:
+		embed = discord.Embed(
+			title="❌ Erreur",
+			description="Je n'ai pas les permissions nécessaires pour exclure cet utilisateur.",
+			color=discord.Color.red()
+		)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
+	except Exception as e:
+		logging.error(f"Erreur lors du timeout de {target_user.name}: {e}")
+		embed = discord.Embed(
+			title="❌ Erreur",
+			description=f"Une erreur est survenue lors de l'exclusion : {str(e)}",
+			color=discord.Color.red()
+		)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
 
 async def send_remove_warning_usage(channel):
 	embed = discord.Embed(
@@ -753,16 +1000,22 @@ async def handle_staff_help_command(message: Message, bot):
 			value = (
 				"• `!averto @utilisateur raison`\n"
 				"  *Alias: !warn, !av, !avertissement*\n"
+				"  *Option: ajouter `--to durée` pour exclusion temporaire*\n"
+				"• `!to @utilisateur durée raison`\n"
+				"  *Alias: !timeout*\n"
+				"  Exclut temporairement un utilisateur\n"
 				"• `!delaverto id`\n"
 				"  *Alias: !removewarn, !delwarn*\n"
 				"• `!warnings` ou `!warnings @utilisateur`\n"
 				"  *Alias: !listevent, !listwarn*\n"
 				"Exemples:\n"
 				"`!averto @User Spam dans le chat`\n"
+				"`!warn @User Spam --to 10m`\n"
+				"`!to @User 10m Flood`\n"
 				"`!delaverto 12`\n"
 				"`!warnings @User`"
 			)
-			embed.add_field(name="⚠️ Avertissements", value=value, inline=False)
+			embed.add_field(name="⚠️ Avertissements & Exclusions", value=value, inline=False)
 			embed.add_field(
 				name="🔎 Inspection",
 				value=("• `!inspect @utilisateur` ou `!inspect id`\n"

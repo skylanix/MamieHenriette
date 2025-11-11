@@ -17,7 +17,8 @@ from discordbot.moderation import (
 	handle_unban_command,
 	handle_inspect_command,
 	handle_ban_list_command,
-	handle_staff_help_command
+	handle_staff_help_command,
+	handle_timeout_command
 )
 from discordbot.welcome import sendWelcomeMessage, sendLeaveMessage, updateInviteCache
 from protondb import searhProtonDb
@@ -99,6 +100,10 @@ async def on_message(message: Message):
 	if ConfigurationHelper().getValue('moderation_enable'):
 		if command_name in ['!averto', '!av', '!avertissement', '!warn']:
 			await handle_warning_command(message, bot)
+			return
+
+		if command_name in ['!to', '!timeout']:
+			await handle_timeout_command(message, bot)
 			return
 
 		if command_name in ['!delaverto', '!removewarn', '!unwarn']:
