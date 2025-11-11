@@ -220,10 +220,10 @@ async def send_warning_confirmation(channel, target_user, reason: str, original_
 	was_timed_out = timeout_info is not None and timeout_info[0]
 	timeout_duration = timeout_info[1] if timeout_info else None
 	
-	title = "⚠️ Avertissement + ⏱️ Exclusion temporaire" if was_timed_out else "⚠️ Avertissement"
+	title = "⚠️ Avertissement + ⏱️ Time out" if was_timed_out else "⚠️ Avertissement"
 	description = f"**{target_user.name}** (`{target_user.name}`) a reçu un avertissement"
 	if was_timed_out:
-		description += f" et a été exclu temporairement ({format_timeout_duration(timeout_duration)})"
+		description += f" et a été time out ({format_timeout_duration(timeout_duration)})"
 	
 	embed = discord.Embed(
 		title=title,
@@ -344,7 +344,7 @@ async def send_timeout_confirmation(channel, target_user, reason: str, timeout_s
 	local_now = _to_local(datetime.now(timezone.utc))
 	
 	embed = discord.Embed(
-		title="⏱️ Exclusion temporaire",
+		title="⏱️ Time out",
 		description=f"**{target_user.name}** (`{target_user.name}`) a été exclu temporairement ({format_timeout_duration(timeout_seconds)})",
 		color=discord.Color.orange(),
 		timestamp=datetime.now(timezone.utc)
@@ -998,24 +998,27 @@ async def handle_staff_help_command(message: Message, bot):
 		
 		if ConfigurationHelper().getValue('moderation_enable'):
 			value = (
-				"• `!averto @utilisateur raison`\n"
-				"  *Alias: !warn, !av, !avertissement*\n"
-				"  *Option: ajouter `--to durée` pour exclusion temporaire*\n"
+				"**Avertissements:**\n"
+				"• `!warn @utilisateur raison`\n"
+				"  *Alias: !averto, !av, !avertissement*\n"
+				"  Donne un avertissement\n"
+				"• `!warn @utilisateur raison --to durée`\n"
+				"  Avertissement + time out temporaire\n\n"
+				"**Time out uniquement:**\n"
 				"• `!to @utilisateur durée raison`\n"
 				"  *Alias: !timeout*\n"
-				"  Exclut temporairement un utilisateur\n"
-				"• `!delaverto id`\n"
-				"  *Alias: !removewarn, !delwarn*\n"
-				"• `!warnings` ou `!warnings @utilisateur`\n"
-				"  *Alias: !listevent, !listwarn*\n"
-				"Exemples:\n"
-				"`!averto @User Spam dans le chat`\n"
-				"`!warn @User Spam --to 10m`\n"
-				"`!to @User 10m Flood`\n"
-				"`!delaverto 12`\n"
+				"  Time out (sans avertissement)\n"
+				"  *Durées: 10s, 5m, 1h, 2j*\n\n"
+				"**Gestion:**\n"
+				"• `!delaverto id` - Supprime un événement\n"
+				"• `!warnings [@utilisateur]` - Liste les événements\n\n"
+				"**Exemples:**\n"
+				"`!warn @User Spam`\n"
+				"`!warn @User Flood --to 10m` (averto + timeout)\n"
+				"`!to @User 5m Spam` (timeout seul)\n"
 				"`!warnings @User`"
 			)
-			embed.add_field(name="⚠️ Avertissements & Exclusions", value=value, inline=False)
+			embed.add_field(name="⚠️ Avertissements & Time out", value=value, inline=False)
 			embed.add_field(
 				name="🔎 Inspection",
 				value=("• `!inspect @utilisateur` ou `!inspect id`\n"
