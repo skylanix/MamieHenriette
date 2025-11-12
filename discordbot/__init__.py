@@ -193,14 +193,9 @@ async def on_message(message: Message):
 				logging.error(f"Échec de l'envoi du message ProtonDB : {e}")
 			return
 		total_games = len(games)
-		embed = discord.Embed(
-			title=f"🎮 Résultats ProtonDB - **{total_games} jeu{'x' if total_games > 1 else ''} trouvé{'s' if total_games > 1 else ''}**",
-			color=0x5865F2
-		)
-		
 		tier_colors = {'platinum': '🟣', 'gold': '🟡', 'silver': '⚪', 'bronze': '🟤', 'borked': '🔴'}
 		content = ""
-		max_games = 35
+		max_games = 15
 		
 		for count, game in enumerate(games[:max_games]):
 			g_name = str(game.get('name'))
@@ -208,8 +203,7 @@ async def on_message(message: Message):
 			tier = str(game.get('tier') or 'N/A').lower()
 			tier_icon = tier_colors.get(tier, '⚫')
 			
-			content += f"**[{g_name}](<https://www.protondb.com/app/{g_id}>)**\n"
-			content += f"{tier_icon} Classé **{tier.capitalize()}**"
+			new_entry = f"**[{g_name}](<https://www.protondb.com/app/{g_id}>)**\n{tier_icon} Classé **{tier.capitalize()}**"
 			
 			ac_status = game.get('anticheat_status')
 			if ac_status:
@@ -224,18 +218,30 @@ async def on_message(message: Message):
 				ac_emoji, ac_label = ac_map.get(status_lower, ('❔', str(ac_status)))
 				acs = game.get('anticheats') or []
 				ac_list = ', '.join([str(ac) for ac in acs if ac])
-				content += f" • [Anti-cheat {ac_emoji} {ac_label}"
+				new_entry += f" • [Anti-cheat {ac_emoji} {ac_label}"
 				if ac_list:
-					content += f" ({ac_list})"
-				content += f"](<https://areweanticheatyet.com/game/{g_id}>)"
+					new_entry += f" ({ac_list})"
+				new_entry += f"](<https://areweanticheatyet.com/game/{g_id}>)"
 			
-			content += "\n\n"
+			new_entry += "\n\n"
+			
+			# Vérifier la limite avant d'ajouter
+			if len(content) + len(new_entry) > 3900:
+				rest = len(games) - count
+				content += f"*... et {rest} autre{'s' if rest > 1 else ''} jeu{'x' if rest > 1 else ''}*"
+				break
+			
+			content += new_entry
+		else:
+			rest = max(0, len(games) - max_games)
+			if rest > 0:
+				content += f"*... et {rest} autre{'s' if rest > 1 else ''} jeu{'x' if rest > 1 else ''}*"
 		
-		rest = max(0, len(games) - max_games)
-		if rest > 0:
-			content += f"*... et {rest} autre{'s' if rest > 1 else ''} jeu{'x' if rest > 1 else ''}*"
-		
-		embed.add_field(name="", value=content, inline=False)
+		embed = discord.Embed(
+			title=f"🎮 Résultats ProtonDB - **{total_games} jeu{'x' if total_games > 1 else ''} trouvé{'s' if total_games > 1 else ''}**",
+			description=content,
+			color=0x5865F2
+		)
 		
 		try : 
 			await message.channel.send(embed=embed)
