@@ -1,6 +1,8 @@
 import logging
 import json
 import os
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlite3 import Cursor, Connection
@@ -9,7 +11,27 @@ from webapp import webapp
 
 basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 webapp.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(basedir, "instance", "database.db")}'
+# Options moteur pour améliorer la concurrence SQLite
+webapp.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+	'connect_args': {
+		'check_same_thread': False,
+		'timeout': 30
+	},
+}
+webapp.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(webapp)
+
+# PRAGMA pour SQLite (WAL, busy timeout)
+@event.listens_for(Engine, "connect")
+def _set_sqlite_pragma(dbapi_connection, connection_record):
+	try:
+		cursor = dbapi_connection.cursor()
+		cursor.execute("PRAGMA journal_mode=WAL;")
+		cursor.execute("PRAGMA synchronous=NORMAL;")
+		cursor.execute("PRAGMA busy_timeout=30000;")
+		cursor.close()
+	except Exception:
+		pass
 
 def _tableHaveColumn(table_name:str, column_name:str, cursor:Cursor) -> bool: 
 	cursor.execute(f'PRAGMA table_info({table_name})')

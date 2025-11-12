@@ -1,11 +1,11 @@
 services:
   mamiehenriette:                                    
     container_name: MamieHenriette                  # Nom du conteneur
-    image: ghcr.io/skylanix/mamiehenriette:latest   # Image hébergée sur GitHub Container Registry
     restart: unless-stopped                         # Redémarre automatiquement sauf si arrêté manuellement
 
 #    build: .                                        # Build du conteneur à partir d'un Dockerfile local (décommentez si nécessaire)
 #    image: mamiehenriette                           # Build du conteneur à partir d'un Dockerfile local (décommentez si nécessaire)
+    image: ghcr.io/skylanix/mamiehenriette:latest    # Image hébergée sur GitHub Container Registry (commentez si nécessaire)
 
     environment:
         TZ: Europe/Paris                            # Fuseau horaire

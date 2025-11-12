@@ -14,6 +14,8 @@
   - [Prérequis](#prérequis)
   - [Création du bot Discord](#création-du-bot-discord)
   - [Démarrage rapide](#démarrage-rapide)
+  - [Build local (développement)](#build-local-développement)
+  - [Déploiement avec Portainer](#déploiement-avec-portainer)
   - [Volumes persistants](#volumes-persistants)
   - [Commandes Docker utiles](#commandes-docker-utiles)
   - [Mise à jour](#mise-à-jour)
@@ -50,12 +52,49 @@ Mamie Henriette est un bot intelligent open-source développé spécifiquement p
 - **Statuts dynamiques** : Rotation automatique des humeurs (10 min)
 - **Notifications Humble Bundle** : Surveillance et alertes automatiques (30 min)
 - **Commandes personnalisées** : Gestion via interface web
-- **Recherche ProtonDB** : Commande `!protondb <nom_du_jeu>` pour vérifier la compatibilité Linux/Steam Deck
-- **Modération** : Outils intégrés
+- **Recherche ProtonDB** :
+  - Commande `!protondb nom_du_jeu` ou `!pdb nom_du_jeu` pour vérifier la compatibilité Linux/Steam Deck
+  - Recherche intelligente avec support des alias de jeux
+  - Affichage du score de compatibilité, nombre de rapports et lien direct
+  - **Intégration anti-cheat** : Affiche automatiquement les systèmes anti-cheat et leur statut (supporté, cassé, refusé)
+  - Cache mis à jour automatiquement depuis AreWeAntiCheatYet
+- **Modération** : Système complet de modération avec historique
+  - **Avertissements** : `!averto`, `!warn`, `!av`, `!avertissement`
+    - Envoi automatique de DM à l'utilisateur averti
+    - Support des timeouts combinés : `!warn @user raison --to durée`
+  - **Timeout** : `!timeout`, `!to` - Exclusion temporaire d'un utilisateur
+    - Syntaxe : `!to @user durée raison` (ex: `!to @User 10m Spam`)
+    - Durées supportées : secondes (s), minutes (m), heures (h), jours (j/days)
+  - **Gestion des avertissements** : `!delaverto`, `!removewarn`, `!delwarn`
+  - **Liste des événements** : `!warnings`, `!listevent`, `!listwarn`
+  - **Inspection utilisateur** : `!inspect @user`
+    - Historique complet des sanctions
+    - Date d'arrivée et durée sur le serveur
+    - Détection des comptes suspects (< 7 jours)
+    - Affichage du code d'invitation utilisé et de l'inviteur
+  - **Bannissement** : `!ban @user raison`, `!banlist`
+    - `!unban @user raison` ou `!unban #ID raison` (débannir par ID de sanction)
+    - Invitation automatique par DM lors du débannissement
+  - **Expulsion** : `!kick @user raison`
+  - **Annonces** : `!say #canal message` - Envoi de messages en tant que bot (staff uniquement)
+  - **Aide** : `!aide`, `!help` - Liste complète des commandes disponibles
+  - **Configuration avancée** :
+    - Support de multiples rôles staff
+    - Canal de logs dédié pour toutes les actions
+    - Suppression automatique des messages de modération (délai configurable)
+    - Activation/désactivation individuelle des fonctionnalités
+  - Panneau d'administration web pour consulter, éditer et supprimer l'historique
+- **Messages de bienvenue et départ** :
+  - Messages personnalisables avec variables : `{member.mention}`, `{member.name}`, `{server.name}`, `{server.member_count}`
+  - **Système de tracking d'invitations** : Affiche qui a invité le nouveau membre
+  - **Messages de départ intelligents** : Détection automatique de la raison (volontaire, kick, ban)
+  - Affichage de la durée passée sur le serveur
+  - Embeds enrichis avec avatar et informations détaillées
 
 ### Twitch
 - **Chat bot** : Commandes et interactions automatiques
-- **Alertes Live** : Surveillance automatique des streamers (vérification toutes les 5 minutes)
+- **Alertes Live** : 
+  - Surveillance automatique des streamers
   - Support jusqu'à 100 chaînes simultanément
   - Notifications Discord avec aperçu du stream
   - Gestion via interface d'administration
@@ -67,10 +106,23 @@ Mamie Henriette est un bot intelligent open-source développé spécifiquement p
 
 ### Interface d'administration
 - **Dashboard** : Vue d'ensemble et statistiques
-- **Configuration** : Tokens, paramètres des plateformes, configuration ProtonDB
-- **Gestion des humeurs** : Création et modification des statuts
-- **Commandes** : Édition des commandes personnalisées
-- **Modération** : Outils de gestion communautaire
+- **Configuration** :
+  - Tokens Discord/Twitch et paramètres des plateformes
+  - Configuration ProtonDB (API Algolia)
+  - Gestion des rôles staff (support de multiples rôles)
+  - Activation/désactivation individuelle des fonctionnalités (modération, ban, kick, welcome, leave)
+  - Configuration du délai de suppression automatique des messages de modération
+- **Gestion des humeurs** : Création et modification des statuts Discord rotatifs
+- **Commandes** : Édition des commandes personnalisées multi-plateformes
+- **Modération** :
+  - Consultation de l'historique complet des sanctions
+  - Édition des raisons des événements de modération
+  - Suppression d'événements de modération
+  - Filtrage et recherche dans l'historique
+- **Messages de bienvenue/départ** :
+  - Personnalisation des messages avec variables dynamiques
+  - Configuration des canaux de bienvenue et départ
+  - Activation/désactivation indépendante
 
 
 ## Installation
@@ -115,21 +167,122 @@ Avant d'installer MamieHenriette, vous devez créer un bot Discord et obtenir so
 ```bash
 # 1. Cloner le projet
 git clone https://github.com/skylanix/MamieHenriette.git
-```
-
-```bash
 cd MamieHenriette
 ```
 
 ```bash
-# 2. Lancer avec Docker
-docker compose up --build -d
+# 2. Récupérer l'image depuis GitHub Container Registry et lancer
+docker compose pull
+docker compose up -d
 ```
 
-> ⚠️ **Important** : Après configuration via l'interface web http://localhost:5000, **redémarrez le conteneur** pour que les changements soient pris en compte :
+> 📝 L'interface web sera accessible sur http://localhost:5000
+>
+> ⚠️ **Important** : Après configuration via l'interface web, **redémarrez le conteneur** pour que les changements soient pris en compte :
 > ```bash
 > docker compose restart MamieHenriette
 > ```
+
+### Build local (développement)
+
+Si vous souhaitez modifier le code et builder l'image localement :
+
+```bash
+# 1. Cloner et accéder au projet
+git clone https://github.com/skylanix/MamieHenriette.git
+cd MamieHenriette
+```
+
+```bash
+# 2. Modifier le docker-compose.yml
+# Commentez la ligne 'image:' et décommentez la section 'build:' :
+```
+
+```yaml
+services:
+  mamiehenriette:
+    container_name: MamieHenriette
+    restart: unless-stopped
+    build: .                                        # ← Décommentez cette ligne
+    image: mamiehenriette                           # ← Décommentez cette ligne
+    # image: ghcr.io/skylanix/mamiehenriette:latest # ← Commentez cette ligne
+    # ... reste de la configuration
+```
+
+```bash
+# 3. Builder et lancer
+docker compose up --build -d
+```
+
+### Déploiement avec Portainer
+
+Si vous utilisez Portainer pour gérer vos conteneurs Docker, voici la configuration Docker Compose à utiliser :
+
+```yaml
+services:
+  mamiehenriette:
+    container_name: MamieHenriette
+    image: ghcr.io/skylanix/mamiehenriette:latest
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Paris
+    volumes:
+      # Adaptez ces chemins selon votre configuration
+      - ./instance:/app/instance
+      - ./logs:/app/logs
+    ports:
+      - 5000:5000
+
+  watchtower:  # Mise à jour automatique de l'image
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Paris
+      WATCHTOWER_INCLUDE: "MamieHenriette"
+      WATCHTOWER_SCHEDULE: "0 */30 * * * *"  # Vérification toutes les 30 min
+      WATCHTOWER_MONITOR_ONLY: "false"
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_INCLUDE_RESTARTING: "true"
+      # Décommentez pour activer les notifications Discord :
+      # WATCHTOWER_NOTIFICATION_URL: "discord://token@id"
+      # WATCHTOWER_NOTIFICATIONS: shoutrrr
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # Décommentez pour accéder à la base de données via interface web (localhost:5001)
+  # sqlite-web:
+  #   image: ghcr.io/coleifer/sqlite-web:latest
+  #   container_name: sqlite_web
+  #   ports:
+  #     - "5001:8080"
+  #   volumes:
+  #     - ./instance/database.db:/data/database.db
+  #   environment:
+  #     - SQLITE_DATABASE=/data/database.db
+```
+
+**Étapes dans Portainer :**
+
+1. **Accéder à Portainer** : Ouvrez votre interface Portainer (généralement http://votre-serveur:9000)
+
+2. **Créer une Stack** :
+   - Allez dans "Stacks" → "Add stack"
+   - Donnez un nom : `MamieHenriette`
+   - Collez la configuration ci-dessus dans l'éditeur
+
+3. **Adapter les chemins des volumes** :
+   - Modifiez `./instance` et `./logs` selon votre configuration
+   - Exemple : `/opt/containers/MamieHenriette/instance` et `/opt/containers/MamieHenriette/logs`
+
+4. **Déployer** :
+   - Cliquez sur "Deploy the stack"
+   - Attendez que le conteneur démarre
+
+5. **Accéder à l'interface** :
+   - Ouvrez http://votre-serveur:5000
+   - Configurez le bot via l'interface web
+   - Redémarrez le conteneur depuis Portainer après configuration
 
 ### Volumes persistants
 - `./instance/` : Base de données SQLite et configuration
@@ -165,9 +318,11 @@ git pull origin main
 # 3. Mettre à jour l'image Docker
 docker compose pull
 
-# 4. Reconstruire et relancer
-docker compose up --build -d
+# 4. Relancer
+docker compose up -d
 ```
+
+> 💡 **Note** : Si vous utilisez Watchtower, les mises à jour de l'image sont automatiques (vérification toutes les 30 minutes).
 
 #### Sans Docker (installation locale)
 ```bash
@@ -236,13 +391,16 @@ python run-web.py
 ## Spécifications techniques
 
 ### Base de données (SQLite)
-- **Configuration** : Paramètres et tokens des plateformes
+- **Configuration** : Paramètres et tokens des plateformes, configuration des fonctionnalités
 - **Humeur** : Statuts Discord rotatifs avec gestion automatique
 - **Commande** : Commandes personnalisées multi-plateformes (Discord/Twitch)
 - **LiveAlert** : Configuration surveillance streamers Twitch (nom, canal Discord, statut)
 - **GameAlias** : Alias pour améliorer les recherches ProtonDB
 - **GameBundle** : Historique et notifications Humble Bundle
-- **Message** : Messages automatiques périodiques (implémenté)
+- **AntiCheatCache** : Cache des informations anti-cheat pour ProtonDB (mise à jour automatique hebdomadaire)
+- **Message** : Messages automatiques périodiques
+- **Moderation** : Historique complet des actions de modération (avertissements, timeouts, bans, kicks, unbans) avec raison, staff, timestamp et durée
+- **MemberInvites** : Tracking des invitations (code d'invitation, inviteur, date de join)
 
 ### Architecture multi-thread
 - **Thread 1** : Interface web Flask (port 5000) avec logging rotatif
