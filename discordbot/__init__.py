@@ -178,7 +178,13 @@ async def on_message(message: Message):
 				logging.error(f"Échec de la gestion du message d'aide ProtonDB : {e}")
 			return
 		
-		games = searhProtonDb(name)
+		try:
+			searching_msg = await message.channel.send(f"🔍 Recherche en cours pour **{name}**...")
+			games = searhProtonDb(name)
+			await searching_msg.delete()
+		except:
+			games = searhProtonDb(name)
+		
 		if (len(games)==0) :
 			msg = f'{mention} Je n\'ai pas trouvé de jeux correspondant à **{name}**. Es-tu sûr que le jeu est disponible sur Steam ?'
 			try:
@@ -188,51 +194,51 @@ async def on_message(message: Message):
 			return
 		total_games = len(games)
 		embed = discord.Embed(
-			title=f"**{total_games} jeu{'x' if total_games > 1 else ''} trouvé{'s' if total_games > 1 else ''}**",
-			color=discord.Color.blurple()
+			title=f"🎮 Résultats ProtonDB - **{total_games} jeu{'x' if total_games > 1 else ''} trouvé{'s' if total_games > 1 else ''}**",
+			color=0x5865F2
 		)
 		
-		max_fields = 10
-		count = 0
-		for game in games:
-			if count >= max_fields:
-				break
+		tier_colors = {'platinum': '🟣', 'gold': '🟡', 'silver': '⚪', 'bronze': '🟤', 'borked': '🔴'}
+		content = ""
+		max_games = 35
+		
+		for count, game in enumerate(games[:max_games]):
 			g_name = str(game.get('name'))
 			g_id = str(game.get('id'))
-			tier = str(game.get('tier') or 'N/A')
+			tier = str(game.get('tier') or 'N/A').lower()
+			tier_icon = tier_colors.get(tier, '⚫')
+			
+			content += f"**[{g_name}](<https://www.protondb.com/app/{g_id}>)**\n"
+			content += f"{tier_icon} Classé **{tier.capitalize()}**"
+			
 			ac_status = game.get('anticheat_status')
-			ac_text = ''
 			if ac_status:
 				status_lower = str(ac_status).lower()
-				if status_lower == 'supported':
-					ac_emoji, ac_label = '✅', 'Supporté'
-				elif status_lower == 'running':
-					ac_emoji, ac_label = '⚠️', 'Fonctionne'
-				elif status_lower == 'broken':
-					ac_emoji, ac_label = '❌', 'Cassé'
-				elif status_lower == 'denied':
-					ac_emoji, ac_label = '🚫', 'Refusé'
-				elif status_lower == 'planned':
-					ac_emoji, ac_label = '📅', 'Planifié'
-				else:
-					ac_emoji, ac_label = '❔', str(ac_status)
+				ac_map = {
+					'supported': ('✅', 'Supporté'),
+					'running': ('⚠️', 'Fonctionne'),
+					'broken': ('❌', 'Cassé'),
+					'denied': ('🚫', 'Refusé'),
+					'planned': ('📅', 'Planifié')
+				}
+				ac_emoji, ac_label = ac_map.get(status_lower, ('❔', str(ac_status)))
 				acs = game.get('anticheats') or []
 				ac_list = ', '.join([str(ac) for ac in acs if ac])
-				ac_text = f" | [Anti-cheat: {ac_emoji} {ac_label}"
+				content += f" • [Anti-cheat {ac_emoji} {ac_label}"
 				if ac_list:
-					ac_text += f" ({ac_list})"
-				ac_text += f"](<https://areweanticheatyet.com/game/{g_id}>)"
+					content += f" ({ac_list})"
+				content += f"](<https://areweanticheatyet.com/game/{g_id}>)"
 			
-			field_value = f"[{g_name}](<https://www.protondb.com/app/{g_id}>) - **Classé**: {tier}{ac_text}"
-			embed.add_field(name="\u200b", value=field_value, inline=False)
-			count += 1
+			content += "\n\n"
 		
-		rest = max(0, len(games) - count)
+		rest = max(0, len(games) - max_games)
 		if rest > 0:
-			embed.add_field(name="…", value=f"et encore {rest} autres jeux", inline=False)
+			content += f"*... et {rest} autre{'s' if rest > 1 else ''} jeu{'x' if rest > 1 else ''}*"
+		
+		embed.add_field(name="", value=content, inline=False)
 		
 		try : 
-			await message.channel.send(content=mention, embed=embed)
+			await message.channel.send(embed=embed)
 		except Exception as e:
 			logging.error(f"Échec de l'envoi de l'embed ProtonDB : {e}")
 
