@@ -44,13 +44,11 @@ class DiscordBot(discord.Client):
 				if humeur != None: 
 					logging.info(f'Changement de statut : {humeur.text}')
 					await self.change_presence(status = discord.Status.online,  activity = discord.CustomActivity(humeur.text))
-			# 10 minutes TODO à rendre configurable
 			await asyncio.sleep(10*60)
 
 	async def updateHumbleBundle(self):
 		while not self.is_closed():
 			await checkHumbleBundleAndNotify(self)
-			# toutes les 30 minutes
 			await asyncio.sleep(30*60)
 
 	def getAllTextChannel(self) -> list[TextChannel]:
@@ -153,19 +151,33 @@ async def on_message(message: Message):
 		except Exception as e:
 			logging.error(f'Échec de l\'exécution de la commande Discord : {e}')
 
-	# Commande !protondb ou !pdb avec embed
 	if (ConfigurationHelper().getValue('proton_db_enable_enable') and (message.content.startswith('!protondb') or message.content.startswith('!pdb'))):
 		if (message.content.find('<@')>0) :
 			mention = message.content[message.content.find('<@'):]
 		else :
 			mention = message.author.mention
-		# Nettoyer le nom en enlevant la commande (!protondb ou !pdb)
 		name = message.content
 		if name.startswith('!protondb'):
 			name = name.replace('!protondb', '', 1)
 		elif name.startswith('!pdb'):
 			name = name.replace('!pdb', '', 1)
 		name = name.replace(f'{mention}', '').strip();
+		
+		if not name or len(name) == 0:
+			try:
+				await message.delete()
+				delete_time = ConfigurationHelper().getIntValue('proton_db_delete_time') or 10
+				help_msg = await message.channel.send(
+					f"{mention} ⚠️ Utilisation: `!pdb nom du jeu` ou `!protondb nom du jeu`\n"
+					f"Exemple: `!pdb Elden Ring`",
+					suppress_embeds=True
+				)
+				await asyncio.sleep(delete_time)
+				await help_msg.delete()
+			except Exception as e:
+				logging.error(f"Échec de la gestion du message d'aide ProtonDB : {e}")
+			return
+		
 		games = searhProtonDb(name)
 		if (len(games)==0) :
 			msg = f'{mention} Je n\'ai pas trouvé de jeux correspondant à **{name}**. Es-tu sûr que le jeu est disponible sur Steam ?'
@@ -174,13 +186,11 @@ async def on_message(message: Message):
 			except Exception as e:
 				logging.error(f"Échec de l'envoi du message ProtonDB : {e}")
 			return
-		
-		# Construire un bel embed
+		total_games = len(games)
 		embed = discord.Embed(
-			title=f"🔎 Résultats ProtonDB pour {name}",
+			title=f"**{total_games} jeu{'x' if total_games > 1 else ''} trouvé{'s' if total_games > 1 else ''}**",
 			color=discord.Color.blurple()
 		)
-		embed.set_footer(text=f"Demandé par {message.author.name}")
 		
 		max_fields = 10
 		count = 0
@@ -190,33 +200,31 @@ async def on_message(message: Message):
 			g_name = str(game.get('name'))
 			g_id = str(game.get('id'))
 			tier = str(game.get('tier') or 'N/A')
-			# Anti-cheat info si disponible
 			ac_status = game.get('anticheat_status')
-			ac_emoji = ''
 			ac_text = ''
 			if ac_status:
 				status_lower = str(ac_status).lower()
 				if status_lower == 'supported':
-					ac_emoji, ac_text = '✅', 'Supporté'
+					ac_emoji, ac_label = '✅', 'Supporté'
 				elif status_lower == 'running':
-					ac_emoji, ac_text = '⚠️', 'Fonctionne'
+					ac_emoji, ac_label = '⚠️', 'Fonctionne'
 				elif status_lower == 'broken':
-					ac_emoji, ac_text = '❌', 'Cassé'
+					ac_emoji, ac_label = '❌', 'Cassé'
 				elif status_lower == 'denied':
-					ac_emoji, ac_text = '🚫', 'Refusé'
+					ac_emoji, ac_label = '🚫', 'Refusé'
 				elif status_lower == 'planned':
-					ac_emoji, ac_text = '📅', 'Planifié'
+					ac_emoji, ac_label = '📅', 'Planifié'
 				else:
-					ac_emoji, ac_text = '❔', str(ac_status)
+					ac_emoji, ac_label = '❔', str(ac_status)
 				acs = game.get('anticheats') or []
 				ac_list = ', '.join([str(ac) for ac in acs if ac])
-				ac_line = f" | Anti-cheat: {ac_emoji} **{ac_text}**"
+				ac_text = f" | [Anti-cheat: {ac_emoji} {ac_label}"
 				if ac_list:
-					ac_line += f" ({ac_list})"
-			else:
-				ac_line = ''
-			value = f"Tier: **{tier}**{ac_line}\nLien: https://www.protondb.com/app/{g_id}"
-			embed.add_field(name=g_name, value=value[:1024], inline=False)
+					ac_text += f" ({ac_list})"
+				ac_text += f"](<https://areweanticheatyet.com/game/{g_id}>)"
+			
+			field_value = f"[{g_name}](<https://www.protondb.com/app/{g_id}>) - **Classé**: {tier}{ac_text}"
+			embed.add_field(name="\u200b", value=field_value, inline=False)
 			count += 1
 		
 		rest = max(0, len(games) - count)
