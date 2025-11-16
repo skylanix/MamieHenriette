@@ -231,8 +231,8 @@ async def send_warning_confirmation(channel, target_user, reason: str, original_
 		color=discord.Color.orange(),
 		timestamp=datetime.now(timezone.utc)
 	)
-	embed.add_field(name="👤 Utilisateur", value=f"{target_user.mention}\n`{target_user.id}`", inline=True)
-	embed.add_field(name="🛡️ Modérateur", value=f"{original_message.author.mention}\n`{original_message.author.name}`", inline=True)
+	embed.add_field(name="👤 Utilisateur", value=f"**{target_user.name}**\n`{target_user.id}`", inline=True)
+	embed.add_field(name="🛡️ Modérateur", value=f"**{original_message.author.name}**", inline=True)
 	embed.add_field(name="📅 Date et heure", value=local_now.strftime('%d/%m/%Y à %H:%M'), inline=True)
 	if reason != "Sans raison":
 		embed.add_field(name="📝 Raison", value=reason, inline=False)
@@ -349,8 +349,8 @@ async def send_timeout_confirmation(channel, target_user, reason: str, timeout_s
 		color=discord.Color.orange(),
 		timestamp=datetime.now(timezone.utc)
 	)
-	embed.add_field(name="👤 Utilisateur", value=f"{target_user.mention}\n`{target_user.id}`", inline=True)
-	embed.add_field(name="🛡️ Modérateur", value=f"{original_message.author.mention}\n`{original_message.author.name}`", inline=True)
+	embed.add_field(name="👤 Utilisateur", value=f"**{target_user.name}**\n`{target_user.id}`", inline=True)
+	embed.add_field(name="🛡️ Modérateur", value=f"**{original_message.author.name}**", inline=True)
 	embed.add_field(name="📅 Date et heure", value=local_now.strftime('%d/%m/%Y à %H:%M'), inline=True)
 	embed.add_field(name="⏱️ Durée", value=format_timeout_duration(timeout_seconds), inline=True)
 	if reason != "Sans raison":
@@ -686,8 +686,8 @@ async def _process_ban_success(message: Message, target_user, reason: str, bot):
 		color=discord.Color.red(),
 		timestamp=datetime.now(timezone.utc)
 	)
-	embed.add_field(name="👤 Utilisateur", value=f"{target_user.mention}\n`{target_user.id}`", inline=True)
-	embed.add_field(name="🛡️ Modérateur", value=f"{message.author.mention}\n`{message.author.name}`", inline=True)
+	embed.add_field(name="👤 Utilisateur", value=f"**{target_user.name}**\n`{target_user.id}`", inline=True)
+	embed.add_field(name="🛡️ Modérateur", value=f"{message.author.name}", inline=True)
 	embed.add_field(name="📅 Date et heure", value=local_now.strftime('%d/%m/%Y à %H:%M'), inline=True)
 	if joined_days is not None:
 		embed.add_field(name="⏱️ Membre depuis", value=format_days_to_age(joined_days), inline=True)
@@ -801,9 +801,9 @@ async def _process_unban_success(message: Message, bot, target_user, discord_id:
 		color=discord.Color.green(),
 		timestamp=datetime.now(timezone.utc)
 	)
-	user_mention = target_user.mention if target_user else username
-	embed.add_field(name="👤 Utilisateur", value=f"{user_mention}\n`{discord_id}`", inline=True)
-	embed.add_field(name="🛡️ Modérateur", value=f"{message.author.mention}\n`{message.author.name}`", inline=True)
+	user_display = f"**{target_user.name}**" if target_user else f"**{username}**"
+	embed.add_field(name="👤 Utilisateur", value=f"{user_display}\n`{discord_id}`", inline=True)
+	embed.add_field(name="🛡️ Modérateur", value=f"**{message.author.name}**", inline=True)
 	embed.add_field(name="📅 Date et heure", value=local_now.strftime('%d/%m/%Y à %H:%M'), inline=True)
 	if reason != "Sans raison":
 		embed.add_field(name="📝 Raison", value=reason, inline=False)
@@ -1155,8 +1155,8 @@ async def _process_kick_success(message: Message, target_member, reason: str, bo
 		color=discord.Color.orange(),
 		timestamp=datetime.now(timezone.utc)
 	)
-	embed.add_field(name="👤 Utilisateur", value=f"{target_member.mention}\n`{target_member.id}`", inline=True)
-	embed.add_field(name="🛡️ Modérateur", value=f"{message.author.mention}\n`{message.author.name}`", inline=True)
+	embed.add_field(name="👤 Utilisateur", value=f"**{target_member.name}**\n`{target_member.id}`", inline=True)
+	embed.add_field(name="🛡️ Modérateur", value=f"**{message.author.name}**", inline=True)
 	embed.add_field(name="📅 Date et heure", value=local_now.strftime('%d/%m/%Y à %H:%M'), inline=True)
 	if joined_days is not None:
 		embed.add_field(name="⏱️ Membre depuis", value=format_days_to_age(joined_days), inline=True)
@@ -1228,7 +1228,7 @@ def create_inspect_embed(user, member, join_date, days_on_server, account_age, w
 	)
 	
 	embed.set_thumbnail(url=user.display_avatar.url)
-	embed.add_field(name="👤 Utilisateur", value=f"{user.mention}\n`{user.id}`", inline=True)
+	embed.add_field(name="👤 Utilisateur", value=f"**{user.name}**\n`{user.id}`", inline=True)
 	
 	if account_age is not None:
 		embed.add_field(
@@ -1355,25 +1355,40 @@ async def handle_say_command(message: Message, bot):
 	if len(parts) < 3:
 		embed = discord.Embed(
 			title="📋 Utilisation de la commande",
-			description="**Syntaxe :** `!say #channel message`",
+			description="**Syntaxe :** `!say #channel message` ou `!say <id_salon> message`",
 			color=discord.Color.blue()
 		)
-		embed.add_field(name="Exemple", value="`!say #general Bonjour à tous !`", inline=False)
+		embed.add_field(name="Exemples", value="`!say #general Bonjour à tous !`\n`!say 123456789 Annonce importante`", inline=False)
 		msg = await message.channel.send(embed=embed)
 		asyncio.create_task(delete_after_delay(msg))
 		return
 	
-	if not message.channel_mentions:
+	target_channel = None
+	
+	if message.channel_mentions:
+		target_channel = message.channel_mentions[0]
+	else:
+		try:
+			channel_id = int(parts[1])
+			target_channel = bot.get_channel(channel_id)
+			if not target_channel:
+				try:
+					target_channel = await bot.fetch_channel(channel_id)
+				except discord.NotFound:
+					pass
+		except ValueError:
+			pass
+	
+	if not target_channel:
 		embed = discord.Embed(
 			title="❌ Erreur",
-			description="Vous devez mentionner un canal avec #",
+			description="Vous devez mentionner un canal avec # ou fournir un ID de salon valide.",
 			color=discord.Color.red()
 		)
 		msg = await message.channel.send(embed=embed)
 		asyncio.create_task(delete_after_delay(msg))
 		return
 	
-	target_channel = message.channel_mentions[0]
 	text_to_send = parts[2]
 	
 	try:

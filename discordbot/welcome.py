@@ -94,7 +94,7 @@ async def sendWelcomeMessage(bot: discord.Client, member: Member):
 	)
 	
 	embed.set_thumbnail(url=member.display_avatar.url)
-	embed.add_field(name='Membre', value=member.mention, inline=True)
+	embed.add_field(name='Membre', value=member.name, inline=True)
 	embed.add_field(name='Nombre de membres', value=str(member.guild.member_count), inline=True)
 	embed.add_field(name='Invitation utilisée', value=invite_display, inline=False)
 	embed.set_footer(text=f'ID: {member.id}')
@@ -179,7 +179,7 @@ async def sendLeaveMessage(bot: discord.Client, member: Member):
 	)
 	
 	embed.set_thumbnail(url=member.display_avatar.url)
-	embed.add_field(name='Membre', value=f'{member.mention} ({member.name})', inline=True)
+	embed.add_field(name='Membre', value=f'**{member.name}**', inline=True)
 	embed.add_field(name='Nombre de membres', value=str(member.guild.member_count), inline=True)
 	embed.add_field(name='Temps sur le serveur', value=duration_text, inline=False)
 	embed.set_footer(text=f'ID: {member.id}')
