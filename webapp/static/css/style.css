@@ -543,7 +543,8 @@ table tbody tr:hover {
 	background: var(--accent-soft);
 }
 
-table.live-alert tr td:last-child {
+table.live-alert tr td:last-child,
+table.youtube-alert tr td:last-child {
 	white-space: nowrap;
 }
 

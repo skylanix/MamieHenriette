@@ -93,3 +93,13 @@ class DiscordInvite(db.Model):
 	revoked = db.Column(db.Boolean, default=False)
 	last_sync = db.Column(db.DateTime)
 
+class YoutubeAlert(db.Model):
+	__tablename__ = 'youtube_alert'
+	id = db.Column(db.Integer, primary_key=True)
+	enable = db.Column(db.Boolean, default=True)
+	channel_id = db.Column(db.String(64), unique=True)
+	channel_name = db.Column(db.String(256))
+	notify_channel = db.Column(db.Integer)
+	message = db.Column(db.String(2000))
+	last_video_id = db.Column(db.String(64))
+

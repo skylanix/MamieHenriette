@@ -108,3 +108,13 @@ CREATE TABLE IF NOT EXISTS `discord_invite` (
 	`revoked` BOOLEAN NOT NULL DEFAULT FALSE,
 	`last_sync` DATETIME NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS `youtube_alert` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	`enable` BOOLEAN NOT NULL DEFAULT TRUE,
+	`channel_id` VARCHAR(64) UNIQUE NOT NULL,
+	`channel_name` VARCHAR(256),
+	`notify_channel` INTEGER NOT NULL,
+	`message` VARCHAR(2000) NOT NULL,
+	`last_video_id` VARCHAR(64)
+);

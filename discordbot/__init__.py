@@ -49,6 +49,7 @@ class DiscordBot(discord.Client):
 		self.loop.create_task(self.updateStatus())
 		self.loop.create_task(self.updateHumbleBundle())
 		self.loop.create_task(self.updateFreeGames())
+		self.loop.create_task(self.updateYoutubeAlerts())
 		self.loop.create_task(self._periodic_stats_update())
 	
 	def _update_shared_stats(self):
@@ -114,6 +115,12 @@ class DiscordBot(discord.Client):
 		while not self.is_closed():
 			await checkFreeGamesAndNotify(self)
 			await asyncio.sleep(60*60)  # Vérification toutes les heures
+
+	async def updateYoutubeAlerts(self):
+		from youtubebot.youtube_alert import checkNewVideos
+		while not self.is_closed():
+			await checkNewVideos(self)
+			await asyncio.sleep(10*60)  # Vérification toutes les 10 minutes
 
 	def getAllTextChannel(self) -> list[TextChannel]:
 		channels = []

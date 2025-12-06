@@ -1,0 +1,94 @@
+{% extends "template.html" %}
+
+{% block content %}
+<h1>Alertes YouTube</h1>
+
+<p>
+	Liste des chaînes YouTube surveillées pour les alertes de nouvelles vidéos.
+	Le bot vérifie régulièrement les nouvelles vidéos publiées sur les chaînes configurées.
+	Lorsqu'une nouvelle vidéo est détectée, le bot envoie une notification sur le canal Discord configuré.
+</p>
+
+{% if not alert %}
+<h2>Chaînes surveillées</h2>
+<table class="youtube-alert">
+	<thead>
+		<tr>
+			<th>Chaîne</th>
+			<th>Canal Discord</th>
+			<th>Message</th>
+			<th>#</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for alert in alerts %}
+		<tr>
+			<td>
+				<a href="https://www.youtube.com/channel/{{alert.channel_id}}" target="_blank">
+					{{alert.channel_name or alert.channel_id}}
+				</a>
+			</td>
+			<td>{{alert.notify_channel_name}}</td>
+			<td>{{alert.message[:50]}}{% if alert.message|length > 50 %}...{% endif %}</td>
+			<td>
+				<a href="{{ url_for('toggleYoutubeAlert', id = alert.id) }}" class="icon">{{ '✅' if alert.enable else '❌' }}</a>
+				<a href="{{ url_for('openEditYoutubeAlert', id = alert.id) }}" class="icon">✐</a>
+				<a href="{{ url_for('delYoutubeAlert', id = alert.id) }}"
+					onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette alerte ?')" class="icon">🗑</a>
+			</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+{% endif %}
+
+<h2>{{ 'Editer une alerte' if alert else 'Ajouter une alerte YouTube' }}</h2>
+<form action="{{ url_for('submitEditYoutubeAlert', id = alert.id) if alert else url_for('addYoutubeAlert') }}" method="POST">
+	<label for="channel_id">ID de la chaîne YouTube</label>
+	<input name="channel_id" type="text" maxlength="64" required="required" value="{{alert.channel_id if alert}}" placeholder="UCxxxxxxxxxxxxxxxxxxxxxxxx"/>
+	
+	<label for="notify_channel">Canal de Notification Discord</label>
+	<select name="notify_channel">
+		{% for channel in channels %}
+		<option value="{{channel.id}}"{% if alert and alert.notify_channel == channel.id %}
+			selected="selected" {% endif %}>{{channel.name}}</option>
+		{% endfor %}
+	</select>
+	
+	<label for="message">Message</label>
+	<textarea name="message" rows="5" cols="50" required="required">{{alert.message if alert else '🎬 **Nouvelle vidéo !**\n\n**{0.author}** vient de publier : **{0.title}**\n\n👉 {0.link}'}}</textarea>
+	
+	<input type="Submit" value="{{ 'Modifier' if alert else 'Ajouter' }}">
+	
+	<h3>Comment trouver l'ID de chaîne YouTube ?</h3>
+	<p>
+		L'ID de chaîne YouTube commence par <code>UC</code> et contient 24 caractères.
+	</p>
+	<ol>
+		<li>Allez sur la page de la chaîne YouTube</li>
+		<li>Cliquez droit sur la page et choisissez "Afficher le code source"</li>
+		<li>Recherchez <code>channelId</code> ou <code>externalId</code></li>
+		<li>Copiez l'ID qui ressemble à : <code>UCxxxxxxxxxxxxxxxxxxxxxxxx</code></li>
+	</ol>
+	<p>
+		Vous pouvez aussi utiliser des outils en ligne comme <a href="https://commentpicker.com/youtube-channel-id.php" target="_blank">Comment Picker</a> pour trouver l'ID.
+	</p>
+	
+	<h3>Variables disponibles pour le message</h3>
+	<p>
+		Pour le message vous avez accès à ces variables :
+	</p>
+	<ul>
+		<li><code>{0.title}</code> : Titre de la vidéo</li>
+		<li><code>{0.author}</code> : Nom de la chaîne</li>
+		<li><code>{0.link}</code> : Lien vers la vidéo</li>
+		<li><code>{0.video_id}</code> : ID de la vidéo</li>
+		<li><code>{0.thumbnail}</code> : URL de la miniature</li>
+	</ul>
+	<p>
+		Le message est au format <a href="https://commonmark.org/" target="_blank">common-mark</a> dans la limite de ce que supporte Discord.
+	</p>
+</form>
+
+{% endblock %}
+
