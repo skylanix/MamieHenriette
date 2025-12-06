@@ -61,3 +61,35 @@ class AntiCheatCache(db.Model):
 	notes = db.Column(db.String(1024))
 	updated_at = db.Column(db.DateTime)
 
+class FreeGame(db.Model):
+	__tablename__ = 'free_game'
+	id = db.Column(db.Integer, primary_key=True)
+	entry_id = db.Column(db.String(512), unique=True)
+	title = db.Column(db.String(512))
+	source = db.Column(db.String(64))
+	url = db.Column(db.String(2048))
+	image_url = db.Column(db.String(2048))
+	description = db.Column(db.Text)
+	valid_from = db.Column(db.DateTime)
+	valid_to = db.Column(db.DateTime)
+	notified = db.Column(db.Boolean, default=False)
+	notified_at = db.Column(db.DateTime)
+	created_at = db.Column(db.DateTime)
+
+class DiscordInvite(db.Model):
+	__tablename__ = 'discord_invite'
+	code = db.Column(db.String(32), primary_key=True)
+	guild_id = db.Column(db.String(64), nullable=False)
+	channel_id = db.Column(db.String(64), nullable=False)
+	channel_name = db.Column(db.String(256))
+	inviter_id = db.Column(db.String(64))
+	inviter_name = db.Column(db.String(256))
+	uses = db.Column(db.Integer, default=0)
+	max_uses = db.Column(db.Integer, default=0)
+	max_age = db.Column(db.Integer, default=0)
+	temporary = db.Column(db.Boolean, default=False)
+	created_at = db.Column(db.DateTime)
+	expires_at = db.Column(db.DateTime)
+	revoked = db.Column(db.Boolean, default=False)
+	last_sync = db.Column(db.DateTime)
+

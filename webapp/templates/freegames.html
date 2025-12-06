@@ -1,0 +1,381 @@
+{% extends "template.html" %}
+
+{% block content %}
+<h1>🎮 Jeux Gratuits</h1>
+<p>Gérez les notifications de jeux gratuits via le flux RSS LootScraper. Activez le module, choisissez les sources à suivre et décidez quels jeux partager avec votre communauté.</p>
+
+<h2>Configuration</h2>
+<form action="{{ url_for('updateFreeGamesConfig') }}" method="POST">
+	<fieldset>
+		<legend>Paramètres généraux</legend>
+		
+		<label for="freegames_enable">
+			<input type="checkbox" name="freegames_enable" id="freegames_enable" {% if configuration.getValue('freegames_enable') %}checked="checked"{% endif %}>
+			Activer le module Jeux Gratuits
+		</label>
+		
+		<label for="freegames_auto_notify">
+			<input type="checkbox" name="freegames_auto_notify" id="freegames_auto_notify" {% if configuration.getValue('freegames_auto_notify') %}checked="checked"{% endif %}>
+			Notification automatique des nouveaux jeux
+		</label>
+		<small>Si activé, les nouveaux jeux des sources sélectionnées seront automatiquement partagés</small>
+		
+		<label for="freegames_channel">Canal de notification</label>
+		<select name="freegames_channel" id="freegames_channel">
+			<option value="">-- Sélectionner un canal --</option>
+			{% for channel in channels %}
+			<option value="{{channel.id}}" {% if configuration.getIntValue('freegames_channel')==channel.id %}selected="selected"{% endif %}>
+				{{channel.name}}
+			</option>
+			{% endfor %}
+		</select>
+	</fieldset>
+	
+	<fieldset>
+		<legend>Mentions</legend>
+		
+		<label for="freegames_mention_type">Type de mention</label>
+		<select name="freegames_mention_type" id="freegames_mention_type" onchange="toggleRoleSelect()">
+			<option value="none" {% if configuration.getValue('freegames_mention_type') == 'none' or not configuration.getValue('freegames_mention_type') %}selected{% endif %}>Aucune mention</option>
+			<option value="here" {% if configuration.getValue('freegames_mention_type') == 'here' %}selected{% endif %}>@here</option>
+			<option value="everyone" {% if configuration.getValue('freegames_mention_type') == 'everyone' %}selected{% endif %}>@everyone</option>
+			<option value="role" {% if configuration.getValue('freegames_mention_type') == 'role' %}selected{% endif %}>Rôle spécifique</option>
+		</select>
+		
+		<div id="role-select-container" style="{% if configuration.getValue('freegames_mention_type') != 'role' %}display: none;{% endif %}">
+			<label for="freegames_mention_role">Rôle à mentionner</label>
+			{% for guild_data in roles %}
+			<select name="freegames_mention_role" id="freegames_mention_role">
+				<option value="">-- Sélectionner un rôle --</option>
+				{% for role in guild_data.roles %}
+				<option value="{{role.id}}" {% if configuration.getIntValue('freegames_mention_role')==role.id %}selected="selected"{% endif %}>
+					{% if role.color.value != 0 %}●{% else %}○{% endif %} {{role.name}}
+				</option>
+				{% endfor %}
+			</select>
+			{% endfor %}
+		</div>
+	</fieldset>
+	
+	<fieldset>
+		<legend>Sources à suivre</legend>
+		<small>Sélectionnez les plateformes dont vous souhaitez recevoir les offres. Si aucune n'est sélectionnée, toutes les sources seront incluses.</small>
+		
+		{% set enabled_sources = (configuration.getValue('freegames_sources') or '').split(',') %}
+		<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 15px;">
+			{% for key, name in sources.items() %}
+			<label style="display: flex; align-items: center; gap: 8px;">
+				<input type="checkbox" name="freegames_sources" value="{{key}}" {% if key in enabled_sources or not configuration.getValue('freegames_sources') %}checked{% endif %}>
+				{{name}}
+			</label>
+			{% endfor %}
+		</div>
+	</fieldset>
+	
+	<input type="submit" value="💾 Enregistrer la configuration">
+</form>
+
+<h2>Jeux disponibles <span class="badge">{{pending_count}} en attente</span></h2>
+
+<div style="margin-bottom: 20px;">
+	<button type="button" onclick="refreshGames()" class="btn-secondary">🔄 Rafraîchir le flux RSS</button>
+</div>
+
+<div style="margin-bottom: 15px;">
+	<label for="filter-source">Filtrer par source :</label>
+	<select id="filter-source" onchange="filterGames()">
+		<option value="all">Toutes les sources</option>
+		{% for key, name in sources.items() %}
+		<option value="{{name}}">{{name}}</option>
+		{% endfor %}
+	</select>
+	
+	<label for="filter-status" style="margin-left: 20px;">Filtrer par statut :</label>
+	<select id="filter-status" onchange="filterGames()">
+		<option value="all">Tous</option>
+		<option value="pending">En attente</option>
+		<option value="notified">Notifiés</option>
+	</select>
+</div>
+
+<div class="games-list">
+	{% for game in games %}
+	<div class="game-card" data-source="{{game.source}}" data-status="{% if game.notified %}notified{% else %}pending{% endif %}">
+		<div class="game-header">
+			{% if game.image_url %}
+			<img src="{{game.image_url}}" alt="{{game.title}}" class="game-thumb">
+			{% else %}
+			<div class="game-thumb-placeholder">🎮</div>
+			{% endif %}
+			<div class="game-info">
+				<h3>{{game.title}}</h3>
+				<span class="source-badge">{{game.source}}</span>
+				{% if game.notified %}
+				<span class="status-badge notified">✓ Notifié</span>
+				{% else %}
+				<span class="status-badge pending">⏳ En attente</span>
+				{% endif %}
+			</div>
+		</div>
+		
+		{% if game.description %}
+		<p class="game-description">{{game.description[:150]}}{% if game.description|length > 150 %}...{% endif %}</p>
+		{% endif %}
+		
+		<div class="game-meta">
+			{% if game.valid_to %}
+			<span title="Date de fin">⏰ Jusqu'au {{game.valid_to.strftime('%d/%m/%Y')}}</span>
+			{% endif %}
+			<a href="{{game.url}}" target="_blank" rel="noopener">🔗 Voir l'offre</a>
+		</div>
+		
+		<div class="game-actions">
+			{% if not game.notified %}
+			<button type="button" onclick="notifyGame({{game.id}}, this)" class="btn-primary">📢 Notifier</button>
+			<button type="button" onclick="markNotified({{game.id}}, this)" class="btn-secondary">✓ Marquer comme notifié</button>
+			{% else %}
+			<button type="button" onclick="resetGame({{game.id}}, this)" class="btn-secondary">↩️ Réinitialiser</button>
+			{% endif %}
+			<button type="button" onclick="deleteGame({{game.id}}, this)" class="btn-danger">🗑️ Supprimer</button>
+		</div>
+	</div>
+	{% else %}
+	<p>Aucun jeu gratuit trouvé. Cliquez sur "Rafraîchir le flux RSS" pour récupérer les dernières offres.</p>
+	{% endfor %}
+</div>
+
+<style>
+.badge {
+	background: #5865F2;
+	color: white;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 0.85em;
+}
+
+.games-list {
+	display: grid;
+	gap: 20px;
+}
+
+.game-card {
+	background: var(--color-bg-secondary, #f5f5f5);
+	border-radius: 12px;
+	padding: 20px;
+	border: 1px solid var(--color-border, #ddd);
+}
+
+.game-card[data-status="notified"] {
+	opacity: 0.7;
+}
+
+.game-header {
+	display: flex;
+	gap: 15px;
+	align-items: flex-start;
+	margin-bottom: 15px;
+}
+
+.game-thumb {
+	width: 80px;
+	height: 80px;
+	object-fit: cover;
+	border-radius: 8px;
+}
+
+.game-thumb-placeholder {
+	width: 80px;
+	height: 80px;
+	background: var(--color-bg-tertiary, #e0e0e0);
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 2em;
+}
+
+.game-info {
+	flex: 1;
+}
+
+.game-info h3 {
+	margin: 0 0 8px 0;
+	font-size: 1.1em;
+}
+
+.source-badge {
+	background: #4CAF50;
+	color: white;
+	padding: 2px 8px;
+	border-radius: 4px;
+	font-size: 0.8em;
+	margin-right: 8px;
+}
+
+.status-badge {
+	padding: 2px 8px;
+	border-radius: 4px;
+	font-size: 0.8em;
+}
+
+.status-badge.pending {
+	background: #FF9800;
+	color: white;
+}
+
+.status-badge.notified {
+	background: #2196F3;
+	color: white;
+}
+
+.game-description {
+	color: var(--color-text-secondary, #666);
+	font-size: 0.9em;
+	margin: 10px 0;
+}
+
+.game-meta {
+	display: flex;
+	gap: 20px;
+	font-size: 0.85em;
+	color: var(--color-text-secondary, #666);
+	margin-bottom: 15px;
+}
+
+.game-meta a {
+	color: #5865F2;
+}
+
+.game-actions {
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.game-actions button {
+	padding: 8px 16px;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 0.9em;
+	transition: opacity 0.2s;
+}
+
+.game-actions button:hover {
+	opacity: 0.8;
+}
+
+.btn-primary {
+	background: #5865F2;
+	color: white;
+}
+
+.btn-secondary {
+	background: #747F8D;
+	color: white;
+}
+
+.btn-danger {
+	background: #ED4245;
+	color: white;
+}
+
+.hidden {
+	display: none !important;
+}
+</style>
+
+<script>
+function toggleRoleSelect() {
+	const mentionType = document.getElementById('freegames_mention_type').value;
+	const roleContainer = document.getElementById('role-select-container');
+	roleContainer.style.display = mentionType === 'role' ? 'block' : 'none';
+}
+
+function filterGames() {
+	const sourceFilter = document.getElementById('filter-source').value;
+	const statusFilter = document.getElementById('filter-status').value;
+	const cards = document.querySelectorAll('.game-card');
+	
+	cards.forEach(card => {
+		const source = card.dataset.source;
+		const status = card.dataset.status;
+		
+		const sourceMatch = sourceFilter === 'all' || source === sourceFilter;
+		const statusMatch = statusFilter === 'all' || status === statusFilter;
+		
+		card.classList.toggle('hidden', !(sourceMatch && statusMatch));
+	});
+}
+
+function refreshGames() {
+	fetch('/freegames/refresh', { method: 'POST' })
+		.then(r => r.json())
+		.then(data => {
+			alert(data.message);
+			if (data.new_games > 0) {
+				location.reload();
+			}
+		})
+		.catch(e => alert('Erreur: ' + e));
+}
+
+function notifyGame(id, btn) {
+	btn.disabled = true;
+	btn.textContent = '⏳ Envoi...';
+	
+	fetch('/freegames/notify/' + id, { method: 'POST' })
+		.then(r => r.json())
+		.then(data => {
+			if (data.success) {
+				location.reload();
+			} else {
+				alert('Erreur: ' + data.message);
+				btn.disabled = false;
+				btn.textContent = '📢 Notifier';
+			}
+		})
+		.catch(e => {
+			alert('Erreur: ' + e);
+			btn.disabled = false;
+			btn.textContent = '📢 Notifier';
+		});
+}
+
+function markNotified(id, btn) {
+	fetch('/freegames/mark-notified/' + id, { method: 'POST' })
+		.then(r => r.json())
+		.then(data => {
+			if (data.success) {
+				location.reload();
+			}
+		})
+		.catch(e => alert('Erreur: ' + e));
+}
+
+function resetGame(id, btn) {
+	fetch('/freegames/reset/' + id, { method: 'POST' })
+		.then(r => r.json())
+		.then(data => {
+			if (data.success) {
+				location.reload();
+			}
+		})
+		.catch(e => alert('Erreur: ' + e));
+}
+
+function deleteGame(id, btn) {
+	if (!confirm('Supprimer ce jeu de la liste ?')) return;
+	
+	fetch('/freegames/delete/' + id, { method: 'POST' })
+		.then(r => r.json())
+		.then(data => {
+			if (data.success) {
+				btn.closest('.game-card').remove();
+			}
+		})
+		.catch(e => alert('Erreur: ' + e));
+}
+</script>
+{% endblock %}
+

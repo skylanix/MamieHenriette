@@ -1220,7 +1220,7 @@ async def parse_target_user(message: Message, bot, parts: list):
 	except (ValueError, discord.NotFound):
 		return None
 
-def create_inspect_embed(user, member, join_date, days_on_server, account_age, warnings, kicks, bans, invite_info):
+def create_inspect_embed(user, member, join_date, days_on_server, account_age, warnings, kicks, bans, invite_info, requester):
 	embed = discord.Embed(
 		title=f"🔍 Inspection de {user.name}",
 		color=discord.Color.blue(),
@@ -1228,7 +1228,7 @@ def create_inspect_embed(user, member, join_date, days_on_server, account_age, w
 	)
 	
 	embed.set_thumbnail(url=user.display_avatar.url)
-	embed.add_field(name="👤 Utilisateur", value=f"**{user.name}**\n`{user.id}`", inline=True)
+	embed.add_field(name="👤 Utilisateur", value=f"**{user.name}**\n```{user.id}```", inline=True)
 	
 	if account_age is not None:
 		embed.add_field(
@@ -1281,7 +1281,7 @@ def create_inspect_embed(user, member, join_date, days_on_server, account_age, w
 	else:
 		embed.add_field(name="✅ Historique de modération", value="Aucun incident", inline=False)
 	
-	embed.set_footer(text="Mamie Henriette")
+	embed.set_footer(text=f"Demandé par {requester.name}")
 	return embed
 
 async def get_invite_info_for_user(bot, guild, user_id: int):
@@ -1339,7 +1339,8 @@ async def handle_inspect_command(message: Message, bot):
 		warnings,
 		kicks,
 		bans,
-		invite_info
+		invite_info,
+		message.author
 	)
 	
 	await message.channel.send(embed=embed)

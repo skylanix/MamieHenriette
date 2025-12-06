@@ -7,7 +7,9 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
 	<meta name="mobile-web-app-capable" content="yes" />
 	<title>Mamie Henriette</title>
-	<link rel="stylesheet" href="/static/css/mvp.css" />
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="/static/css/style.css" />
 	<link rel="icon" href="/static/ico/favicon.ico" type="image/x-icon">
 	<link rel="shortcut icon" href="/static/ico/favicon.ico" type="image/x-icon">
@@ -16,18 +18,56 @@
 <body>
 	<header>
 		<nav>
-			<a href="/"><img src="/static/ico/favicon.ico"></a>
-			<ul>
-				<li><a href="/live-alert">Alerte live</a></li>
-				<li><a href="/commandes">Commandes</a></li>
-				<li><a href="/humeurs">Humeurs</a></li>
-				<li><a href="/moderation">Modération</a></li>
-				<li><a href="/protondb">ProtonDB</a></li>
-				<li><a href="/configurations">Configurations</a></li>
+			<a href="/" class="nav-logo">
+				<img src="/static/ico/favicon.ico" alt="Mamie Henriette">
+				<span>Mamie Henriette</span>
+			</a>
+			
+			<input type="checkbox" id="nav-toggle" class="nav-toggle">
+			<label for="nav-toggle" class="nav-toggle-label">
+				<span></span>
+				<span></span>
+				<span></span>
+			</label>
+			
+			<ul class="nav-menu">
+				<li class="has-submenu">
+					<a href="#">Discord</a>
+					<ul class="submenu">
+						<li><a href="/commandes">📝 Commandes</a></li>
+						<li><a href="/humeurs">😊 Humeurs</a></li>
+						<li><a href="/moderation">🛡️ Modération</a></li>
+					</ul>
+				</li>
+				<li class="has-submenu">
+					<a href="#">Twitch</a>
+					<ul class="submenu">
+						<li><a href="/live-alert">📺 Alerte Live</a></li>
+					</ul>
+				</li>
+				<li class="has-submenu">
+					<a href="#">Outils</a>
+					<ul class="submenu">
+						<li><a href="/freegames">🎮 Jeux Gratuits</a></li>
+						<li><a href="/protondb">🐧 ProtonDB</a></li>
+					</ul>
+				</li>
+				<li>
+					<a href="/configurations">⚙️ Config</a>
+				</li>
 			</ul>
 		</nav>
 	</header>
 	<main>
+		{% with messages = get_flashed_messages(with_categories=true) %}
+			{% if messages %}
+			<div class="flash-messages">
+				{% for category, message in messages %}
+				<div class="flash-message {{ category }}">{{ message }}</div>
+				{% endfor %}
+			</div>
+			{% endif %}
+		{% endwith %}
 		{% block content %}{% endblock %}
 	</main>
 	<footer>

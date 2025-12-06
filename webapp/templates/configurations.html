@@ -5,6 +5,17 @@
 <p>Configurez les tokens Discord, les notifications Humble Bundle et l'API Twitch.</p>
 
 <h2>Discord</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+	{% if messages %}
+		{% for category, message in messages %}
+		<div class="alert alert-{{ category }}" style="padding: 10px; margin: 10px 0; border-radius: 5px; {% if category == 'error' %}background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;{% else %}background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;{% endif %}">
+			{{ message }}
+		</div>
+		{% endfor %}
+	{% endif %}
+{% endwith %}
+
 <form action="{{ url_for('updateConfiguration') }}" method="POST">
 	<fieldset>
 		<legend>API Discord</legend>
@@ -41,6 +52,87 @@
 			• <code>{server.member_count}</code> - Nombre total de membres<br>
 			• <code>&lt;#ID_DU_CHANNEL&gt;</code> - Mentionne un salon (ex: &lt;#123456789012345678&gt;)
 		</small>
+	</fieldset>
+
+	<fieldset>
+		<legend>Auto-Role</legend>
+		<label for="autorole_enable">
+			<input type="checkbox" name="autorole_enable" {% if configuration.getValue('autorole_enable') %}checked="checked"{% endif %}>
+			Attribuer automatiquement un rôle aux nouveaux membres
+		</label>
+		
+		<label for="autorole_role_id">Rôle à attribuer</label>
+		{% if roles|length > 1 %}
+		<div class="tabs tabs-autorole">
+			{% for guild_data in roles %}
+			<button type="button" class="tab-button-autorole" onclick="openTabAutorole(event, 'autorole-guild-{{guild_data.guild_id}}')" {% if loop.first %}id="defaultOpenAutorole"{% endif %}>
+				{{ guild_data.guild_name }}
+			</button>
+			{% endfor %}
+		</div>
+		{% endif %}
+		
+		{% for guild_data in roles %}
+		<div id="autorole-guild-{{guild_data.guild_id}}" class="tab-content-autorole" {% if not loop.first %}style="display: none;"{% endif %}>
+			<select name="autorole_role_id">
+				<option value="">-- Aucun rôle --</option>
+				{% for role in guild_data.roles %}
+				<option value="{{role.id}}" {% if configuration.getIntValue('autorole_role_id')==role.id %}selected="selected"{% endif %}>
+					{% if role.color.value != 0 %}⬤{% else %}○{% endif %} {{role.name}}
+				</option>
+				{% endfor %}
+			</select>
+		</div>
+		{% endfor %}
+		
+		<small>
+			<strong>Note :</strong> Le bot doit avoir la permission "Gérer les rôles" et son rôle doit être positionné plus haut que le rôle à attribuer dans la hiérarchie des rôles.
+		</small>
+		
+		<script>
+		function openTabAutorole(evt, tabName) {
+			var i, tabcontent, tabbuttons;
+			tabcontent = document.getElementsByClassName("tab-content-autorole");
+			for (i = 0; i < tabcontent.length; i++) {
+				tabcontent[i].style.display = "none";
+			}
+			tabbuttons = document.getElementsByClassName("tab-button-autorole");
+			for (i = 0; i < tabbuttons.length; i++) {
+				tabbuttons[i].className = tabbuttons[i].className.replace(" active", "");
+			}
+			document.getElementById(tabName).style.display = "block";
+			evt.currentTarget.className += " active";
+		}
+		document.getElementById("defaultOpenAutorole")?.click();
+		</script>
+		
+		<style>
+		.tabs-autorole {
+			overflow: hidden;
+			border-bottom: 2px solid #ccc;
+			margin-bottom: 10px;
+		}
+		.tab-button-autorole {
+			background-color: #f1f1f1;
+			border: none;
+			outline: none;
+			cursor: pointer;
+			padding: 10px 20px;
+			transition: 0.3s;
+			font-size: 14px;
+			margin-right: 2px;
+		}
+		.tab-button-autorole:hover {
+			background-color: #ddd;
+		}
+		.tab-button-autorole.active {
+			background-color: #ccc;
+			font-weight: bold;
+		}
+		.tab-content-autorole {
+			animation: fadeEffect 0.3s;
+		}
+		</style>
 	</fieldset>
 
 	<fieldset>
@@ -237,4 +329,42 @@
 
 	<input type="Submit" value="Enregistrer la configuration Humble Bundle">
 </form>
+
+<h2>⚠️ Gestion des serveurs</h2>
+<form action="{{ url_for('leaveGuild') }}" method="POST" onsubmit="return confirmLeave();">
+	<fieldset>
+		<legend>Quitter un serveur Discord</legend>
+		<p style="color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 5px;">
+			<strong>⚠️ Attention :</strong> Cette action est irréversible ! Le bot quittera définitivement le serveur sélectionné.
+			Pour rejoindre à nouveau, vous devrez ré-inviter le bot.
+		</p>
+		
+		{% if guilds and guilds|length > 0 %}
+		<label for="guild_id">Sélectionner un serveur à quitter</label>
+		<select name="guild_id" id="guild_id" required>
+			<option value="">-- Choisir un serveur --</option>
+			{% for guild in guilds %}
+			<option value="{{ guild.id }}">{{ guild.name }} ({{ guild.member_count }} membres)</option>
+			{% endfor %}
+		</select>
+		
+		<label for="confirm_leave" style="margin-top: 15px;">
+			<input type="checkbox" name="confirm_leave" id="confirm_leave" value="1" required>
+			Je confirme vouloir faire quitter le bot de ce serveur
+		</label>
+		
+		<input type="submit" value="🚪 Quitter le serveur" style="background-color: #dc3545; border-color: #dc3545;" />
+		{% else %}
+		<p>Aucun serveur Discord connecté ou le bot n'est pas encore démarré.</p>
+		{% endif %}
+	</fieldset>
+</form>
+
+<script>
+function confirmLeave() {
+	var select = document.getElementById('guild_id');
+	var serverName = select.options[select.selectedIndex].text;
+	return confirm('Êtes-vous VRAIMENT sûr de vouloir quitter le serveur "' + serverName + '" ?\n\nCette action est IRRÉVERSIBLE !');
+}
+</script>
 {% endblock %}

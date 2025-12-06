@@ -21,3 +21,6 @@ requests>=2.32.4
 # Nécessaire pour l'appel à ProtonDB
 algoliasearch>=4,<5
 
+# Nécessaire pour le flux RSS des jeux gratuits
+feedparser>=6.0.0
+

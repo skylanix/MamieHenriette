@@ -76,3 +76,35 @@ CREATE TABLE IF NOT EXISTS `member_invites` (
 	`inviter_name` VARCHAR(256),
 	`join_date` DATETIME NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS `free_game` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	`entry_id` VARCHAR(512) UNIQUE NOT NULL,
+	`title` VARCHAR(512) NOT NULL,
+	`source` VARCHAR(64) NOT NULL,
+	`url` VARCHAR(2048) NOT NULL,
+	`image_url` VARCHAR(2048),
+	`description` TEXT,
+	`valid_from` DATETIME,
+	`valid_to` DATETIME,
+	`notified` BOOLEAN NOT NULL DEFAULT FALSE,
+	`notified_at` DATETIME,
+	`created_at` DATETIME NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS `discord_invite` (
+	`code` VARCHAR(32) PRIMARY KEY,
+	`guild_id` VARCHAR(64) NOT NULL,
+	`channel_id` VARCHAR(64) NOT NULL,
+	`channel_name` VARCHAR(256),
+	`inviter_id` VARCHAR(64),
+	`inviter_name` VARCHAR(256),
+	`uses` INTEGER NOT NULL DEFAULT 0,
+	`max_uses` INTEGER NOT NULL DEFAULT 0,
+	`max_age` INTEGER NOT NULL DEFAULT 0,
+	`temporary` BOOLEAN NOT NULL DEFAULT FALSE,
+	`created_at` DATETIME,
+	`expires_at` DATETIME,
+	`revoked` BOOLEAN NOT NULL DEFAULT FALSE,
+	`last_sync` DATETIME NOT NULL
+);

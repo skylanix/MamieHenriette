@@ -9,13 +9,16 @@ from twitchAPI.chat import Chat, ChatEvent, ChatMessage, EventData
 from database.helpers import ConfigurationHelper
 from twitchbot.live_alert import checkOnlineStreamer
 from webapp import webapp
+from shared_stats import stats_manager
 
 USER_SCOPE = [AuthScope.CHAT_READ, AuthScope.CHAT_EDIT]
 
 async def _onReady(ready_event: EventData):
 	logging.info('Bot Twitch prêt')
 	with webapp.app_context():
-		await ready_event.chat.join_room(ConfigurationHelper().getValue('twitch_channel'))
+		channel = ConfigurationHelper().getValue('twitch_channel')
+		await ready_event.chat.join_room(channel)
+		stats_manager.update_twitch_stats(connected=True, channel=channel)
 	asyncio.get_event_loop().create_task(twitchBot._checkOnlineStreamers())
 	
 

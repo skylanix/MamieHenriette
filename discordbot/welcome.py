@@ -87,6 +87,8 @@ async def sendWelcomeMessage(bot: discord.Client, member: Member):
 	except Exception as e:
 		logging.error(f'Échec de la sauvegarde de l\'invitation : {e}')
 	
+	account_age_days = (datetime.now(timezone.utc) - member.created_at).days
+	
 	embed = discord.Embed(
 		title='🎉 Nouveau membre !',
 		description=welcome_message,
@@ -100,8 +102,10 @@ async def sendWelcomeMessage(bot: discord.Client, member: Member):
 	embed.set_footer(text=f'ID: {member.id}')
 	
 	try:
-		await channel.send(embed=embed)
+		message = await channel.send(embed=embed)
 		logging.info(f'Message de bienvenue envoyé pour {member.name}')
+		if account_age_days < 7:
+			await message.add_reaction('⚠️')
 	except Exception as e:
 		logging.error(f'Échec de l\'envoi du message de bienvenue : {e}')
 

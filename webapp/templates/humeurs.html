@@ -3,6 +3,18 @@
 {% block content %}
 <h1>Humeurs de Mamie</h1>
 <p>Définissez les statuts Discord qui changeront automatiquement toutes les 10 minutes pour donner de la personnalité à votre bot.</p>
+
+<div class="info-box">
+	<h3>📝 Variables disponibles</h3>
+	<p>Vous pouvez utiliser ces variables dans vos humeurs, elles seront remplacées automatiquement :</p>
+	<ul>
+		<li><code>{servers}</code> — Nombre de serveurs gérés par le bot</li>
+		<li><code>{members}</code> — Nombre total de membres sur tous les serveurs</li>
+		<li><code>{channels}</code> — Nombre total de salons sur tous les serveurs</li>
+	</ul>
+	<p><em>Exemple : "Je surveille {members} personnes sur {servers} serveurs 👀"</em></p>
+</div>
+
 <table>
 	<thead>
 		<tr>

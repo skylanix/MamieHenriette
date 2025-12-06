@@ -3,61 +3,175 @@
 {% block content %}
 <h1>Modération Discord</h1>
 
-<p>
-	Historique des actions de modération effectuées sur le serveur Discord.
+<p>Historique des actions de modération effectuées sur le serveur Discord. Le bot enregistre automatiquement les avertissements, exclusions et bannissements.</p>
 
-	Le bot enregistre automatiquement les avertissements, exclusions et bannissements.
+<!-- Navigation entre les sections -->
+<div class="moderation-nav">
+	<a href="{{ url_for('moderation') }}" class="nav-btn {{ '' if show_invites else 'active' }}">📋 Événements de modération</a>
+	<a href="{{ url_for('moderation_invitations') }}" class="nav-btn {{ 'active' if show_invites else '' }}">🔗 Invitations</a>
+</div>
 
-	<table>
-		<thead>
-			<tr>
-				<th>Commande</th>
-				<th>Description</th>
-			</tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td><strong>!averto @utilisateur raison</strong><br><small>Alias : !warn, !av, !avertissement</small></td>
-				<td>Avertit un utilisateur et enregistre l'avertissement dans la base de données</td>
-			</tr>
-			<tr>
-				<td><strong>!delaverto id</strong><br><small>Alias : !removewarn, !delwarn</small></td>
-				<td>Retire un avertissement en utilisant son numéro d'ID</td>
-			</tr>
-			<tr>
-				<td><strong>!warnings</strong> ou <strong>!warnings @utilisateur</strong><br><small>Alias : !listevent, !listwarn</small></td>
-				<td>Affiche la liste des événements de modération (tous ou pour un utilisateur spécifique)</td>
-			</tr>
-			<tr>
-				<td><strong>!inspect @utilisateur</strong> ou <strong>!inspect id</strong></td>
-				<td>Affiche des informations détaillées sur un utilisateur : création du compte, date d'arrivée, historique de modération</td>
-			</tr>
-			<tr>
-				<td><strong>!kick @utilisateur raison</strong></td>
-				<td>Expulse un utilisateur du serveur</td>
-			</tr>
-			<tr>
-				<td><strong>!ban @utilisateur raison</strong></td>
-				<td>Bannit définitivement un utilisateur du serveur</td>
-			</tr>
-			<tr>
-				<td><strong>!unban discord_id</strong> ou <strong>!unban #sanction_id raison</strong></td>
-				<td>Révoque le bannissement d'un utilisateur et lui envoie une invitation</td>
-			</tr>
-			<tr>
-				<td><strong>!banlist</strong></td>
-				<td>Affiche la liste des utilisateurs actuellement bannis du serveur</td>
-			</tr>
-			<tr>
-				<td><strong>!aide</strong><br><small>Alias : !help</small></td>
-				<td>Affiche l'aide avec toutes les commandes disponibles</td>
-			</tr>
-		</tbody>
-	</table>
-</p>
+<!-- Section Statistiques -->
+<div class="dashboard-section">
+	<h2>📊 Statistiques</h2>
+	<div class="stats-grid">
+		<div class="stat-card">
+			<div class="stat-icon">📋</div>
+			<div class="stat-content">
+				<span class="stat-label">Total des sanctions</span>
+				<span class="stat-value big">{{ stats.total }}</span>
+			</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-icon">⏰</div>
+			<div class="stat-content">
+				<span class="stat-label">Dernières 24h</span>
+				<span class="stat-value big">{{ stats.recent_24h }}</span>
+			</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-icon">📅</div>
+			<div class="stat-content">
+				<span class="stat-label">7 derniers jours</span>
+				<span class="stat-value big">{{ stats.recent_7d }}</span>
+			</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-icon">📆</div>
+			<div class="stat-content">
+				<span class="stat-label">30 derniers jours</span>
+				<span class="stat-value big">{{ stats.recent_30d }}</span>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Section Types de sanctions et Top modérateurs -->
+<div class="moderation-insights">
+	<div class="insight-card">
+		<h3>🛡️ Top Modérateurs</h3>
+		{% if stats.top_moderators %}
+		<div class="leaderboard">
+			{% for mod_name, count in stats.top_moderators %}
+			<div class="leaderboard-item">
+				<span class="rank">{{ loop.index }}</span>
+				<span class="name">{{ mod_name }}</span>
+				<span class="count">{{ count }} sanction{{ 's' if count > 1 else '' }}</span>
+			</div>
+			{% endfor %}
+		</div>
+		{% else %}
+		<p class="text-muted">Aucune donnée disponible</p>
+		{% endif %}
+	</div>
+	
+	<div class="insight-card">
+		<h3>⚖️ Types de sanctions</h3>
+		{% if stats.type_counts %}
+		<div class="type-badges">
+			{% for type_name, count in stats.type_counts.items() %}
+			<div class="type-badge {{ type_name | lower }}">
+				<span class="type-name">{{ type_name }}</span>
+				<span class="type-count">{{ count }}</span>
+			</div>
+			{% endfor %}
+		</div>
+		{% else %}
+		<p class="text-muted">Aucune donnée disponible</p>
+		{% endif %}
+	</div>
+	
+	<div class="insight-card">
+		<h3>⚠️ Utilisateurs les plus sanctionnés</h3>
+		{% if stats.top_sanctioned %}
+		<div class="leaderboard">
+			{% for username, count in stats.top_sanctioned %}
+			<div class="leaderboard-item warning">
+				<span class="rank">{{ loop.index }}</span>
+				<span class="name">{{ username }}</span>
+				<span class="count">{{ count }} sanction{{ 's' if count > 1 else '' }}</span>
+			</div>
+			{% endfor %}
+		</div>
+		{% else %}
+		<p class="text-muted">Aucune donnée disponible</p>
+		{% endif %}
+	</div>
+</div>
+
+<!-- Section Commandes (collapsible) -->
+<details class="commands-section">
+	<summary>
+		<span class="summary-icon">📖</span>
+		<span>Commandes de modération disponibles</span>
+	</summary>
+	<div class="commands-grid">
+		<div class="command-card">
+			<div class="command-header">
+				<code>!averto @utilisateur raison</code>
+			</div>
+			<p>Avertit un utilisateur et enregistre l'avertissement</p>
+			<small>Alias : !warn, !av, !avertissement</small>
+		</div>
+		<div class="command-card">
+			<div class="command-header">
+				<code>!delaverto id</code>
+			</div>
+			<p>Retire un avertissement par son ID</p>
+			<small>Alias : !removewarn, !delwarn</small>
+		</div>
+		<div class="command-card">
+			<div class="command-header">
+				<code>!warnings [@utilisateur]</code>
+			</div>
+			<p>Liste les événements de modération</p>
+			<small>Alias : !listevent, !listwarn</small>
+		</div>
+		<div class="command-card">
+			<div class="command-header">
+				<code>!inspect @utilisateur</code>
+			</div>
+			<p>Informations détaillées sur un utilisateur</p>
+			<small>Aussi : !inspect id</small>
+		</div>
+		<div class="command-card">
+			<div class="command-header">
+				<code>!kick @utilisateur raison</code>
+			</div>
+			<p>Expulse un utilisateur du serveur</p>
+		</div>
+		<div class="command-card">
+			<div class="command-header">
+				<code>!ban @utilisateur raison</code>
+			</div>
+			<p>Bannit définitivement un utilisateur</p>
+		</div>
+		<div class="command-card">
+			<div class="command-header">
+				<code>!unban discord_id</code>
+			</div>
+			<p>Révoque un bannissement</p>
+			<small>Aussi : !unban #sanction_id raison</small>
+		</div>
+		<div class="command-card">
+			<div class="command-header">
+				<code>!banlist</code>
+			</div>
+			<p>Liste des utilisateurs bannis</p>
+		</div>
+		<div class="command-card">
+			<div class="command-header">
+				<code>!aide</code>
+			</div>
+			<p>Affiche toutes les commandes</p>
+			<small>Alias : !help</small>
+		</div>
+	</div>
+</details>
 
 {% if not event %}
-<h2>Événements de modération</h2>
+<h2>📜 Historique des événements</h2>
+{% if events %}
 <table class="moderation">
 	<thead>
 		<tr>
@@ -73,24 +187,31 @@
 	<tbody>
 		{% for mod_event in events %}
 		<tr>
-			<td>{{ mod_event.type }}</td>
+			<td><span class="event-type {{ mod_event.type | lower if mod_event.type else '' }}">{{ mod_event.type }}</span></td>
 			<td>{{ mod_event.username }}</td>
-			<td>{{ mod_event.discord_id }}</td>
+			<td><code>{{ mod_event.discord_id }}</code></td>
 			<td>{{ mod_event.created_at.strftime('%d/%m/%Y %H:%M') if mod_event.created_at else 'N/A' }}</td>
 			<td>{{ mod_event.reason }}</td>
 			<td>{{ mod_event.staff_name }}</td>
 			<td>
-				<a href="{{ url_for('open_edit_moderation_event', event_id = mod_event.id) }}" class="icon">✐</a>
-				<a href="{{ url_for('delete_moderation_event', event_id = mod_event.id) }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')" class="icon">🗑</a>
+				<a href="{{ url_for('open_edit_moderation_event', event_id = mod_event.id) }}" class="icon" title="Modifier">✐</a>
+				<a href="{{ url_for('delete_moderation_event', event_id = mod_event.id) }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')" class="icon" title="Supprimer">🗑</a>
 			</td>
 		</tr>
 		{% endfor %}
 	</tbody>
 </table>
+{% else %}
+<div class="empty-state">
+	<div class="empty-icon">🎉</div>
+	<p>Aucun événement de modération enregistré</p>
+	<small>Le serveur est sage !</small>
+</div>
+{% endif %}
 {% endif %}
 
 {% if event %}
-<h2>Editer un événement</h2>
+<h2>✏️ Editer un événement</h2>
 <form action="{{ url_for('update_moderation_event', event_id = event.id) }}" method="POST">
 	<label for="type">Type</label>
 	<input name="type" type="text" value="{{ event.type }}" disabled />
@@ -105,6 +226,144 @@
 	<input type="Submit" value="Modifier">
 	<a href="{{ url_for('moderation') }}">Annuler</a>
 </form>
+{% endif %}
+
+{% if show_invites %}
+<!-- Section Invitations Discord -->
+<h2>🔗 Invitations Discord</h2>
+
+<div class="invites-actions">
+	<a href="{{ url_for('sync_invitations') }}" class="btn btn-primary">🔄 Synchroniser les invitations</a>
+	<label class="checkbox-label">
+		<input type="checkbox" id="show-revoked" {{ 'checked' if show_revoked else '' }} onchange="toggleRevoked()">
+		Afficher les invitations révoquées
+	</label>
+</div>
+
+{% if invite_stats %}
+<!-- Statistiques des invitations -->
+<div class="dashboard-section">
+	<h3>📊 Statistiques des invitations</h3>
+	<div class="stats-grid">
+		<div class="stat-card">
+			<div class="stat-icon">🔗</div>
+			<div class="stat-content">
+				<span class="stat-label">Invitations actives</span>
+				<span class="stat-value big">{{ invite_stats.total }}</span>
+			</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-icon">👥</div>
+			<div class="stat-content">
+				<span class="stat-label">Utilisations totales</span>
+				<span class="stat-value big">{{ invite_stats.total_uses }}</span>
+			</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-icon">♾️</div>
+			<div class="stat-content">
+				<span class="stat-label">Permanentes</span>
+				<span class="stat-value big">{{ invite_stats.permanent }}</span>
+			</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-icon">⏳</div>
+			<div class="stat-content">
+				<span class="stat-label">Temporaires</span>
+				<span class="stat-value big">{{ invite_stats.temporary }}</span>
+			</div>
+		</div>
+	</div>
+</div>
+
+{% if invite_stats.top_inviters %}
+<div class="moderation-insights">
+	<div class="insight-card">
+		<h3>🏆 Top inviteurs</h3>
+		<div class="leaderboard">
+			{% for inviter_name, uses in invite_stats.top_inviters %}
+			<div class="leaderboard-item">
+				<span class="rank">{{ loop.index }}</span>
+				<span class="name">{{ inviter_name }}</span>
+				<span class="count">{{ uses }} membre{{ 's' if uses > 1 else '' }} invité{{ 's' if uses > 1 else '' }}</span>
+			</div>
+			{% endfor %}
+		</div>
+	</div>
+</div>
+{% endif %}
+{% endif %}
+
+<!-- Liste des invitations -->
+{% if invites %}
+<table class="moderation invites-table">
+	<thead>
+		<tr>
+			<th>Code</th>
+			<th>Canal</th>
+			<th>Créateur</th>
+			<th>Utilisations</th>
+			<th>Max utilisations</th>
+			<th>Expiration</th>
+			<th>Créée le</th>
+			<th>Statut</th>
+			<th>#</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for invite in invites %}
+		<tr class="{{ 'revoked' if invite.revoked else '' }} {{ 'expired' if invite.is_expired else '' }}">
+			<td><code>{{ invite.code }}</code></td>
+			<td>{{ invite.channel_name or 'N/A' }}</td>
+			<td>{{ invite.inviter_name or 'Inconnu' }}</td>
+			<td>{{ invite.uses or 0 }}</td>
+			<td>{{ invite.max_uses if invite.max_uses > 0 else '∞' }}</td>
+			<td>
+				{% if invite.max_age == 0 %}
+					<span class="badge permanent">Jamais</span>
+				{% elif invite.expires_at %}
+					{{ invite.expires_at.strftime('%d/%m/%Y %H:%M') }}
+				{% else %}
+					N/A
+				{% endif %}
+			</td>
+			<td>{{ invite.created_at.strftime('%d/%m/%Y %H:%M') if invite.created_at else 'N/A' }}</td>
+			<td>
+				{% if invite.revoked %}
+					<span class="badge revoked">Révoquée</span>
+				{% elif invite.is_expired %}
+					<span class="badge expired">Expirée</span>
+				{% elif invite.max_uses > 0 and invite.uses >= invite.max_uses %}
+					<span class="badge used">Max atteint</span>
+				{% else %}
+					<span class="badge active">Active</span>
+				{% endif %}
+			</td>
+			<td>
+				{% if not invite.revoked %}
+				<a href="{{ url_for('revoke_invitation', invite_code=invite.code) }}" 
+				   onclick="return confirm('Êtes-vous sûr de vouloir révoquer l\'invitation {{ invite.code }} ?')" 
+				   class="icon" title="Révoquer">🗑</a>
+				{% endif %}
+			</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+{% else %}
+<div class="empty-state">
+	<div class="empty-icon">🔗</div>
+	<p>Aucune invitation trouvée</p>
+	<small>Cliquez sur "Synchroniser les invitations" pour récupérer les invitations depuis Discord</small>
+</div>
+{% endif %}
+
+<script>
+function toggleRevoked() {
+	const showRevoked = document.getElementById('show-revoked').checked;
+	window.location.href = '{{ url_for("moderation_invitations") }}?show_revoked=' + showRevoked;
+}
+</script>
 {% endif %}
 
 {% endblock %}

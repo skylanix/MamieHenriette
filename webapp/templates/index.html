@@ -1,7 +1,161 @@
 {% extends "template.html" %}
 
 {% block content %}
-<h1>Bienvenue sur l'interface d'administration de Mamie.</h1>
-<p>Nous devons définir ce que nous souhaitons afficher sur la page d'accueil. Peut-être l'historique des dernières
-	modifications ? de la modération ?</p>
+<h1>Tableau de bord</h1>
+<p>Bienvenue sur l'interface d'administration de Mamie Henriette.</p>
+
+<!-- Services -->
+<section class="dashboard-section">
+	<h2>🔌 Services</h2>
+	<div class="stats-grid">
+		<div class="stat-card {{ 'online' if stats.discord_connected else 'offline' }}">
+			<div class="stat-icon">🤖</div>
+			<div class="stat-content">
+				<span class="stat-label">Discord</span>
+				<span class="stat-value">{{ 'Connecté' if stats.discord_connected else 'Déconnecté' }}</span>
+				{% if stats.discord_connected and stats.discord_bot_name %}
+				<span class="stat-sub">{{ stats.discord_bot_name }}</span>
+				{% endif %}
+			</div>
+			<div class="stat-status {{ 'online' if stats.discord_connected else 'offline' }}"></div>
+		</div>
+		
+		<div class="stat-card {{ 'online' if stats.twitch_connected else 'offline' }}">
+			<div class="stat-icon">📺</div>
+			<div class="stat-content">
+				<span class="stat-label">Twitch</span>
+				<span class="stat-value">{{ 'Connecté' if stats.twitch_connected else 'Déconnecté' }}</span>
+				{% if stats.twitch_connected and stats.twitch_channel %}
+				<span class="stat-sub">#{{ stats.twitch_channel }}</span>
+				{% endif %}
+			</div>
+			<div class="stat-status {{ 'online' if stats.twitch_connected else 'offline' }}"></div>
+		</div>
+	</div>
+</section>
+
+<!-- Statistiques Discord -->
+{% if stats.discord_connected %}
+<section class="dashboard-section">
+	<h2>📊 Statistiques Discord</h2>
+	<div class="stats-grid">
+		<div class="stat-card">
+			<div class="stat-icon">🏠</div>
+			<div class="stat-content">
+				<span class="stat-label">Serveurs</span>
+				<span class="stat-value big">{{ stats.discord_guilds }}</span>
+			</div>
+		</div>
+		
+		<div class="stat-card">
+			<div class="stat-icon">👥</div>
+			<div class="stat-content">
+				<span class="stat-label">Membres</span>
+				<span class="stat-value big">{{ stats.discord_members }}</span>
+			</div>
+		</div>
+		
+		<div class="stat-card">
+			<div class="stat-icon">💬</div>
+			<div class="stat-content">
+				<span class="stat-label">Salons</span>
+				<span class="stat-value big">{{ stats.discord_channels }}</span>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!-- Envoyer une annonce -->
+<section class="dashboard-section">
+	<h2>📢 Envoyer une annonce</h2>
+	<form id="announce-form" class="announce-form-inline">
+		<div class="announce-row">
+			<input type="text" id="message-input" name="message" placeholder="Votre message..." required>
+			<select id="channel-select" name="channel_id" required>
+				<option value="">Salon</option>
+				{% for channel in channels %}
+				<option value="{{ channel.id }}">#{{ channel.name }} ({{ channel.guild_name }})</option>
+				{% endfor %}
+			</select>
+			<button type="submit" id="send-btn">
+				<span class="btn-text">📨 Envoyer</span>
+				<span class="btn-loading" style="display: none;">⏳</span>
+			</button>
+		</div>
+		<div id="announce-result" class="announce-result" style="display: none;"></div>
+	</form>
+</section>
+{% endif %}
+
+<!-- Fonctionnalités -->
+<section class="dashboard-section">
+	<h2>⚡ Fonctionnalités</h2>
+	<div class="cogs-grid">
+		{% for cog_name, enabled in stats.cogs_enabled.items() %}
+		<div class="cog-item {{ 'enabled' if enabled else 'disabled' }}">
+			<span class="cog-status">{{ '✅' if enabled else '❌' }}</span>
+			<span class="cog-name">{{ cog_name }}</span>
+		</div>
+		{% else %}
+		<p class="text-muted">Aucune information disponible. Le bot Discord n'est peut-être pas encore connecté.</p>
+		{% endfor %}
+	</div>
+</section>
+
+{% if stats.last_update %}
+<p class="last-update">Dernière mise à jour : {{ stats.last_update.strftime('%d/%m/%Y à %H:%M:%S') }}</p>
+{% endif %}
+
+<script>
+document.getElementById('announce-form')?.addEventListener('submit', async function(e) {
+	e.preventDefault();
+	
+	const btn = document.getElementById('send-btn');
+	const btnText = btn.querySelector('.btn-text');
+	const btnLoading = btn.querySelector('.btn-loading');
+	const result = document.getElementById('announce-result');
+	
+	const channelId = document.getElementById('channel-select').value;
+	const message = document.getElementById('message-input').value;
+	
+	// UI loading
+	btn.disabled = true;
+	btnText.style.display = 'none';
+	btnLoading.style.display = 'inline';
+	result.style.display = 'none';
+	
+	try {
+		const response = await fetch('/api/send-message', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				channel_id: channelId,
+				message: message
+			})
+		});
+		
+		const data = await response.json();
+		
+		result.style.display = 'block';
+		if (data.success) {
+			result.className = 'announce-result success';
+			result.textContent = '✅ ' + data.message;
+			document.getElementById('message-input').value = '';
+		} else {
+			result.className = 'announce-result error';
+			result.textContent = '❌ ' + data.error;
+		}
+	} catch (error) {
+		result.style.display = 'block';
+		result.className = 'announce-result error';
+		result.textContent = '❌ Erreur de connexion';
+	} finally {
+		btn.disabled = false;
+		btnText.style.display = 'inline';
+		btnLoading.style.display = 'none';
+	}
+});
+</script>
 {% endblock %}
