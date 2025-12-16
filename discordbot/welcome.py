@@ -100,8 +100,14 @@ async def sendWelcomeMessage(bot: discord.Client, member: Member):
 	embed.set_footer(text=f'ID: {member.id}')
 	
 	try:
-		await channel.send(embed=embed)
+		message = await channel.send(embed=embed)
 		logging.info(f'Message de bienvenue envoyé pour {member.name}')
+		
+		now = datetime.now(timezone.utc)
+		account_age = (now - member.created_at).days
+		if account_age < 7:
+			await message.add_reaction('⚠️')
+			logging.info(f'Réaction warning ajoutée pour {member.name} (compte créé il y a {account_age} jours)')
 	except Exception as e:
 		logging.error(f'Échec de l\'envoi du message de bienvenue : {e}')
 
