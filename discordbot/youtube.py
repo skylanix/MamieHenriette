@@ -149,31 +149,76 @@ async def _notifyVideo(notification: YouTubeNotification, video_data: dict, vide
 			message = f"🎥 Nouvelle vidéo de {channel_name}: [{video_title}]({video_url})"
 		
 		logger.info(f"Envoi de notification YouTube: {message}")
-		bot.loop.create_task(_sendMessage(notification.notify_channel, message, video_url, thumbnail, video_title, channel_name))
+		bot.loop.create_task(_sendMessage(notification, message, video_url, thumbnail, video_title, channel_name, video_id, published_at, is_short))
 		
 	except Exception as e:
 		logger.error(f"Erreur lors de la notification: {e}")
 
 
-async def _sendMessage(channel_id: int, message: str, video_url: str, thumbnail: str, video_title: str, channel_name: str):
+def _format_embed_text(text: str, channel_name: str, video_title: str, video_url: str, video_id: str, thumbnail: str, published_at: str, is_short: bool) -> str:
+	"""Formate un texte d'embed avec les variables disponibles"""
+	if not text:
+		return None
+	try:
+		return text.format(
+			channel_name=channel_name or 'Inconnu',
+			video_title=video_title or 'Sans titre',
+			video_url=video_url,
+			video_id=video_id,
+			thumbnail=thumbnail or '',
+			published_at=published_at or '',
+			is_short=is_short
+		)
+	except KeyError:
+		return text
+
+
+async def _sendMessage(notification: YouTubeNotification, message: str, video_url: str, thumbnail: str, video_title: str, channel_name: str, video_id: str, published_at: str, is_short: bool):
 	from discordbot import bot
 	try:
-		discord_channel = bot.get_channel(channel_id)
+		discord_channel = bot.get_channel(notification.notify_channel)
 		if not discord_channel:
-			logger.error(f"Canal Discord {channel_id} introuvable")
+			logger.error(f"Canal Discord {notification.notify_channel} introuvable")
 			return
 		
 		import discord
+		
+		embed_title = _format_embed_text(notification.embed_title, channel_name, video_title, video_url, video_id, thumbnail, published_at, is_short) if notification.embed_title else video_title
+		embed_description = _format_embed_text(notification.embed_description, channel_name, video_title, video_url, video_id, thumbnail, published_at, is_short) if notification.embed_description else None
+		
+		try:
+			embed_color = int(notification.embed_color or 'FF0000', 16)
+		except ValueError:
+			embed_color = 0xFF0000
+		
 		embed = discord.Embed(
-			title=video_title,
+			title=embed_title,
 			url=video_url,
-			color=0xFF0000
+			color=embed_color
 		)
-		embed.set_author(name=channel_name, icon_url="https://www.youtube.com/img/desktop/yt_1200.png")
-		if thumbnail:
+		
+		if embed_description:
+			embed.description = embed_description
+		
+		author_name = _format_embed_text(notification.embed_author_name, channel_name, video_title, video_url, video_id, thumbnail, published_at, is_short) if notification.embed_author_name else channel_name
+		author_icon = notification.embed_author_icon if notification.embed_author_icon else "https://www.youtube.com/img/desktop/yt_1200.png"
+		embed.set_author(name=author_name, icon_url=author_icon)
+		
+		if notification.embed_thumbnail and thumbnail:
+			embed.set_thumbnail(url=thumbnail)
+		
+		if notification.embed_image and thumbnail:
 			embed.set_image(url=thumbnail)
 		
-		await discord_channel.send(message, embed=embed)
+		if notification.embed_footer:
+			footer_text = _format_embed_text(notification.embed_footer, channel_name, video_title, video_url, video_id, thumbnail, published_at, is_short)
+			if footer_text:
+				embed.set_footer(text=footer_text)
+		
+		if message and message.strip():
+			await discord_channel.send(message, embed=embed)
+		else:
+			await discord_channel.send(embed=embed)
 		logger.info(f"Notification YouTube envoyée avec succès")
 		
 	except Exception as e:

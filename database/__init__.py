@@ -33,7 +33,13 @@ def _set_sqlite_pragma(dbapi_connection, connection_record):
 	except Exception:
 		pass
 
+def _tableExists(table_name:str, cursor:Cursor) -> bool:
+	cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
+	return cursor.fetchone() is not None
+
 def _tableHaveColumn(table_name:str, column_name:str, cursor:Cursor) -> bool: 
+	if not _tableExists(table_name, cursor):
+		return False
 	cursor.execute(f'PRAGMA table_info({table_name})')
 	columns = cursor.fetchall()
 	return any(col[1] == column_name for col in columns)
@@ -64,6 +70,27 @@ def _doPostImportMigration(cursor:Cursor):
 			cursor.execute('INSERT INTO game_bundle(url, name, json) VALUES (?, ?, ?)', (url, name, json.dumps(json_data)))
 		logging.info("suppression de la table temporaire game_bundle_old")
 		_dropTable('game_bundle_old', cursor)
+	
+	if _tableExists('youtube_notification', cursor):
+		logging.info("Migration de la table youtube_notification: ajout des colonnes d'embed")
+		embed_columns = [
+			('embed_title', 'VARCHAR(256)'),
+			('embed_description', 'VARCHAR(2000)'),
+			('embed_color', 'VARCHAR(8) DEFAULT "FF0000"'),
+			('embed_footer', 'VARCHAR(2048)'),
+			('embed_author_name', 'VARCHAR(256)'),
+			('embed_author_icon', 'VARCHAR(512)'),
+			('embed_thumbnail', 'BOOLEAN DEFAULT 1'),
+			('embed_image', 'BOOLEAN DEFAULT 1')
+		]
+		for col_name, col_type in embed_columns:
+			if not _tableHaveColumn('youtube_notification', col_name, cursor):
+				try:
+					cursor.execute(f'ALTER TABLE youtube_notification ADD COLUMN {col_name} {col_type}')
+					logging.info(f"Colonne {col_name} ajoutée à youtube_notification")
+				except Exception as e:
+					logging.error(f"Impossible d'ajouter la colonne {col_name}: {e}")
+					raise
 
 with webapp.app_context():
 	with open('database/schema.sql', 'r') as f:

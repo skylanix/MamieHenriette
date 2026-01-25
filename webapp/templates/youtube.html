@@ -62,52 +62,184 @@
 {% endif %}
 
 <h2>{{ 'Editer une notification' if notification else 'Ajouter une notification YouTube' }}</h2>
-<form action="{{ url_for('submitEditYouTube', id = notification.id) if notification else url_for('addYouTube') }}" method="POST">
-	<label for="channel_id">Lien ou ID de la chaîne YouTube</label>
-	<input name="channel_id" type="text" maxlength="256" required="required" value="{{notification.channel_id if notification}}" placeholder="https://www.youtube.com/@513v3 ou https://www.youtube.com/channel/UC... ou UC..."/>
-	<label for="notify_channel">Canal de Notification Discord</label>
-	<select name="notify_channel">
-		{% for channel in channels %}
-		<option value="{{channel.id}}"{% if notification and notification.notify_channel == channel.id %}
-			selected="selected" {% endif %}>{{channel.name}}</option>
-		{% endfor %}
-	</select>
-	<label for="video_type">Type de vidéo à notifier</label>
-	<select name="video_type">
-		<option value="all"{% if notification and notification.video_type == 'all' %} selected="selected" {% endif %}>Toutes (vidéos + shorts)</option>
-		<option value="video"{% if notification and notification.video_type == 'video' %} selected="selected" {% endif %}>Vidéos uniquement</option>
-		<option value="short"{% if notification and notification.video_type == 'short' %} selected="selected" {% endif %}>Shorts uniquement</option>
-	</select>
-	<label for="message">Message</label>
-	<textarea name="message" rows="5" cols="50" required="required">{{notification.message if notification}}</textarea>
-	<input type="Submit" value="{{ 'Modifier' if notification else 'Ajouter' }}">
-	<p>
-		Vous pouvez coller directement le lien de la chaîne YouTube dans n'importe quel format :
-		<ul>
-			<li><strong>Lien avec handle :</strong> <code>https://www.youtube.com/@513v3</code></li>
-			<li><strong>Lien avec ID :</strong> <code>https://www.youtube.com/channel/UCxxxxxxxxxxxxxxxxxxxxxxxxxx</code></li>
-			<li><strong>ID seul :</strong> <code>UCxxxxxxxxxxxxxxxxxxxxxxxxxx</code></li>
-			<li><strong>Handle seul :</strong> <code>@513v3</code></li>
-		</ul>
-		Le système extraira automatiquement l'ID de la chaîne.
-		<br><br>
-		<strong>Note :</strong> Les notifications utilisent le flux RSS YouTube, aucune clé API n'est nécessaire !
-	</p>
-	<p>
-		Pour le message vous avez accès à ces variables :
-		<ul>
-			<li><code>{channel_name}</code> : nom de la chaîne YouTube</li>
-			<li><code>{video_title}</code> : titre de la vidéo</li>
-			<li><code>{video_url}</code> : lien vers la vidéo</li>
-			<li><code>{video_id}</code> : ID de la vidéo</li>
-			<li><code>{thumbnail}</code> : URL de la miniature</li>
-			<li><code>{published_at}</code> : date de publication</li>
-			<li><code>{is_short}</code> : True si c'est un short, False sinon</li>
-		</ul>
-		Le message est au format <a href="https://commonmark.org/" target="_blank">common-mark</a> dans la limite de ce que
-		support Discord.
-		Exemple : <code>🎥 Nouvelle vidéo de {channel_name} : [{video_title}]({video_url})</code>
-	</p>
-</form>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+	<div>
+		<form id="youtube-form" action="{{ url_for('submitEditYouTube', id = notification.id) if notification else url_for('addYouTube') }}" method="POST">
+			<fieldset>
+				<legend>Configuration de base</legend>
+				<label for="channel_id">Lien ou ID de la chaîne YouTube</label>
+				<input name="channel_id" id="channel_id" type="text" maxlength="256" required="required" value="{{notification.channel_id if notification}}" placeholder="https://www.youtube.com/@513v3 ou https://www.youtube.com/channel/UC... ou UC..."/>
+				
+				<label for="notify_channel">Canal de Notification Discord</label>
+				<select name="notify_channel" id="notify_channel">
+					{% for channel in channels %}
+					<option value="{{channel.id}}"{% if notification and notification.notify_channel == channel.id %}
+						selected="selected" {% endif %}>{{channel.name}}</option>
+					{% endfor %}
+				</select>
+				
+				<label for="video_type">Type de vidéo à notifier</label>
+				<select name="video_type" id="video_type">
+					<option value="all"{% if notification and notification.video_type == 'all' %} selected="selected" {% endif %}>Toutes (vidéos + shorts)</option>
+					<option value="video"{% if notification and notification.video_type == 'video' %} selected="selected" {% endif %}>Vidéos uniquement</option>
+					<option value="short"{% if notification and notification.video_type == 'short' %} selected="selected" {% endif %}>Shorts uniquement</option>
+				</select>
+				
+				<label for="message">Message (optionnel, envoyé avant l'embed)</label>
+				<textarea name="message" id="message" rows="3" cols="50">{{notification.message if notification}}</textarea>
+			</fieldset>
+
+			<fieldset>
+				<legend>Personnalisation de l'embed Discord</legend>
+				
+				<label for="embed_title">Titre de l'embed</label>
+				<input name="embed_title" id="embed_title" type="text" maxlength="256" value="{{notification.embed_title if notification}}" placeholder="{video_title} (par défaut: titre de la vidéo)"/>
+				<small>Variables: {video_title}, {channel_name}, {video_url}, {video_id}</small>
+				
+				<label for="embed_description">Description de l'embed</label>
+				<textarea name="embed_description" id="embed_description" rows="4" cols="50" placeholder="Description optionnelle de l'embed">{{notification.embed_description if notification}}</textarea>
+				<small>Variables: {video_title}, {channel_name}, {video_url}, {published_at}, {is_short}</small>
+				
+				<label for="embed_color">Couleur de l'embed (hexadécimal)</label>
+				<input name="embed_color" id="embed_color" type="color" value="#{{notification.embed_color if notification else 'FF0000'}}" style="width: 100px; height: 40px;"/>
+				<input type="text" id="embed_color_text" value="{{notification.embed_color if notification else 'FF0000'}}" placeholder="FF0000" style="width: 100px; margin-left: 10px;" maxlength="6"/>
+				<small>Format: FF0000 (rouge YouTube par défaut)</small>
+				
+				<label for="embed_author_name">Nom de l'auteur</label>
+				<input name="embed_author_name" id="embed_author_name" type="text" maxlength="256" value="{{notification.embed_author_name if notification}}" placeholder="{channel_name} (par défaut: nom de la chaîne)"/>
+				
+				<label for="embed_author_icon">Icône de l'auteur (URL)</label>
+				<input name="embed_author_icon" id="embed_author_icon" type="text" maxlength="512" value="{{notification.embed_author_icon if notification}}" placeholder="https://www.youtube.com/img/desktop/yt_1200.png"/>
+				
+				<label for="embed_footer">Pied de page</label>
+				<input name="embed_footer" id="embed_footer" type="text" maxlength="2048" value="{{notification.embed_footer if notification}}" placeholder="Texte optionnel en bas de l'embed"/>
+				
+				<label>
+					<input type="checkbox" name="embed_thumbnail" id="embed_thumbnail" {% if not notification or notification.embed_thumbnail %}checked="checked"{% endif %}>
+					Afficher la miniature (thumbnail) en haut à droite
+				</label>
+				
+				<label>
+					<input type="checkbox" name="embed_image" id="embed_image" {% if not notification or notification.embed_image %}checked="checked"{% endif %}>
+					Afficher l'image principale (image de la vidéo)
+				</label>
+			</fieldset>
+
+			<input type="Submit" value="{{ 'Modifier' if notification else 'Ajouter' }}">
+		</form>
+	</div>
+
+	<div>
+		<h3>Prévisualisation de l'embed Discord</h3>
+		<div id="embed-preview" style="background-color: #2f3136; border-radius: 4px; padding: 16px; font-family: 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #dcddde; max-width: 520px; border-left: 4px solid #FF0000;">
+			<div id="embed-author" style="display: flex; align-items: center; margin-bottom: 8px; font-size: 14px;">
+				<img id="embed-author-icon" src="https://www.youtube.com/img/desktop/yt_1200.png" style="width: 20px; height: 20px; border-radius: 50%; margin-right: 8px;" onerror="this.style.display='none'"/>
+				<span id="embed-author-name" style="font-weight: 600;">Nom de la chaîne</span>
+			</div>
+			<a id="embed-title" href="#" style="color: #00aff4; text-decoration: none; font-size: 16px; font-weight: 600; display: block; margin-bottom: 8px;">Titre de la vidéo</a>
+			<div id="embed-description" style="font-size: 14px; line-height: 1.375; margin-bottom: 8px; color: #dcddde;"></div>
+			<div id="embed-thumbnail-container" style="margin: 8px 0;">
+				<img id="embed-thumbnail" src="" style="max-width: 80px; max-height: 80px; border-radius: 4px; float: right; margin-left: 16px; display: none;"/>
+			</div>
+			<div id="embed-image-container" style="margin-top: 16px;">
+				<img id="embed-image" src="https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg" style="max-width: 100%; border-radius: 4px; display: none;"/>
+			</div>
+			<div id="embed-footer" style="margin-top: 8px; font-size: 12px; color: #72767d;"></div>
+		</div>
+		<small style="color: #666;">Cette prévisualisation est approximative. L'apparence réelle sur Discord peut varier légèrement.</small>
+	</div>
+</div>
+
+<script>
+	function formatText(text, vars) {
+		if (!text) return '';
+		return text.replace(/\{(\w+)\}/g, function(match, key) {
+			return vars[key] || match;
+		});
+	}
+
+	function updatePreview() {
+		const embedTitle = document.getElementById('embed_title').value || '{video_title}';
+		const embedDescription = document.getElementById('embed_description').value || '';
+		const embedColor = document.getElementById('embed_color_text').value || 'FF0000';
+		const embedAuthorName = document.getElementById('embed_author_name').value || '{channel_name}';
+		const embedAuthorIcon = document.getElementById('embed_author_icon').value || 'https://www.youtube.com/img/desktop/yt_1200.png';
+		const embedFooter = document.getElementById('embed_footer').value || '';
+		const embedThumbnail = document.getElementById('embed_thumbnail').checked;
+		const embedImage = document.getElementById('embed_image').checked;
+
+		const vars = {
+			video_title: 'Nouvelle vidéo de test',
+			channel_name: 'Ma Chaîne YouTube',
+			video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+			video_id: 'dQw4w9WgXcQ',
+			thumbnail: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',
+			published_at: '2026-01-25T12:00:00Z',
+			is_short: false
+		};
+
+		document.getElementById('embed-title').textContent = formatText(embedTitle, vars);
+		document.getElementById('embed-title').href = vars.video_url;
+		document.getElementById('embed-description').textContent = formatText(embedDescription, vars);
+		document.getElementById('embed-author-name').textContent = formatText(embedAuthorName, vars);
+		document.getElementById('embed-author-icon').src = embedAuthorIcon;
+		document.getElementById('embed-footer').textContent = formatText(embedFooter, vars);
+		
+		document.getElementById('embed-preview').style.borderLeftColor = '#' + embedColor;
+		
+		if (embedThumbnail) {
+			document.getElementById('embed-thumbnail').src = vars.thumbnail;
+			document.getElementById('embed-thumbnail').style.display = 'block';
+		} else {
+			document.getElementById('embed-thumbnail').style.display = 'none';
+		}
+		
+		if (embedImage) {
+			document.getElementById('embed-image').src = vars.thumbnail;
+			document.getElementById('embed-image').style.display = 'block';
+		} else {
+			document.getElementById('embed-image').style.display = 'none';
+		}
+	}
+
+	document.getElementById('embed_color').addEventListener('input', function(e) {
+		document.getElementById('embed_color_text').value = e.target.value.substring(1).toUpperCase();
+		updatePreview();
+	});
+
+	document.getElementById('embed_color_text').addEventListener('input', function(e) {
+		const val = e.target.value.replace(/[^0-9A-Fa-f]/g, '').substring(0, 6);
+		e.target.value = val;
+		if (val.length === 6) {
+			document.getElementById('embed_color').value = '#' + val;
+			updatePreview();
+		}
+	});
+
+	const formFields = ['embed_title', 'embed_description', 'embed_author_name', 'embed_author_icon', 'embed_footer', 'embed_thumbnail', 'embed_image'];
+	formFields.forEach(field => {
+		const el = document.getElementById(field);
+		if (el) {
+			el.addEventListener('input', updatePreview);
+			el.addEventListener('change', updatePreview);
+		}
+	});
+
+	updatePreview();
+</script>
+
+<p>
+	<strong>Variables disponibles pour l'embed :</strong>
+	<ul>
+		<li><code>{channel_name}</code> : nom de la chaîne YouTube</li>
+		<li><code>{video_title}</code> : titre de la vidéo</li>
+		<li><code>{video_url}</code> : lien vers la vidéo</li>
+		<li><code>{video_id}</code> : ID de la vidéo</li>
+		<li><code>{thumbnail}</code> : URL de la miniature</li>
+		<li><code>{published_at}</code> : date de publication</li>
+		<li><code>{is_short}</code> : True si c'est un short, False sinon</li>
+	</ul>
+</p>
 
 {% endblock %}

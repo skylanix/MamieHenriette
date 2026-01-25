@@ -93,12 +93,24 @@ def addYouTube():
 	except ValueError:
 		return redirect(url_for("openYouTube") + "?" + urlencode({'msg': "Canal Discord invalide.", 'type': 'error'}))
 	
+	embed_color = request.form.get('embed_color', 'FF0000').strip().lstrip('#')
+	if len(embed_color) != 6:
+		embed_color = 'FF0000'
+	
 	notification = YouTubeNotification(
 		enable=True,
 		channel_id=channel_id,
 		notify_channel=notify_channel,
 		message=request.form.get('message'),
-		video_type=request.form.get('video_type', 'all')
+		video_type=request.form.get('video_type', 'all'),
+		embed_title=request.form.get('embed_title') or None,
+		embed_description=request.form.get('embed_description') or None,
+		embed_color=embed_color,
+		embed_footer=request.form.get('embed_footer') or None,
+		embed_author_name=request.form.get('embed_author_name') or None,
+		embed_author_icon=request.form.get('embed_author_icon') or None,
+		embed_thumbnail=request.form.get('embed_thumbnail') == 'on',
+		embed_image=request.form.get('embed_image') == 'on'
 	)
 	db.session.add(notification)
 	db.session.commit()
@@ -141,10 +153,22 @@ def submitEditYouTube(id):
 	except ValueError:
 		return redirect(url_for("openEditYouTube", id=id) + "?" + urlencode({'msg': "Canal Discord invalide.", 'type': 'error'}))
 	
+	embed_color = request.form.get('embed_color', 'FF0000').strip().lstrip('#')
+	if len(embed_color) != 6:
+		embed_color = 'FF0000'
+	
 	notification.channel_id = channel_id
 	notification.notify_channel = notify_channel
 	notification.message = request.form.get('message')
 	notification.video_type = request.form.get('video_type', 'all')
+	notification.embed_title = request.form.get('embed_title') or None
+	notification.embed_description = request.form.get('embed_description') or None
+	notification.embed_color = embed_color
+	notification.embed_footer = request.form.get('embed_footer') or None
+	notification.embed_author_name = request.form.get('embed_author_name') or None
+	notification.embed_author_icon = request.form.get('embed_author_icon') or None
+	notification.embed_thumbnail = request.form.get('embed_thumbnail') == 'on'
+	notification.embed_image = request.form.get('embed_image') == 'on'
 	db.session.commit()
 	return redirect(url_for("openYouTube") + "?" + urlencode({'msg': "Notification modifiée avec succès", 'type': 'success'}))
 
