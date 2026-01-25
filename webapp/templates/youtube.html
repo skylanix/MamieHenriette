@@ -1,0 +1,113 @@
+{% extends "template.html" %}
+
+{% block content %}
+<h1>Notifications YouTube</h1>
+
+{% if msg %}
+<div id="alert-msg" class="alert alert-{{ msg_type }}" style="padding: 10px; margin: 10px 0; border: 1px solid {{ '#f00' if msg_type == 'error' else '#0f0' }}; background-color: {{ '#ffe0e0' if msg_type == 'error' else '#e0ffe0' }};">
+	{{ msg }}
+</div>
+<script>
+	setTimeout(function() {
+		var el = document.getElementById('alert-msg');
+		if (el) el.style.display = 'none';
+	}, 5000);
+</script>
+{% endif %}
+
+<p>
+	Liste des chaînes YouTube surveillées pour les notifications de nouvelles vidéos.
+
+	Le bot vérifie toutes les 5 minutes les nouvelles vidéos des chaînes en dessous.
+	Quand une nouvelle vidéo est détectée, le bot enverra une notification sur Discord.
+</p>
+
+{% if not notification %}
+<h2>Notifications</h2>
+<table class="live-alert">
+	<thead>
+		<tr>
+			<th>Chaîne YouTube</th>
+			<th>Canal Discord</th>
+			<th>Type</th>
+			<th>Message</th>
+			<th>#</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for notification in notifications %}
+		<tr>
+			<td>{{notification.channel_id}}</td>
+			<td>{{notification.notify_channel_name}}</td>
+			<td>
+				{% if notification.video_type == 'all' %}
+					Toutes
+				{% elif notification.video_type == 'video' %}
+					Vidéos uniquement
+				{% elif notification.video_type == 'short' %}
+					Shorts uniquement
+				{% endif %}
+			</td>
+			<td>{{notification.message}}</td>
+			<td>
+				<a href="{{ url_for('toggleYouTube', id = notification.id) }}" class="icon">{{ '✅' if notification.enable else '❌' }}</a>
+				<a href="{{ url_for('openEditYouTube', id = notification.id) }}" class="icon">✐</a>
+				<a href="{{ url_for('delYouTube', id = notification.id) }}"
+					onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette notification ?')" class="icon">🗑</a>
+			</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+{% endif %}
+
+<h2>{{ 'Editer une notification' if notification else 'Ajouter une notification YouTube' }}</h2>
+<form action="{{ url_for('submitEditYouTube', id = notification.id) if notification else url_for('addYouTube') }}" method="POST">
+	<label for="channel_id">Lien ou ID de la chaîne YouTube</label>
+	<input name="channel_id" type="text" maxlength="256" required="required" value="{{notification.channel_id if notification}}" placeholder="https://www.youtube.com/@513v3 ou https://www.youtube.com/channel/UC... ou UC..."/>
+	<label for="notify_channel">Canal de Notification Discord</label>
+	<select name="notify_channel">
+		{% for channel in channels %}
+		<option value="{{channel.id}}"{% if notification and notification.notify_channel == channel.id %}
+			selected="selected" {% endif %}>{{channel.name}}</option>
+		{% endfor %}
+	</select>
+	<label for="video_type">Type de vidéo à notifier</label>
+	<select name="video_type">
+		<option value="all"{% if notification and notification.video_type == 'all' %} selected="selected" {% endif %}>Toutes (vidéos + shorts)</option>
+		<option value="video"{% if notification and notification.video_type == 'video' %} selected="selected" {% endif %}>Vidéos uniquement</option>
+		<option value="short"{% if notification and notification.video_type == 'short' %} selected="selected" {% endif %}>Shorts uniquement</option>
+	</select>
+	<label for="message">Message</label>
+	<textarea name="message" rows="5" cols="50" required="required">{{notification.message if notification}}</textarea>
+	<input type="Submit" value="{{ 'Modifier' if notification else 'Ajouter' }}">
+	<p>
+		Vous pouvez coller directement le lien de la chaîne YouTube dans n'importe quel format :
+		<ul>
+			<li><strong>Lien avec handle :</strong> <code>https://www.youtube.com/@513v3</code></li>
+			<li><strong>Lien avec ID :</strong> <code>https://www.youtube.com/channel/UCxxxxxxxxxxxxxxxxxxxxxxxxxx</code></li>
+			<li><strong>ID seul :</strong> <code>UCxxxxxxxxxxxxxxxxxxxxxxxxxx</code></li>
+			<li><strong>Handle seul :</strong> <code>@513v3</code></li>
+		</ul>
+		Le système extraira automatiquement l'ID de la chaîne.
+		<br><br>
+		<strong>Note :</strong> Les notifications utilisent le flux RSS YouTube, aucune clé API n'est nécessaire !
+	</p>
+	<p>
+		Pour le message vous avez accès à ces variables :
+		<ul>
+			<li><code>{channel_name}</code> : nom de la chaîne YouTube</li>
+			<li><code>{video_title}</code> : titre de la vidéo</li>
+			<li><code>{video_url}</code> : lien vers la vidéo</li>
+			<li><code>{video_id}</code> : ID de la vidéo</li>
+			<li><code>{thumbnail}</code> : URL de la miniature</li>
+			<li><code>{published_at}</code> : date de publication</li>
+			<li><code>{is_short}</code> : True si c'est un short, False sinon</li>
+		</ul>
+		Le message est au format <a href="https://commonmark.org/" target="_blank">common-mark</a> dans la limite de ce que
+		support Discord.
+		Exemple : <code>🎥 Nouvelle vidéo de {channel_name} : [{video_title}]({video_url})</code>
+	</p>
+</form>
+
+{% endblock %}

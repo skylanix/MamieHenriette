@@ -22,6 +22,7 @@ from discordbot.moderation import (
 	handle_say_command
 )
 from discordbot.welcome import sendWelcomeMessage, sendLeaveMessage, updateInviteCache
+from discordbot.youtube import checkYouTubeVideos
 from protondb import searhProtonDb
 
 class DiscordBot(discord.Client):
@@ -35,6 +36,7 @@ class DiscordBot(discord.Client):
 		
 		self.loop.create_task(self.updateStatus())
 		self.loop.create_task(self.updateHumbleBundle())
+		self.loop.create_task(self.updateYouTube())
 	
 	async def updateStatus(self):
 		while not self.is_closed():
@@ -50,6 +52,12 @@ class DiscordBot(discord.Client):
 		while not self.is_closed():
 			await checkHumbleBundleAndNotify(self)
 			await asyncio.sleep(30*60)
+	
+	async def updateYouTube(self):
+		while not self.is_closed():
+			await checkYouTubeVideos()
+			# Vérification toutes les 5 minutes (comme pour Twitch)
+			await asyncio.sleep(5*60)
 
 	def getAllTextChannel(self) -> list[TextChannel]:
 		channels = []

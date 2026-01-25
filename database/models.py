@@ -61,3 +61,13 @@ class AntiCheatCache(db.Model):
 	notes = db.Column(db.String(1024))
 	updated_at = db.Column(db.DateTime)
 
+class YouTubeNotification(db.Model):
+	__tablename__ = 'youtube_notification'
+	id = db.Column(db.Integer, primary_key=True)
+	enable = db.Column(db.Boolean, default=True)
+	channel_id = db.Column(db.String(128))  # ID de la chaîne YouTube
+	notify_channel = db.Column(db.Integer)  # ID du canal Discord
+	message = db.Column(db.String(2000))
+	video_type = db.Column(db.String(16), default='all')  # 'all', 'video', 'short'
+	last_video_id = db.Column(db.String(128))  # ID de la dernière vidéo notifiée
+
