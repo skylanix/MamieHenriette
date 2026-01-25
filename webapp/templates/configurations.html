@@ -1,240 +1,251 @@
 {% extends "template.html" %}
 
 {% block content %}
-<h1>Configuration de Mamie</h1>
-<p>Configurez les tokens Discord, les notifications Humble Bundle et l'API Twitch.</p>
+<div class="mb-6">
+	<h1 class="text-2xl font-semibold text-slate-800 dark:text-white mb-1">Configurations</h1>
+	<p class="text-sm text-slate-600 dark:text-slate-400">
+		Paramètres Discord, Twitch et Humble Bundle.
+	</p>
+</div>
 
-<h2>Discord</h2>
-<form action="{{ url_for('updateConfiguration') }}" method="POST">
-	<fieldset>
-		<legend>API Discord</legend>
-		<label for="discord_token">Token Discord (caché)</label>
-		<input name="discord_token" type="password" placeholder="Votre token Discord" />
-		<small>Nécessite un redémarrage après modification</small>
-	</fieldset>
-
-	<fieldset>
-		<legend>Messages de bienvenue</legend>
-		<label for="welcome_enable">
-			<input type="checkbox" name="welcome_enable" {% if configuration.getValue('welcome_enable') %}checked="checked"{% endif %}>
-			Activer le message de bienvenue pour les nouveaux membres
-		</label>
-		
-		<label for="welcome_channel_id">Canal de bienvenue</label>
-		<select name="welcome_channel_id">
-			{% for channel in channels %}
-			<option value="{{channel.id}}" {% if configuration.getIntValue('welcome_channel_id')==channel.id %}selected="selected"{% endif %}>
-				{{channel.name}}
-			</option>
-			{% endfor %}
-		</select>
-		
-		<label for="welcome_message">Message personnalisé de bienvenue</label>
-		<textarea name="welcome_message" rows="3" placeholder="Bienvenue {member.mention} sur le serveur !">{{ configuration.getValue('welcome_message') }}</textarea>
-		<small>
-			<strong>Syntaxes disponibles :</strong><br>
-			• <code>{member.mention}</code> - Mentionne l'utilisateur (@NomUtilisateur)<br>
-			• <code>{member.name}</code> - Nom d'utilisateur (sans mention)<br>
-			• <code>{member.display_name}</code> - Surnom sur le serveur<br>
-			• <code>{member.id}</code> - ID de l'utilisateur<br>
-			• <code>{server.name}</code> - Nom du serveur<br>
-			• <code>{server.member_count}</code> - Nombre total de membres<br>
-			• <code>&lt;#ID_DU_CHANNEL&gt;</code> - Mentionne un salon (ex: &lt;#123456789012345678&gt;)
-		</small>
-	</fieldset>
-
-	<fieldset>
-		<legend>Messages de départ</legend>
-		<label for="leave_enable">
-			<input type="checkbox" name="leave_enable" {% if configuration.getValue('leave_enable') %}checked="checked"{% endif %}>
-			Activer le message de départ quand un membre quitte le serveur
-		</label>
-		
-		<label for="leave_channel_id">Canal de départ</label>
-		<select name="leave_channel_id">
-			{% for channel in channels %}
-			<option value="{{channel.id}}" {% if configuration.getIntValue('leave_channel_id')==channel.id %}selected="selected"{% endif %}>
-				{{channel.name}}
-			</option>
-			{% endfor %}
-		</select>
-		
-		<label for="leave_message">Message personnalisé de départ</label>
-		<textarea name="leave_message" rows="3" placeholder="{member.mention} a quitté le serveur.">{{ configuration.getValue('leave_message') }}</textarea>
-		<small>
-			<strong>Syntaxes disponibles :</strong><br>
-			• <code>{member.mention}</code> - Mentionne l'utilisateur (@NomUtilisateur)<br>
-			• <code>{member.name}</code> - Nom d'utilisateur (sans mention)<br>
-			• <code>{member.display_name}</code> - Surnom sur le serveur<br>
-			• <code>{member.id}</code> - ID de l'utilisateur<br>
-			• <code>{server.name}</code> - Nom du serveur<br>
-			• <code>{server.member_count}</code> - Nombre total de membres<br>
-			• <code>&lt;#ID_DU_CHANNEL&gt;</code> - Mentionne un salon (ex: &lt;#123456789012345678&gt;)
-		</small>
-	</fieldset>
-
-	<fieldset>
-		<legend>Modération</legend>
-		<label for="moderation_enable">
-			<input type="checkbox" name="moderation_enable" {% if configuration.getValue('moderation_enable') %}checked="checked"{% endif %}>
-			Activer les commandes d'avertissement (!warn, !unwarn, !inspect)
-		</label>
-		
-		<label for="moderation_ban_enable">
-			<input type="checkbox" name="moderation_ban_enable" {% if configuration.getValue('moderation_ban_enable') %}checked="checked"{% endif %}>
-			Activer les commandes de bannissement (!ban, !unban)
-		</label>
-		
-		<label for="moderation_kick_enable">
-			<input type="checkbox" name="moderation_kick_enable" {% if configuration.getValue('moderation_kick_enable') %}checked="checked"{% endif %}>
-			Activer la commande d'expulsion (!kick)
-		</label>
-		
-		<label for="moderation_log_channel_id">Canal de logs de modération</label>
-		<select name="moderation_log_channel_id">
-			{% for channel in channels %}
-			<option value="{{channel.id}}" {% if configuration.getIntValue('moderation_log_channel_id')==channel.id %}selected="selected"{% endif %}>
-				{{channel.name}}
-			</option>
-			{% endfor %}
-		</select>
-		<small>Toutes les actions de modération seront notifiées dans ce canal</small>
-		
-		<label>Rôles Staff autorisés</label>
-		{% set selected_roles = (configuration.getValue('moderation_staff_role_ids') or '').split(',') %}
-		
-		{% if roles|length > 1 %}
-		<div class="tabs">
-			{% for guild_data in roles %}
-			<button type="button" class="tab-button" onclick="openTab(event, 'guild-{{guild_data.guild_id}}')" {% if loop.first %}id="defaultOpen"{% endif %}>
-				{{ guild_data.guild_name }}
-			</button>
-			{% endfor %}
+<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 mb-6 overflow-hidden">
+	<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+		<h2 class="text-lg font-medium text-slate-800 dark:text-white">Discord</h2>
+	</div>
+	
+	<form action="{{ url_for('updateConfiguration') }}" method="POST" class="p-5 space-y-6">
+		<div>
+			<label for="discord_token" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Token Discord</label>
+			<input type="password" name="discord_token" id="discord_token" placeholder="Votre token Discord (caché)" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
+			<p class="mt-1 text-xs text-amber-600 dark:text-amber-400">Nécessite un redémarrage après modification</p>
 		</div>
-		{% endif %}
-		
-		{% for guild_data in roles %}
-		<div id="guild-{{guild_data.guild_id}}" class="tab-content" {% if not loop.first %}style="display: none;"{% endif %}>
-			<div style="max-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 5px;">
-				{% for role in guild_data.roles %}
-				<label style="display: block; margin: 5px 0;">
-					<input type="checkbox" name="moderation_staff_role_ids" value="{{role.id}}" {% if role.id|string in selected_roles %}checked="checked"{% endif %}>
-					{% if role.color.value != 0 %}
-					<span style="color:#{{ '%06x' % role.color.value }}">●</span>
-					{% else %}
-					<span>○</span>
-					{% endif %}
-					{{role.name}}
+
+		<div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+			<h3 class="text-sm font-medium text-slate-800 dark:text-white mb-4">Messages de bienvenue</h3>
+			
+			<label class="flex items-center gap-3 cursor-pointer mb-4">
+				<input type="checkbox" name="welcome_enable" {% if configuration.getValue('welcome_enable') %}checked{% endif %} class="w-4 h-4 text-slate-600 bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-slate-500">
+				<span class="text-sm text-slate-700 dark:text-slate-300">Activer le message de bienvenue</span>
+			</label>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+				<div>
+					<label for="welcome_channel_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Canal de bienvenue</label>
+					<select name="welcome_channel_id" id="welcome_channel_id" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
+						{% for channel in channels %}
+						<option value="{{ channel.id }}" {% if configuration.getIntValue('welcome_channel_id') == channel.id %}selected{% endif %}>{{ channel.name }}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+
+			<div>
+				<label for="welcome_message" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Message personnalisé</label>
+				<textarea name="welcome_message" id="welcome_message" rows="2" placeholder="Bienvenue {member.mention} sur le serveur !" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all resize-none">{{ configuration.getValue('welcome_message') }}</textarea>
+			</div>
+
+			<div class="mt-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3">
+				<p class="text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Variables :</p>
+				<div class="flex flex-wrap gap-2 text-xs">
+					<code class="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-600 rounded">{member.mention}</code>
+					<code class="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-600 rounded">{member.name}</code>
+					<code class="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-600 rounded">{server.name}</code>
+					<code class="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-600 rounded">{server.member_count}</code>
+				</div>
+			</div>
+		</div>
+
+		<div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+			<h3 class="text-sm font-medium text-slate-800 dark:text-white mb-4">Messages de départ</h3>
+			
+			<label class="flex items-center gap-3 cursor-pointer mb-4">
+				<input type="checkbox" name="leave_enable" {% if configuration.getValue('leave_enable') %}checked{% endif %} class="w-4 h-4 text-slate-600 bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-slate-500">
+				<span class="text-sm text-slate-700 dark:text-slate-300">Activer le message de départ</span>
+			</label>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+				<div>
+					<label for="leave_channel_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Canal de départ</label>
+					<select name="leave_channel_id" id="leave_channel_id" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
+						{% for channel in channels %}
+						<option value="{{ channel.id }}" {% if configuration.getIntValue('leave_channel_id') == channel.id %}selected{% endif %}>{{ channel.name }}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+
+			<div>
+				<label for="leave_message" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Message personnalisé</label>
+				<textarea name="leave_message" id="leave_message" rows="2" placeholder="{member.mention} a quitté le serveur." class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all resize-none">{{ configuration.getValue('leave_message') }}</textarea>
+			</div>
+		</div>
+
+		<div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+			<h3 class="text-sm font-medium text-slate-800 dark:text-white mb-4">Modération</h3>
+			
+			<div class="space-y-3 mb-4">
+				<label class="flex items-center gap-3 cursor-pointer">
+					<input type="checkbox" name="moderation_enable" {% if configuration.getValue('moderation_enable') %}checked{% endif %} class="w-4 h-4 text-slate-600 bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-slate-500">
+					<span class="text-sm text-slate-700 dark:text-slate-300">Activer les commandes d'avertissement</span>
 				</label>
+				<label class="flex items-center gap-3 cursor-pointer">
+					<input type="checkbox" name="moderation_ban_enable" {% if configuration.getValue('moderation_ban_enable') %}checked{% endif %} class="w-4 h-4 text-slate-600 bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-slate-500">
+					<span class="text-sm text-slate-700 dark:text-slate-300">Activer les commandes de bannissement</span>
+				</label>
+				<label class="flex items-center gap-3 cursor-pointer">
+					<input type="checkbox" name="moderation_kick_enable" {% if configuration.getValue('moderation_kick_enable') %}checked{% endif %} class="w-4 h-4 text-slate-600 bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-slate-500">
+					<span class="text-sm text-slate-700 dark:text-slate-300">Activer la commande d'expulsion</span>
+				</label>
+			</div>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+				<div>
+					<label for="moderation_log_channel_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Canal de logs</label>
+					<select name="moderation_log_channel_id" id="moderation_log_channel_id" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
+						{% for channel in channels %}
+						<option value="{{ channel.id }}" {% if configuration.getIntValue('moderation_log_channel_id') == channel.id %}selected{% endif %}>{{ channel.name }}</option>
+						{% endfor %}
+					</select>
+				</div>
+				<div>
+					<label for="moderation_embed_delete_delay" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Délai suppression (sec)</label>
+					<input type="number" name="moderation_embed_delete_delay" id="moderation_embed_delete_delay" value="{{ configuration.getValue('moderation_embed_delete_delay') or '0' }}" min="0" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
+				</div>
+			</div>
+
+			<div>
+				<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Rôles Staff autorisés</label>
+				{% set selected_roles = (configuration.getValue('moderation_staff_role_ids') or '').split(',') %}
+				
+				{% if roles|length > 1 %}
+				<div class="flex flex-wrap gap-2 mb-3">
+					{% for guild_data in roles %}
+					<button type="button" onclick="openTab(event, 'guild-{{ guild_data.guild_id }}')" class="tab-button px-3 py-1.5 text-sm rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors {% if loop.first %}active bg-slate-200 dark:bg-slate-600{% endif %}">
+						{{ guild_data.guild_name }}
+					</button>
+					{% endfor %}
+				</div>
+				{% endif %}
+				
+				{% for guild_data in roles %}
+				<div id="guild-{{ guild_data.guild_id }}" class="tab-content {% if not loop.first %}hidden{% endif %}">
+					<div class="max-h-48 overflow-y-auto bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 space-y-1">
+						{% for role in guild_data.roles %}
+						<label class="flex items-center gap-3 cursor-pointer p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-600/50 transition-colors">
+							<input type="checkbox" name="moderation_staff_role_ids" value="{{ role.id }}" {% if role.id|string in selected_roles %}checked{% endif %} class="w-4 h-4 text-slate-600 bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-slate-500">
+							{% if role.color.value != 0 %}
+							<span style="color:#{{ '%06x' % role.color.value }}">●</span>
+							{% else %}
+							<span class="text-slate-400">○</span>
+							{% endif %}
+							<span class="text-sm text-slate-700 dark:text-slate-300">{{ role.name }}</span>
+						</label>
+						{% endfor %}
+					</div>
+				</div>
 				{% endfor %}
 			</div>
 		</div>
-		{% endfor %}
+
+		<div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+			<button type="submit" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-colors">
+				Enregistrer
+			</button>
+		</div>
+	</form>
+</div>
+
+<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 mb-6 overflow-hidden">
+	<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+		<h2 class="text-lg font-medium text-slate-800 dark:text-white">API Twitch</h2>
+	</div>
+	
+	<form action="{{ url_for('updateConfiguration') }}" method="POST" class="p-5 space-y-6">
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+			<div>
+				<label for="twitch_client_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Client ID</label>
+				<input type="text" name="twitch_client_id" id="twitch_client_id" value="{{ configuration.getValue('twitch_client_id') }}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
+			</div>
+			<div>
+				<label for="twitch_client_secret" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Client Secret</label>
+				<input type="text" name="twitch_client_secret" id="twitch_client_secret" value="{{ configuration.getValue('twitch_client_secret') }}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
+			</div>
+		</div>
 		
-		<small>Sélectionnez un ou plusieurs rôles qui peuvent utiliser les commandes de modération</small>
+		<div>
+			<label for="twitch_channel" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Chaîne à rejoindre</label>
+			<input type="text" name="twitch_channel" id="twitch_channel" value="{{ configuration.getValue('twitch_channel') }}" placeholder="#machinTruc" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
+		</div>
+
+		{% if configuration.getValue('twitch_client_secret') and configuration.getValue('twitch_client_id') %}
+		<div>
+			<a href="{{ url_for('twitchRequestToken') }}" class="text-sm text-slate-600 dark:text-slate-400 hover:underline">
+				Obtenir token et refresh token
+			</a>
+		</div>
 		
-		<script>
-		function openTab(evt, tabName) {
-			var i, tabcontent, tabbuttons;
-			tabcontent = document.getElementsByClassName("tab-content");
-			for (i = 0; i < tabcontent.length; i++) {
-				tabcontent[i].style.display = "none";
-			}
-			tabbuttons = document.getElementsByClassName("tab-button");
-			for (i = 0; i < tabbuttons.length; i++) {
-				tabbuttons[i].className = tabbuttons[i].className.replace(" active", "");
-			}
-			document.getElementById(tabName).style.display = "block";
-			evt.currentTarget.className += " active";
-		}
-		document.getElementById("defaultOpen")?.click();
-		</script>
-		
-		<style>
-		.tabs {
-			overflow: hidden;
-			border-bottom: 2px solid #ccc;
-			margin-bottom: 10px;
-		}
-		.tab-button {
-			background-color: #f1f1f1;
-			border: none;
-			outline: none;
-			cursor: pointer;
-			padding: 10px 20px;
-			transition: 0.3s;
-			font-size: 14px;
-			margin-right: 2px;
-		}
-		.tab-button:hover {
-			background-color: #ddd;
-		}
-		.tab-button.active {
-			background-color: #ccc;
-			font-weight: bold;
-		}
-		.tab-content {
-			animation: fadeEffect 0.3s;
-		}
-		@keyframes fadeEffect {
-			from {opacity: 0;}
-			to {opacity: 1;}
-		}
-		</style>
-		
-		<label for="moderation_embed_delete_delay">Délai de suppression des embeds (en secondes)</label>
-		<input name="moderation_embed_delete_delay" type="number" value="{{ configuration.getValue('moderation_embed_delete_delay') or '0' }}" placeholder="0" min="0" />
-		<small>Mettre 0 pour ne pas supprimer automatiquement</small>
-	</fieldset>
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+			<div>
+				<label for="twitch_access_token" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Access Token</label>
+				<input type="text" name="twitch_access_token" id="twitch_access_token" value="{{ configuration.getValue('twitch_access_token') }}" readonly class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-500 dark:text-slate-400 font-mono">
+			</div>
+			<div>
+				<label for="twitch_refresh_token" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Refresh Token</label>
+				<input type="text" name="twitch_refresh_token" id="twitch_refresh_token" value="{{ configuration.getValue('twitch_refresh_token') }}" readonly class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-500 dark:text-slate-400 font-mono">
+			</div>
+		</div>
+		<p class="text-xs text-amber-600 dark:text-amber-400">Nécessite un redémarrage après l'obtention des tokens</p>
+		{% endif %}
 
-	<input type="Submit" value="Enregistrer la configuration Discord">
-</form>
+		<div class="flex items-center gap-4">
+			<button type="submit" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-colors">
+				Enregistrer
+			</button>
+			<a href="{{ url_for('twitchConfigurationHelp') }}" class="text-sm text-slate-600 dark:text-slate-400 hover:underline">Besoin d'aide ?</a>
+		</div>
+	</form>
+</div>
 
-<h2>API Twitch</h2>
-<form action="{{ url_for('updateConfiguration') }}" method="POST">
-	<label for="twitch_client_id">Client ID</label>
-	<input name="twitch_client_id" type="text" value="{{ configuration.getValue('twitch_client_id') }}" />
-	<label for="twitch_client_secret">Client Secret</label>
-	<input name="twitch_client_secret" type="text" value="{{ configuration.getValue('twitch_client_secret') }}" />
-	<label for="twitch_channel">Chaîne à rejoindre</label>
-	<input name="twitch_channel" type="text" value="{{ configuration.getValue('twitch_channel') }}"
-		placeholder="#machinTruc" />
-	<input type="Submit" value="Enregistrer la configuration Twitch">
-	<p>
-		<a href="{{ url_for('twitchConfigurationHelp') }}">Aide</a>
-	</p>
-	{% if configuration.getValue('twitch_client_secret') and configuration.getValue('twitch_client_id') %}
-	<p>
-		<a href="{{ url_for('twitchRequestToken') }}">Obtenir token et refresh token</a>
-	</p>
-	<label for="twitch_access_token">Access Token</label>
-	<input name="twitch_access_token" type="text" value="{{ configuration.getValue('twitch_access_token') }}"
-		readonly="readonly" />
-	<label for="twitch_refresh_token">Refresh Token</label>
-	<input name="twitch_refresh_token" type="text" value="{{ configuration.getValue('twitch_refresh_token') }}"
-		readonly="readonly" />
-	<p>Nécessite un redémarrage après l'obtention des Tokens.</p>
-	{% endif %}
-</form>
+<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+	<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+		<h2 class="text-lg font-medium text-slate-800 dark:text-white">Humble Bundle</h2>
+	</div>
+	
+	<form action="{{ url_for('updateConfiguration') }}" method="POST" class="p-5 space-y-6">
+		<p class="text-sm text-slate-600 dark:text-slate-400">
+			Activez les notifications pour recevoir automatiquement les nouveaux packs sur Discord.
+		</p>
 
-<h2>Humble Bundle</h2>
-<form action="{{ url_for('updateConfiguration') }}" method="POST">
-	<p>Humble Bundle propose régulièrement des bundles de jeux vidéo à des prix réduits. Activez les notifications pour recevoir automatiquement les nouveaux packs disponibles sur votre serveur Discord.</p>
+		<label class="flex items-center gap-3 cursor-pointer">
+			<input type="checkbox" name="humble_bundle_enable" {% if configuration.getValue('humble_bundle_enable') %}checked{% endif %} class="w-4 h-4 text-slate-600 bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-slate-500">
+			<span class="text-sm text-slate-700 dark:text-slate-300">Activer les notifications Humble Bundle</span>
+		</label>
 
-	<label for="humble_bundle_enable">
-		<input type="checkbox" name="humble_bundle_enable" {% if configuration.getValue('humble_bundle_enable') %}checked="checked"{% endif %}>
-		Activer les notifications Humble Bundle
-	</label>
+		<div>
+			<label for="humble_bundle_channel" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Canal de notification</label>
+			<select name="humble_bundle_channel" id="humble_bundle_channel" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
+				{% for channel in channels %}
+				<option value="{{ channel.id }}" {% if configuration.getIntValue('humble_bundle_channel') == channel.id %}selected{% endif %}>{{ channel.name }}</option>
+				{% endfor %}
+			</select>
+		</div>
 
-	<label for="humble_bundle_channel">Canal de notification</label>
-	<select name="humble_bundle_channel">
-		{% for channel in channels %}
-		<option value="{{channel.id}}" {% if configuration.getIntValue('humble_bundle_channel')==channel.id %}selected="selected"{% endif %}>
-			{{channel.name}}
-		</option>
-		{% endfor %}
-	</select>
+		<button type="submit" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-colors">
+			Enregistrer
+		</button>
+	</form>
+</div>
 
-	<input type="Submit" value="Enregistrer la configuration Humble Bundle">
-</form>
+<script>
+function openTab(evt, tabName) {
+	document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+	document.querySelectorAll('.tab-button').forEach(el => {
+		el.classList.remove('active', 'bg-slate-200', 'dark:bg-slate-600');
+		el.classList.add('bg-slate-100', 'dark:bg-slate-700');
+	});
+	document.getElementById(tabName).classList.remove('hidden');
+	evt.currentTarget.classList.add('active', 'bg-slate-200', 'dark:bg-slate-600');
+	evt.currentTarget.classList.remove('bg-slate-100', 'dark:bg-slate-700');
+}
+</script>
 {% endblock %}

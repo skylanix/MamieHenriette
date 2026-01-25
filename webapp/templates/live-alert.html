@@ -1,76 +1,135 @@
 {% extends "template.html" %}
 
 {% block content %}
-<h1>Alerte Live</h1>
-
-<p>
-	Liste des chaines surveillées pour les alertes de live twitch.
-
-	Le bot vérifie toutes les 5 minutes qui est en live dans la liste en dessous.
-	Le bot enregistre le status de stream toutes les 5 minutes, quand le status pass de "hors-ligne" à "en ligne" alors
-	le bot le notifiera sur discord.
-	Ne peu surveiller qu'au maximum 100 chaines.
-</p>
+<div class="mb-6">
+	<h1 class="text-2xl font-semibold text-slate-800 dark:text-white mb-1">Alertes Live</h1>
+	<p class="text-sm text-slate-600 dark:text-slate-400">
+		Chaînes Twitch surveillées. Vérification toutes les 5 minutes, maximum 100 chaînes.
+	</p>
+</div>
 
 {% if not alert %}
-<h2>Alertes</h2>
-<table class="live-alert">
-	<thead>
-		<tr>
-			<th>Chaine</th>
-			<th>Canal</th>
-			<th>Message</th>
-			<th>#</th>
-		</tr>
-	</thead>
-	<tbody>
-		{% for alert in alerts %}
-		<tr>
-			<td>{{alert.login}}</td>
-			<td>{{alert.notify_channel_name}}</td>
-			<td>{{alert.message}}</td>
-			<td>
-				<a href="{{ url_for('toggleLiveAlert', id = alert.id) }}" class="icon">{{ '✅' if alert.enable else '❌' }}</a>
-				<a href="{{ url_for('openEditLiveAlert', id = alert.id) }}" class="icon">✐</a>
-				<a href="{{ url_for('delLiveAlert', id = alert.id) }}"
-					onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette alerte ?')" class="icon">🗑</a>
-			</td>
-		</tr>
-		{% endfor %}
-	</tbody>
-</table>
+<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
+	<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+		<h2 class="text-lg font-medium text-slate-800 dark:text-white">Alertes configurées</h2>
+	</div>
+	<div class="overflow-x-auto">
+		<table class="w-full">
+			<thead>
+				<tr class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
+					<th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Chaîne</th>
+					<th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Canal Discord</th>
+					<th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Message</th>
+					<th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
+				</tr>
+			</thead>
+			<tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+				{% for alert in alerts %}
+				<tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+					<td class="px-4 py-3">
+						<a href="https://www.twitch.tv/{{ alert.login }}" target="_blank" class="text-sm font-medium text-slate-700 dark:text-slate-300 hover:underline">{{ alert.login }}</a>
+					</td>
+					<td class="px-4 py-3">
+						<span class="text-sm text-slate-600 dark:text-slate-400">#{{ alert.notify_channel_name }}</span>
+					</td>
+					<td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400 max-w-xs">
+						<div class="line-clamp-2">{{ alert.message }}</div>
+					</td>
+					<td class="px-4 py-3">
+						<div class="flex items-center justify-end gap-2">
+							<a href="{{ url_for('toggleLiveAlert', id = alert.id) }}" class="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors" title="{{ 'Désactiver' if alert.enable else 'Activer' }}">
+								{% if alert.enable %}
+								<span class="text-green-600 dark:text-green-500">Actif</span>
+								{% else %}
+								<span class="text-slate-400">Inactif</span>
+								{% endif %}
+							</a>
+							<a href="{{ url_for('openEditLiveAlert', id = alert.id) }}" class="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
+								Modifier
+							</a>
+							<a href="{{ url_for('delLiveAlert', id = alert.id) }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette alerte ?')" class="text-sm text-slate-500 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+								Supprimer
+							</a>
+						</div>
+					</td>
+				</tr>
+				{% else %}
+				<tr>
+					<td colspan="4" class="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+						Aucune alerte configurée
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
 {% endif %}
 
-<h2>{{ 'Editer une alerte' if alert else 'Ajouter une alerte de Live' }}</h2>
-<form action="{{ url_for('submitEditLiveAlert', id = alert.id) if alert else url_for('addLiveAlert') }}" method="POST">
-	<label for="login">Chaine</label>
-	<input name="login" type="text" maxlength="32" required="required" value="{{alert.login if alert}}"/>
-	<label for="notify_channel">Canal de Notification</label>
-	<select name="notify_channel">
-		{% for channel in channels %}
-		<option value="{{channel.id}}"{% if alert and alert.notify_channel == channel.id %}
-			selected="selected" {% endif %}>{{channel.name}}</option>
-		{% endfor %}
-	</select>
-	<label for="message">Message</label>
-	<textarea name="message" rows="5" cols="50" required="required">{{alert.message if alert}}</textarea>
-	<input type="Submit" value="Ajouter">
-	<p>
-		La chaine est le login de la chaine, par exemple <strong>chainesteve</strong> pour <strong>https://www.twitch.tv/chainesteve</strong>.
-	</p>
-	<p>
-		Pour le message vous avez acces à ces variables :
-		<ul>
-			<li>{0.user_login} : pour le lien vers la chaine</li>
-			<li>{0.user_name} : à priviligier pour le text</li>
-			<li>{0.game_name}</li>
-			<li>{0.title}</li>
-			<li>{0.language}</li>
-		</ul>
-		Le message est au format <a href="https://commonmark.org/" target="_blank">common-mark</a> dans la limite de ce que
-		support discord.
-		Pour mettre un lien vers la chaine : [description](https://www.twitch.tv/{0.user_login})
-	</p>
-</form>
-
+<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5">
+	<h2 class="text-lg font-medium text-slate-800 dark:text-white mb-5">
+		{% if alert %}Modifier l'alerte{% else %}Ajouter une alerte{% endif %}
+	</h2>
+	
+	<form action="{{ url_for('submitEditLiveAlert', id = alert.id) if alert else url_for('addLiveAlert') }}" method="POST" class="space-y-6">
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+			<div>
+				<label for="login" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Chaîne Twitch</label>
+				<input type="text" name="login" id="login" maxlength="32" required value="{{ alert.login if alert else '' }}" placeholder="chainesteve" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
+				<p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Le login de la chaîne, ex: chainesteve</p>
+			</div>
+			
+			<div>
+				<label for="notify_channel" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Canal de Notification</label>
+				<select name="notify_channel" id="notify_channel" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
+					{% for channel in channels %}
+					<option value="{{ channel.id }}" {% if alert and alert.notify_channel == channel.id %}selected{% endif %}>{{ channel.name }}</option>
+					{% endfor %}
+				</select>
+			</div>
+		</div>
+		
+		<div>
+			<label for="message" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Message de notification</label>
+			<textarea name="message" id="message" rows="4" required placeholder="🔴 **{0.user_name}** est en live !" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all resize-none">{{ alert.message if alert else '' }}</textarea>
+		</div>
+		
+		<div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+			<p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Variables disponibles :</p>
+			<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+				<div class="flex items-center gap-2">
+					<code class="px-2 py-0.5 bg-slate-200 dark:bg-slate-600 rounded text-xs font-mono">{0.user_login}</code>
+					<span class="text-slate-600 dark:text-slate-400">Lien vers la chaîne</span>
+				</div>
+				<div class="flex items-center gap-2">
+					<code class="px-2 py-0.5 bg-slate-200 dark:bg-slate-600 rounded text-xs font-mono">{0.user_name}</code>
+					<span class="text-slate-600 dark:text-slate-400">Nom du streamer</span>
+				</div>
+				<div class="flex items-center gap-2">
+					<code class="px-2 py-0.5 bg-slate-200 dark:bg-slate-600 rounded text-xs font-mono">{0.game_name}</code>
+					<span class="text-slate-600 dark:text-slate-400">Jeu en cours</span>
+				</div>
+				<div class="flex items-center gap-2">
+					<code class="px-2 py-0.5 bg-slate-200 dark:bg-slate-600 rounded text-xs font-mono">{0.title}</code>
+					<span class="text-slate-600 dark:text-slate-400">Titre du stream</span>
+				</div>
+				<div class="flex items-center gap-2">
+					<code class="px-2 py-0.5 bg-slate-200 dark:bg-slate-600 rounded text-xs font-mono">{0.language}</code>
+					<span class="text-slate-600 dark:text-slate-400">Langue du stream</span>
+				</div>
+			</div>
+		</div>
+		
+		<div class="flex items-center justify-end gap-3">
+			{% if alert %}
+			<a href="{{ url_for('openLiveAlert') }}" class="px-4 py-2 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+				Annuler
+			</a>
+			{% endif %}
+			<button type="submit" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-colors">
+				{% if alert %}Enregistrer{% else %}Ajouter{% endif %}
+			</button>
+		</div>
+	</form>
+</div>
 {% endblock %}
