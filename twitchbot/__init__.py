@@ -14,8 +14,11 @@ USER_SCOPE = [AuthScope.CHAT_READ, AuthScope.CHAT_EDIT]
 
 async def _onReady(ready_event: EventData):
 	logging.info('Bot Twitch prêt')
+	channel = ConfigurationHelper().getValue('twitch_channel')
+	webapp.config["BOT_STATUS"]["twitch_connected"] = True
+	webapp.config["BOT_STATUS"]["twitch_channel_name"] = channel
 	with webapp.app_context():
-		await ready_event.chat.join_room(ConfigurationHelper().getValue('twitch_channel'))
+		await ready_event.chat.join_room(channel)
 	asyncio.get_event_loop().create_task(twitchBot._checkOnlineStreamers())
 	
 

@@ -3,6 +3,7 @@ import discord
 import logging
 import random
 
+from webapp import webapp
 from database import db
 from database.helpers import ConfigurationHelper
 from database.models import Configuration, Humeur, Commande
@@ -28,6 +29,8 @@ from protondb import searhProtonDb
 class DiscordBot(discord.Client):
 	async def on_ready(self):
 		logging.info(f'Connecté en tant que {self.user} (ID: {self.user.id})')
+		webapp.config["BOT_STATUS"]["discord_connected"] = True
+		webapp.config["BOT_STATUS"]["discord_guild_count"] = len(self.guilds)
 		for c in self.get_all_channels() :
 			logging.info(f'{c.id} {c.name}')
 		
@@ -37,6 +40,9 @@ class DiscordBot(discord.Client):
 		self.loop.create_task(self.updateStatus())
 		self.loop.create_task(self.updateHumbleBundle())
 		self.loop.create_task(self.updateYouTube())
+
+	async def on_disconnect(self):
+		webapp.config["BOT_STATUS"]["discord_connected"] = False
 	
 	async def updateStatus(self):
 		while not self.is_closed():
@@ -52,11 +58,10 @@ class DiscordBot(discord.Client):
 		while not self.is_closed():
 			await checkHumbleBundleAndNotify(self)
 			await asyncio.sleep(30*60)
-	
+
 	async def updateYouTube(self):
 		while not self.is_closed():
 			await checkYouTubeVideos()
-			# Vérification toutes les 5 minutes (comme pour Twitch)
 			await asyncio.sleep(5*60)
 
 	def getAllTextChannel(self) -> list[TextChannel]:

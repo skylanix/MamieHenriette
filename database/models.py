@@ -61,6 +61,7 @@ class AntiCheatCache(db.Model):
 	notes = db.Column(db.String(1024))
 	updated_at = db.Column(db.DateTime)
 
+
 class YouTubeNotification(db.Model):
 	__tablename__ = 'youtube_notification'
 	id = db.Column(db.Integer, primary_key=True)

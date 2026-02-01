@@ -1,110 +1,215 @@
 {% extends "template.html" %}
 
 {% block content %}
-<h1>Modération Discord</h1>
+<div class="mb-6">
+	<h1 class="text-2xl font-semibold text-slate-800 dark:text-white mb-1">Modération</h1>
+	<p class="text-sm text-slate-600 dark:text-slate-400">
+		Historique des actions de modération sur le serveur Discord.
+	</p>
+</div>
 
-<p>
-	Historique des actions de modération effectuées sur le serveur Discord.
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+	<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+		<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+			<h2 class="text-lg font-medium text-slate-800 dark:text-white">Top 3 sanctions</h2>
+			<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Utilisateurs les plus sanctionnés</p>
+		</div>
+		<div class="divide-y divide-slate-200 dark:divide-slate-700">
+			{% for row in top_sanctioned %}
+			<div class="px-5 py-3 flex items-center justify-between gap-3">
+				<div class="flex items-center gap-3 min-w-0">
+					<span class="flex-shrink-0 w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-sm font-bold text-slate-700 dark:text-slate-300">{{ loop.index }}</span>
+					<div class="min-w-0">
+						<span class="block text-sm font-medium text-slate-800 dark:text-white truncate">{{ row.username or '—' }}</span>
+						<span class="block text-xs text-slate-500 dark:text-slate-400 font-mono truncate">{{ row.discord_id }}</span>
+					</div>
+				</div>
+				<span class="flex-shrink-0 text-sm font-semibold text-slate-600 dark:text-slate-300">{{ row.count }} sanction{{ 's' if row.count > 1 else '' }}</span>
+			</div>
+			{% else %}
+			<div class="px-5 py-6 text-center text-sm text-slate-500 dark:text-slate-400">Aucune sanction enregistrée</div>
+			{% endfor %}
+		</div>
+	</div>
+	<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+		<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+			<h2 class="text-lg font-medium text-slate-800 dark:text-white">Top 3 modérateurs</h2>
+			<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Staff ayant effectué le plus d'actions</p>
+		</div>
+		<div class="divide-y divide-slate-200 dark:divide-slate-700">
+			{% for row in top_moderators %}
+			<div class="px-5 py-3 flex items-center justify-between gap-3">
+				<div class="flex items-center gap-3 min-w-0">
+					<span class="flex-shrink-0 w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-sm font-bold text-slate-700 dark:text-slate-300">{{ loop.index }}</span>
+					<div class="min-w-0">
+						<span class="block text-sm font-medium text-slate-800 dark:text-white truncate">{{ row.staff_name or '—' }}</span>
+						<span class="block text-xs text-slate-500 dark:text-slate-400 font-mono truncate">{{ row.staff_id }}</span>
+					</div>
+				</div>
+				<span class="flex-shrink-0 text-sm font-semibold text-slate-600 dark:text-slate-300">{{ row.count }} action{{ 's' if row.count > 1 else '' }}</span>
+			</div>
+			{% else %}
+			<div class="px-5 py-6 text-center text-sm text-slate-500 dark:text-slate-400">Aucune action enregistrée</div>
+			{% endfor %}
+		</div>
+	</div>
+</div>
 
-	Le bot enregistre automatiquement les avertissements, exclusions et bannissements.
-
-	<table>
-		<thead>
-			<tr>
-				<th>Commande</th>
-				<th>Description</th>
-			</tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td><strong>!averto @utilisateur raison</strong><br><small>Alias : !warn, !av, !avertissement</small></td>
-				<td>Avertit un utilisateur et enregistre l'avertissement dans la base de données</td>
-			</tr>
-			<tr>
-				<td><strong>!delaverto id</strong><br><small>Alias : !removewarn, !delwarn</small></td>
-				<td>Retire un avertissement en utilisant son numéro d'ID</td>
-			</tr>
-			<tr>
-				<td><strong>!warnings</strong> ou <strong>!warnings @utilisateur</strong><br><small>Alias : !listevent, !listwarn</small></td>
-				<td>Affiche la liste des événements de modération (tous ou pour un utilisateur spécifique)</td>
-			</tr>
-			<tr>
-				<td><strong>!inspect @utilisateur</strong> ou <strong>!inspect id</strong></td>
-				<td>Affiche des informations détaillées sur un utilisateur : création du compte, date d'arrivée, historique de modération</td>
-			</tr>
-			<tr>
-				<td><strong>!kick @utilisateur raison</strong></td>
-				<td>Expulse un utilisateur du serveur</td>
-			</tr>
-			<tr>
-				<td><strong>!ban @utilisateur raison</strong></td>
-				<td>Bannit définitivement un utilisateur du serveur</td>
-			</tr>
-			<tr>
-				<td><strong>!unban discord_id</strong> ou <strong>!unban #sanction_id raison</strong></td>
-				<td>Révoque le bannissement d'un utilisateur et lui envoie une invitation</td>
-			</tr>
-			<tr>
-				<td><strong>!banlist</strong></td>
-				<td>Affiche la liste des utilisateurs actuellement bannis du serveur</td>
-			</tr>
-			<tr>
-				<td><strong>!aide</strong><br><small>Alias : !help</small></td>
-				<td>Affiche l'aide avec toutes les commandes disponibles</td>
-			</tr>
-		</tbody>
-	</table>
-</p>
+<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
+	<details class="group">
+		<summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+			<span class="font-medium text-slate-800 dark:text-white">Commandes de modération disponibles</span>
+			<svg class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+		</summary>
+		<div class="border-t border-slate-200 dark:border-slate-700">
+			<div class="divide-y divide-slate-200 dark:divide-slate-700 text-sm">
+				<div class="px-5 py-3 flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+					<code class="text-slate-700 dark:text-slate-300 font-mono">!averto @user raison</code>
+					<span class="text-slate-500 dark:text-slate-400">Avertit un utilisateur</span>
+				</div>
+				<div class="px-5 py-3 flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+					<code class="text-slate-700 dark:text-slate-300 font-mono">!delaverto id</code>
+					<span class="text-slate-500 dark:text-slate-400">Retire un avertissement</span>
+				</div>
+				<div class="px-5 py-3 flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+					<code class="text-slate-700 dark:text-slate-300 font-mono">!warnings [@user]</code>
+					<span class="text-slate-500 dark:text-slate-400">Liste les événements de modération</span>
+				</div>
+				<div class="px-5 py-3 flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+					<code class="text-slate-700 dark:text-slate-300 font-mono">!inspect @user</code>
+					<span class="text-slate-500 dark:text-slate-400">Informations sur un utilisateur</span>
+				</div>
+				<div class="px-5 py-3 flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+					<code class="text-slate-700 dark:text-slate-300 font-mono">!kick @user raison</code>
+					<span class="text-slate-500 dark:text-slate-400">Expulse un utilisateur</span>
+				</div>
+				<div class="px-5 py-3 flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+					<code class="text-slate-700 dark:text-slate-300 font-mono">!ban @user raison</code>
+					<span class="text-slate-500 dark:text-slate-400">Bannit un utilisateur</span>
+				</div>
+				<div class="px-5 py-3 flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+					<code class="text-slate-700 dark:text-slate-300 font-mono">!unban id</code>
+					<span class="text-slate-500 dark:text-slate-400">Révoque un bannissement</span>
+				</div>
+				<div class="px-5 py-3 flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+					<code class="text-slate-700 dark:text-slate-300 font-mono">!banlist</code>
+					<span class="text-slate-500 dark:text-slate-400">Liste des utilisateurs bannis</span>
+				</div>
+			</div>
+		</div>
+	</details>
+</div>
 
 {% if not event %}
-<h2>Événements de modération</h2>
-<table class="moderation">
-	<thead>
-		<tr>
-			<th>Type</th>
-			<th>Utilisateur</th>
-			<th>Discord ID</th>
-			<th>Date & Heure</th>
-			<th>Raison</th>
-			<th>Staff</th>
-			<th>#</th>
-		</tr>
-	</thead>
-	<tbody>
-		{% for mod_event in events %}
-		<tr>
-			<td>{{ mod_event.type }}</td>
-			<td>{{ mod_event.username }}</td>
-			<td>{{ mod_event.discord_id }}</td>
-			<td>{{ mod_event.created_at.strftime('%d/%m/%Y %H:%M') if mod_event.created_at else 'N/A' }}</td>
-			<td>{{ mod_event.reason }}</td>
-			<td>{{ mod_event.staff_name }}</td>
-			<td>
-				<a href="{{ url_for('open_edit_moderation_event', event_id = mod_event.id) }}" class="icon">✐</a>
-				<a href="{{ url_for('delete_moderation_event', event_id = mod_event.id) }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')" class="icon">🗑</a>
-			</td>
-		</tr>
-		{% endfor %}
-	</tbody>
-</table>
+<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
+	<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+		<h2 class="text-lg font-medium text-slate-800 dark:text-white">Événements de modération</h2>
+	</div>
+	<div class="overflow-x-auto">
+		<table class="w-full">
+			<thead>
+				<tr class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
+					<th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Type</th>
+					<th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Utilisateur</th>
+					<th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Date</th>
+					<th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Raison</th>
+					<th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Staff</th>
+					<th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
+				</tr>
+			</thead>
+			<tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+				{% for mod_event in events %}
+				<tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+					<td class="px-4 py-3">
+						{% if mod_event.type == 'ban' %}
+						<span class="text-xs font-medium text-red-600 dark:text-red-400">Ban</span>
+						{% elif mod_event.type == 'kick' %}
+						<span class="text-xs font-medium text-orange-600 dark:text-orange-400">Kick</span>
+						{% elif mod_event.type == 'warn' or mod_event.type == 'warning' %}
+						<span class="text-xs font-medium text-yellow-600 dark:text-yellow-400">Warn</span>
+						{% elif mod_event.type == 'unban' %}
+						<span class="text-xs font-medium text-green-600 dark:text-green-400">Unban</span>
+						{% else %}
+						<span class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ mod_event.type }}</span>
+						{% endif %}
+					</td>
+					<td class="px-4 py-3">
+						<div class="flex flex-col">
+							<span class="text-sm font-medium text-slate-800 dark:text-white">{{ mod_event.username }}</span>
+							<span class="text-xs text-slate-500 dark:text-slate-400 font-mono">{{ mod_event.discord_id }}</span>
+						</div>
+					</td>
+					<td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400 whitespace-nowrap">
+						{{ mod_event.created_at.strftime('%d/%m/%Y %H:%M') if mod_event.created_at else 'N/A' }}
+					</td>
+					<td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400 max-w-xs">
+						<div class="line-clamp-2">{{ mod_event.reason }}</div>
+					</td>
+					<td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+						{{ mod_event.staff_name }}
+					</td>
+					<td class="px-4 py-3">
+						<div class="flex items-center justify-end gap-2">
+							<a href="{{ url_for('open_edit_moderation_event', event_id = mod_event.id) }}" class="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
+								Modifier
+							</a>
+							<a href="{{ url_for('delete_moderation_event', event_id = mod_event.id) }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')" class="text-sm text-slate-500 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+								Supprimer
+							</a>
+						</div>
+					</td>
+				</tr>
+				{% else %}
+				<tr>
+					<td colspan="6" class="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+						Aucun événement de modération
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
 {% endif %}
 
 {% if event %}
-<h2>Editer un événement</h2>
-<form action="{{ url_for('update_moderation_event', event_id = event.id) }}" method="POST">
-	<label for="type">Type</label>
-	<input name="type" type="text" value="{{ event.type }}" disabled />
-	<label for="username">Utilisateur</label>
-	<input name="username" type="text" value="{{ event.username }}" disabled />
-	<label for="discord_id">Discord ID</label>
-	<input name="discord_id" type="text" value="{{ event.discord_id }}" disabled />
-	<label for="reason">Raison</label>
-	<input name="reason" type="text" value="{{ event.reason }}" required="required" />
-	<label for="staff_name">Staff</label>
-	<input name="staff_name" type="text" value="{{ event.staff_name }}" disabled />
-	<input type="Submit" value="Modifier">
-	<a href="{{ url_for('moderation') }}">Annuler</a>
-</form>
+<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5">
+	<h2 class="text-lg font-medium text-slate-800 dark:text-white mb-5">Modifier l'événement</h2>
+	
+	<form action="{{ url_for('update_moderation_event', event_id = event.id) }}" method="POST" class="space-y-6">
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+			<div>
+				<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Type</label>
+				<input type="text" value="{{ event.type }}" disabled class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-500 dark:text-slate-400 cursor-not-allowed">
+			</div>
+			<div>
+				<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Staff</label>
+				<input type="text" value="{{ event.staff_name }}" disabled class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-500 dark:text-slate-400 cursor-not-allowed">
+			</div>
+			<div>
+				<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Utilisateur</label>
+				<input type="text" value="{{ event.username }}" disabled class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-500 dark:text-slate-400 cursor-not-allowed">
+			</div>
+			<div>
+				<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Discord ID</label>
+				<input type="text" value="{{ event.discord_id }}" disabled class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-500 dark:text-slate-400 cursor-not-allowed font-mono">
+			</div>
+		</div>
+		
+		<div>
+			<label for="reason" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Raison</label>
+			<input type="text" name="reason" id="reason" value="{{ event.reason }}" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
+		</div>
+		
+		<div class="flex items-center justify-end gap-3">
+			<a href="{{ url_for('moderation') }}" class="px-4 py-2 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+				Annuler
+			</a>
+			<button type="submit" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-colors">
+				Enregistrer
+			</button>
+		</div>
+	</form>
+</div>
 {% endif %}
-
 {% endblock %}
