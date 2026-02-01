@@ -1,35 +1,92 @@
 {% extends "template.html" %}
 
 {% block content %}
-<h1>Procédure de configuration de Twitch</h1>
-<p>
-	<strong>Avant toute chose, activez l'authentification à deux facteurs (2FA) :</strong>
-	<a href="https://help.twitch.tv/s/article/two-factor-authentication?language=en_US" target="_blank">Guide officiel
-		Twitch pour la 2FA</a>
-</p>
-<p>
-	Rendez-vous sur <a href="https://dev.twitch.tv/console" target="_blank">la console d'applications Twitch</a> et
-	ajoutez une application. Renseignez :
-<ul>
-	<li>URL de redirection : {{token_redirect_url}}</li>
-	<li>Catégorie : Chat Bot</li>
-</ul>
-</p>
+<div class="mb-6">
+	<h1 class="text-2xl font-semibold text-slate-800 dark:text-white mb-1">Configuration Twitch</h1>
+	<p class="text-sm text-slate-600 dark:text-slate-400">
+		Guide étape par étape pour configurer l'API Twitch.
+	</p>
+</div>
 
-<img src="/static/img/twitch-api-01.jpg">
+<div class="space-y-4">
+	<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+		<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+			<div class="flex items-center gap-3">
+				<span class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 text-xs font-medium">1</span>
+				<h2 class="font-medium text-slate-800 dark:text-white">Activer l'authentification à deux facteurs (2FA)</h2>
+			</div>
+		</div>
+		<div class="p-5">
+			<p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+				Avant de créer une application Twitch, vous devez activer la 2FA sur votre compte.
+			</p>
+			<a href="https://help.twitch.tv/s/article/two-factor-authentication?language=en_US" target="_blank" class="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white">
+				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+				Guide officiel Twitch
+			</a>
+		</div>
+	</div>
 
-<p>
-	Créez le bot. Puis, de retour à la liste, éditez-le en cliquant sur Gérer. Puis cliquez sur <strong>Nouveau
-		Secret</strong>. Vous trouverez ici le <strong>Client ID</strong> et le <strong>Client Secret</strong>.
-</p>
+	<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+		<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+			<div class="flex items-center gap-3">
+				<span class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 text-xs font-medium">2</span>
+				<h2 class="font-medium text-slate-800 dark:text-white">Créer une application Twitch</h2>
+			</div>
+		</div>
+		<div class="p-5 space-y-4">
+			<p class="text-sm text-slate-600 dark:text-slate-400">
+				Rendez-vous sur la console Twitch et créez une nouvelle application :
+			</p>
+			<a href="https://dev.twitch.tv/console" target="_blank" class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-800 dark:bg-slate-700 text-white text-sm rounded-lg hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors">
+				Console Twitch
+			</a>
 
-<img src="/static/img/twitch-api-02.jpg">
+			<div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 space-y-2 text-sm">
+				<div><span class="text-slate-500 dark:text-slate-400">URL de redirection :</span> <code class="ml-1 px-1.5 py-0.5 bg-slate-200 dark:bg-slate-600 rounded text-xs">{{ token_redirect_url }}</code></div>
+				<div><span class="text-slate-500 dark:text-slate-400">Catégorie :</span> <span class="ml-1 text-slate-800 dark:text-white">Chat Bot</span></div>
+			</div>
 
-<p>
-	Ensuite, retournez sur la page de <a href="{{url_for('openConfigurations')}}">Configuration</a>, après avoir
-	enregistré le <strong>Client ID</strong> et le <strong>Client Secret</strong>, cliquez sur le lien <strong>Obtenir
-		token et refresh token</strong>. Si tout se passe bien les champs <strong>Access Token</strong> et
-	<strong>Refresh Token</strong> sont remplis.
-</p>
+			<div class="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+				<img src="/static/img/twitch-api-01.jpg" alt="Création d'application Twitch" class="w-full">
+			</div>
+		</div>
+	</div>
 
+	<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+		<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+			<div class="flex items-center gap-3">
+				<span class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 text-xs font-medium">3</span>
+				<h2 class="font-medium text-slate-800 dark:text-white">Récupérer les identifiants</h2>
+			</div>
+		</div>
+		<div class="p-5 space-y-4">
+			<p class="text-sm text-slate-600 dark:text-slate-400">
+				Cliquez sur <strong class="text-slate-800 dark:text-white">Gérer</strong> puis <strong class="text-slate-800 dark:text-white">Nouveau Secret</strong> pour obtenir le Client ID et Client Secret.
+			</p>
+			<div class="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+				<img src="/static/img/twitch-api-02.jpg" alt="Récupération des identifiants" class="w-full">
+			</div>
+		</div>
+	</div>
+
+	<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+		<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+			<div class="flex items-center gap-3">
+				<span class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 text-xs font-medium">4</span>
+				<h2 class="font-medium text-slate-800 dark:text-white">Configurer Mamie Henriette</h2>
+			</div>
+		</div>
+		<div class="p-5 space-y-4">
+			<ol class="list-decimal list-inside space-y-1 text-sm text-slate-600 dark:text-slate-400">
+				<li>Entrez le Client ID et Client Secret</li>
+				<li>Cliquez sur Enregistrer</li>
+				<li>Cliquez sur "Obtenir token et refresh token"</li>
+			</ol>
+			<a href="{{ url_for('openConfigurations') }}" class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-800 dark:bg-slate-700 text-white text-sm rounded-lg hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors">
+				Aller à la Configuration
+			</a>
+		</div>
+	</div>
+</div>
 {% endblock %}
