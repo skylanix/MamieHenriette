@@ -27,11 +27,15 @@ class LiveAlert(db.Model):
 	notify_channel = db.Column(db.Integer)
 	message = db.Column(db.String(2000))
 
-class Message(db.Model):
+class TwitchAnnouncement(db.Model):
+	__tablename__ = 'twitch_announcement'
 	id = db.Column(db.Integer, primary_key=True)
-	enable = db.Column(db.Boolean, default=False)
-	text = db.Column(db.String(256))
-	periodicity = db.Column(db.Integer)
+	enable = db.Column(db.Boolean, default=True)
+	name = db.Column(db.String(64))
+	text = db.Column(db.String(500))
+	periodicity = db.Column(db.Integer, default=10)
+	min_chat_messages = db.Column(db.Integer, default=0)
+	last_sent = db.Column(db.DateTime, nullable=True)
 
 class Commande(db.Model):
 	id = db.Column(db.Integer, primary_key=True)

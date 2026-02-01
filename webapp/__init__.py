@@ -10,4 +10,4 @@ webapp.config["BOT_STATUS"] = {
 	"twitch_channel_name": None,
 }
 
-from webapp import commandes, configurations, index, humeurs, protondb, live_alert, twitch_auth, moderation, youtube
+from webapp import commandes, configurations, index, humeurs, protondb, live_alert, twitch_auth, moderation, youtube, announcements

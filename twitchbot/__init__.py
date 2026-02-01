@@ -1,4 +1,3 @@
-
 import asyncio
 import logging
 
@@ -8,9 +7,11 @@ from twitchAPI.chat import Chat, ChatEvent, ChatMessage, EventData
 
 from database.helpers import ConfigurationHelper
 from twitchbot.live_alert import checkOnlineStreamer
+from twitchbot.announcements import checkAndSendAnnouncements, incrementMessageCount
 from webapp import webapp
 
 USER_SCOPE = [AuthScope.CHAT_READ, AuthScope.CHAT_EDIT]
+
 
 async def _onReady(ready_event: EventData):
 	logging.info('Bot Twitch prêt')
@@ -20,56 +21,69 @@ async def _onReady(ready_event: EventData):
 	with webapp.app_context():
 		await ready_event.chat.join_room(channel)
 	asyncio.get_event_loop().create_task(twitchBot._checkOnlineStreamers())
-	
+	asyncio.get_event_loop().create_task(twitchBot._runAnnouncements())
+
 
 async def _onMessage(msg: ChatMessage):
 	logging.info(f'Dans {msg.room.name}, {msg.user.name} a dit : {msg.text}')
+	incrementMessageCount()
 
-# commande qui répond "bonjour" à "!hello"
+
 async def _helloCommand(msg: ChatMessage):
 	await msg.reply(f'Bonjour {msg.user.name}')
 
-def _isConfigured() -> bool: 
-	helper = ConfigurationHelper()
-	return helper.getValue('twitch_client_id') != None and helper.getValue('twitch_client_secret') != None and helper.getValue('twitch_access_token') != None and helper.getValue('twitch_refresh_token') != None and helper.getValue('twitch_channel') != None
 
-class TwitchBot() : 
+def _isConfigured():
+	helper = ConfigurationHelper()
+	return (helper.getValue('twitch_client_id') is not None and 
+			helper.getValue('twitch_client_secret') is not None and 
+			helper.getValue('twitch_access_token') is not None and 
+			helper.getValue('twitch_refresh_token') is not None and 
+			helper.getValue('twitch_channel') is not None)
+
+
+class TwitchBot():
 
 	async def _connect(self):
 		with webapp.app_context():
-			if _isConfigured() : 
-				try : 
+			if _isConfigured():
+				try:
 					helper = ConfigurationHelper()
 					self.twitch = await Twitch(helper.getValue('twitch_client_id'), helper.getValue('twitch_client_secret'))
 					await self.twitch.set_user_authentication(helper.getValue('twitch_access_token'), USER_SCOPE, helper.getValue('twitch_refresh_token'))
 					self.chat = await Chat(self.twitch)
 					self.chat.register_event(ChatEvent.READY, _onReady)
 					self.chat.register_event(ChatEvent.MESSAGE, _onMessage)
-					# chat.register_event(ChatEvent.SUB, on_sub)
 					self.chat.register_command('hello', _helloCommand)
 					self.chat.start()
-				except Exception as e: 
-					logging.error(f'Échec de l\'authentification Twitch. Vérifiez vos identifiants et redémarrez après correction : {e}')
-			else: 
+				except Exception as e:
+					logging.error(f'Échec de l\'authentification Twitch : {e}')
+			else:
 				logging.info("Twitch n'est pas configuré")
-	
-	async def _checkOnlineStreamers(self): 
-		# pas bon faudrait faire un truc mieux
-		while True :
+
+	async def _checkOnlineStreamers(self):
+		while True:
 			try:
 				await checkOnlineStreamer(self.twitch)
 			except Exception as e:
-				logging.error(f'Erreur lors lors du check des streamers online : {e}')
-			# toutes les 5 minutes
-			await asyncio.sleep(5*60)
+				logging.error(f'Erreur check streamers online : {e}')
+			await asyncio.sleep(5 * 60)
 
-	def begin(self): 
+	async def _runAnnouncements(self):
+		channel = ConfigurationHelper().getValue('twitch_channel')
+		while True:
+			try:
+				await checkAndSendAnnouncements(self.chat, channel)
+			except Exception as e:
+				logging.error(f'Erreur envoi annonces : {e}')
+			await asyncio.sleep(60)
+
+	def begin(self):
 		asyncio.run(self._connect())
 
-	# je ne sais pas encore comment appeler ça
 	async def _close(self):
 		self.chat.stop()
 		await self.twitch.close()
 
-twitchBot = TwitchBot()
 
+twitchBot = TwitchBot()
