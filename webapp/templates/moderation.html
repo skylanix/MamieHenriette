@@ -8,6 +8,53 @@
 	</p>
 </div>
 
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+	<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+		<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+			<h2 class="text-lg font-medium text-slate-800 dark:text-white">Top 3 sanctions</h2>
+			<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Utilisateurs les plus sanctionnés</p>
+		</div>
+		<div class="divide-y divide-slate-200 dark:divide-slate-700">
+			{% for row in top_sanctioned %}
+			<div class="px-5 py-3 flex items-center justify-between gap-3">
+				<div class="flex items-center gap-3 min-w-0">
+					<span class="flex-shrink-0 w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-sm font-bold text-slate-700 dark:text-slate-300">{{ loop.index }}</span>
+					<div class="min-w-0">
+						<span class="block text-sm font-medium text-slate-800 dark:text-white truncate">{{ row.username or '—' }}</span>
+						<span class="block text-xs text-slate-500 dark:text-slate-400 font-mono truncate">{{ row.discord_id }}</span>
+					</div>
+				</div>
+				<span class="flex-shrink-0 text-sm font-semibold text-slate-600 dark:text-slate-300">{{ row.count }} sanction{{ 's' if row.count > 1 else '' }}</span>
+			</div>
+			{% else %}
+			<div class="px-5 py-6 text-center text-sm text-slate-500 dark:text-slate-400">Aucune sanction enregistrée</div>
+			{% endfor %}
+		</div>
+	</div>
+	<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+		<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+			<h2 class="text-lg font-medium text-slate-800 dark:text-white">Top 3 modérateurs</h2>
+			<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Staff ayant effectué le plus d'actions</p>
+		</div>
+		<div class="divide-y divide-slate-200 dark:divide-slate-700">
+			{% for row in top_moderators %}
+			<div class="px-5 py-3 flex items-center justify-between gap-3">
+				<div class="flex items-center gap-3 min-w-0">
+					<span class="flex-shrink-0 w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-sm font-bold text-slate-700 dark:text-slate-300">{{ loop.index }}</span>
+					<div class="min-w-0">
+						<span class="block text-sm font-medium text-slate-800 dark:text-white truncate">{{ row.staff_name or '—' }}</span>
+						<span class="block text-xs text-slate-500 dark:text-slate-400 font-mono truncate">{{ row.staff_id }}</span>
+					</div>
+				</div>
+				<span class="flex-shrink-0 text-sm font-semibold text-slate-600 dark:text-slate-300">{{ row.count }} action{{ 's' if row.count > 1 else '' }}</span>
+			</div>
+			{% else %}
+			<div class="px-5 py-6 text-center text-sm text-slate-500 dark:text-slate-400">Aucune action enregistrée</div>
+			{% endfor %}
+		</div>
+	</div>
+</div>
+
 <div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
 	<details class="group">
 		<summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">

@@ -76,3 +76,21 @@ CREATE TABLE IF NOT EXISTS `member_invites` (
 	`inviter_name` VARCHAR(256),
 	`join_date` DATETIME NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS `youtube_notification` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	`enable` BOOLEAN NOT NULL DEFAULT TRUE,
+	`channel_id` VARCHAR(128) NOT NULL,
+	`notify_channel` INTEGER NOT NULL,
+	`message` VARCHAR(2000) NOT NULL,
+	`video_type` VARCHAR(16) NOT NULL DEFAULT 'all',
+	`last_video_id` VARCHAR(128),
+	`embed_title` VARCHAR(256),
+	`embed_description` VARCHAR(2000),
+	`embed_color` VARCHAR(8) NOT NULL DEFAULT 'FF0000',
+	`embed_footer` VARCHAR(2048),
+	`embed_author_name` VARCHAR(256),
+	`embed_author_icon` VARCHAR(512),
+	`embed_thumbnail` BOOLEAN NOT NULL DEFAULT TRUE,
+	`embed_image` BOOLEAN NOT NULL DEFAULT TRUE
+);
