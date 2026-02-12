@@ -27,7 +27,7 @@ def twitchConfigurationHelp():
 def twitchRequestToken():
 	global auth
 	helper = ConfigurationHelper()
-	twitch = asyncio.run(Twitch(helper.getValue('twitch_client_id'), helper.getValue('twitch_client_secret')))
+	twitch = Twitch(helper.getValue('twitch_client_id'), helper.getValue('twitch_client_secret'))
 	auth = UserAuthenticator(twitch, USER_SCOPE, url=_buildUrl())
 	return redirect(auth.return_auth_url())
 
