@@ -1,29 +1,69 @@
 {% extends "template.html" %}
 
 {% block content %}
-<h1>Humeurs de Mamie</h1>
-<p>Définissez les statuts Discord qui changeront automatiquement toutes les 10 minutes pour donner de la personnalité à votre bot.</p>
-<table>
-	<thead>
-		<tr>
-			<th>Texte</th>
-			<th>Action</th>
-		</tr>
-	</thead>
-	<tbody>
-		{% for humeur in humeurs %}
-		<tr>
-			<td>{{humeur.text}}</td>
-			<td><a href="{{ url_for('delHumeur', id = humeur.id) }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette humeur ?')">Supprimer</a></td>
-		</tr>
-		{% endfor %}
-	</tbody>
-</table>
+<div class="mb-8">
+	<h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Humeurs de Mamie</h1>
+	<div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+		<p class="text-gray-700 dark:text-gray-300">
+			Définissez les statuts Discord qui changeront automatiquement toutes les 10 minutes pour donner de la personnalité à votre bot.
+		</p>
+	</div>
+</div>
 
-<h2>Ajouter une humeur</h2>
-<form action="{{ url_for('addHumeur') }}" method="POST">
-	<label for="text">Texte</label>
-	<input name="text" type="text" />
-	<input type="Submit" value="Ajouter">
-</form>
+<div class="mb-8">
+	<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Liste des humeurs</h2>
+	<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+		<div class="overflow-x-auto">
+			<table class="w-full">
+				<thead class="bg-gray-50 dark:bg-gray-700">
+					<tr>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Texte</th>
+						<th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">Action</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+					{% for humeur in humeurs %}
+					<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+						<td class="px-6 py-4 text-gray-700 dark:text-gray-300">{{ humeur.text }}</td>
+						<td class="px-6 py-4 text-center">
+							<a href="{{ url_for('delHumeur', id = humeur.id) }}" 
+								onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette humeur ?')"
+								class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-red-600 dark:text-red-400 inline-block"
+								title="Supprimer">
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+							</a>
+						</td>
+					</tr>
+					{% else %}
+					<tr>
+						<td colspan="2" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+							Aucune humeur configurée. Ajoutez-en une ci-dessous.
+						</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+	<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Ajouter une humeur</h2>
+	
+	<form action="{{ url_for('addHumeur') }}" method="POST" class="space-y-6">
+		<div>
+			<label for="text" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Texte du statut</label>
+			<input name="text" id="text" type="text" required
+				class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+				placeholder="Joue à un jeu vidéo..."/>
+		</div>
+		
+		<div>
+			<button type="submit" 
+				class="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+				Ajouter l'humeur
+			</button>
+		</div>
+	</form>
+</div>
 {% endblock %}

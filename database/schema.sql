@@ -28,7 +28,16 @@ CREATE TABLE IF NOT EXISTS live_alert (
 	`online` BOOLEAN NOT NULL DEFAULT FALSE,
 	`login` VARCHAR(128) UNIQUE NOT NULL,
 	`notify_channel` INTEGER NOT NULL,
-	`message` VARCHAR(2000) NOT NULL
+	`message` VARCHAR(2000),
+	`watch_activity` BOOLEAN NOT NULL DEFAULT FALSE,
+	`embed_title` VARCHAR(256),
+	`embed_description` VARCHAR(2000),
+	`embed_color` VARCHAR(8) DEFAULT '9146FF',
+	`embed_footer` VARCHAR(2048),
+	`embed_author_name` VARCHAR(256),
+	`embed_author_icon` VARCHAR(512),
+	`embed_thumbnail` BOOLEAN DEFAULT TRUE,
+	`embed_image` BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS `twitch_announcement` (
@@ -46,7 +55,8 @@ CREATE TABLE IF NOT EXISTS `commande` (
 	`discord_enable` BOOLEAN NOT NULL DEFAULT TRUE,
 	`twitch_enable` BOOLEAN NOT NULL DEFAULT TRUE,
 	`trigger` VARCHAR(16) UNIQUE NOT NULL,
-	`response` VARCHAR(2000) NOT NULL
+	`response` VARCHAR(2000) NOT NULL,
+	`twitch_permission` VARCHAR(16) DEFAULT 'viewer'
 );
 
 CREATE TABLE IF NOT EXISTS `moderation_event` (
@@ -59,6 +69,15 @@ CREATE TABLE IF NOT EXISTS `moderation_event` (
 	`staff_id` VARCHAR(64) NOT NULL,
 	`staff_name` VARCHAR(256) NOT NULL,
 	`duration` INTEGER NULL
+);
+
+CREATE TABLE IF NOT EXISTS `twitch_moderation_log` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	`action` VARCHAR(32) NOT NULL,
+	`moderator` VARCHAR(256) NOT NULL,
+	`target` VARCHAR(256),
+	`details` VARCHAR(512),
+	`created_at` DATETIME NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS `anticheat_cache` (
@@ -80,6 +99,40 @@ CREATE TABLE IF NOT EXISTS `member_invites` (
 	`join_date` DATETIME NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS `twitch_link_filter` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	`enabled` BOOLEAN NOT NULL DEFAULT FALSE,
+	`allow_subscribers` BOOLEAN NOT NULL DEFAULT TRUE,
+	`allow_vips` BOOLEAN NOT NULL DEFAULT TRUE,
+	`allow_moderators` BOOLEAN NOT NULL DEFAULT TRUE,
+	`timeout_duration` INTEGER NOT NULL DEFAULT 60,
+	`warning_message` VARCHAR(500) NOT NULL DEFAULT 'Les liens ne sont pas autorises dans le chat.'
+);
+
+CREATE TABLE IF NOT EXISTS `twitch_allowed_domain` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	`domain` VARCHAR(256) UNIQUE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS `twitch_permit` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	`username` VARCHAR(256) NOT NULL,
+	`expires_at` DATETIME NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS `twitch_allowed_user` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	`username` VARCHAR(256) UNIQUE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS `twitch_banned_word` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	`word` VARCHAR(256) UNIQUE NOT NULL,
+	`enabled` BOOLEAN NOT NULL DEFAULT TRUE,
+	`timeout_duration` INTEGER NOT NULL DEFAULT 60,
+	`created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS `youtube_notification` (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	`enable` BOOLEAN NOT NULL DEFAULT TRUE,
@@ -96,4 +149,52 @@ CREATE TABLE IF NOT EXISTS `youtube_notification` (
 	`embed_author_icon` VARCHAR(512),
 	`embed_thumbnail` BOOLEAN NOT NULL DEFAULT TRUE,
 	`embed_image` BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS `webapp_user` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	username VARCHAR(64) UNIQUE NOT NULL,
+	email VARCHAR(256) UNIQUE NOT NULL,
+	password_hash VARCHAR(256) NOT NULL,
+	role VARCHAR(64) NOT NULL DEFAULT 'viewer_twitch',
+	created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS `webapp_role` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name VARCHAR(64) UNIQUE NOT NULL,
+	level INTEGER NOT NULL DEFAULT 0,
+	description VARCHAR(256) NULL,
+	color VARCHAR(7) NULL DEFAULT '#6B7280',
+	icon VARCHAR(32) NULL
+);
+
+CREATE TABLE IF NOT EXISTS `webapp_page_permission` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	page_key VARCHAR(64) UNIQUE NOT NULL,
+	min_level INTEGER NOT NULL DEFAULT 0,
+	write_level INTEGER NULL,
+	category VARCHAR(32) NULL DEFAULT 'general',
+	description VARCHAR(256) NULL
+);
+
+CREATE TABLE IF NOT EXISTS `freeloot_entry` (
+	entry_id VARCHAR(256) PRIMARY KEY
+);
+
+-- Notifications d'événements Twitch (sub, follow, raid, clip) : chat Twitch et/ou canal Discord
+CREATE TABLE IF NOT EXISTS `twitch_event_notification` (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	event_type VARCHAR(32) UNIQUE NOT NULL,
+	`enable` BOOLEAN NOT NULL DEFAULT TRUE,
+	notify_twitch_chat BOOLEAN NOT NULL DEFAULT TRUE,
+	notify_discord BOOLEAN NOT NULL DEFAULT FALSE,
+	discord_channel_id INTEGER NULL,
+	message_twitch VARCHAR(500) NOT NULL DEFAULT '',
+	message_discord VARCHAR(2000) NULL,
+	embed_color VARCHAR(8) DEFAULT '9146FF',
+	embed_title VARCHAR(256) NULL,
+	embed_description VARCHAR(2000) NULL,
+	embed_thumbnail BOOLEAN NOT NULL DEFAULT TRUE,
+	last_clip_id VARCHAR(128) NULL
 );

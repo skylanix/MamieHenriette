@@ -10,23 +10,31 @@ from webapp import webapp
 logger = logging.getLogger('youtube-notification')
 logger.setLevel(logging.INFO)
 
+_youtube_first_check = True
+
 
 async def checkYouTubeVideos():
+	global _youtube_first_check
 	with webapp.app_context():
 		try:
 			notifications: list[YouTubeNotification] = YouTubeNotification.query.filter_by(enable=True).all()
 			
 			for notification in notifications:
 				try:
-					await _checkChannelVideos(notification)
+					await _checkChannelVideos(notification, is_first_check=_youtube_first_check)
 				except Exception as e:
 					logger.error(f"Erreur lors de la vérification de la chaîne {notification.channel_id}: {e}")
 					continue
+			
+			# Après la première vérification complète, on désactive le flag
+			if _youtube_first_check:
+				_youtube_first_check = False
+				logger.info("YouTube: première vérification terminée, notifications activées")
 		except Exception as e:
 			logger.error(f"Erreur lors de la vérification YouTube: {e}")
 
 
-async def _checkChannelVideos(notification: YouTubeNotification):
+async def _checkChannelVideos(notification: YouTubeNotification, is_first_check: bool = False):
 	try:
 		channel_id = notification.channel_id
 		
@@ -109,6 +117,15 @@ async def _checkChannelVideos(notification: YouTubeNotification):
 		if videos:
 			latest_video_id, latest_video = videos[0]
 			
+			# Si c'est la première vérification après démarrage, on synchronise sans notifier
+			if is_first_check:
+				if not notification.last_video_id or notification.last_video_id != latest_video_id:
+					logger.info(f"YouTube: synchronisation initiale pour {channel_id}, dernière vidéo: {latest_video_id}")
+					notification.last_video_id = latest_video_id
+					db.session.commit()
+				return
+			
+			# Vérifications normales ensuite
 			if not notification.last_video_id:
 				notification.last_video_id = latest_video_id
 				db.session.commit()

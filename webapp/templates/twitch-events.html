@@ -1,0 +1,117 @@
+{% extends "template.html" %}
+
+{% block content %}
+<div class="mb-8">
+	<h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Notifications d'événements Twitch</h1>
+	<div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+		<p class="text-gray-700 dark:text-gray-300">
+			Configurez les notifications pour les abonnements, follows, raids et nouveaux clips.
+			Pour chaque type d'événement vous pouvez activer l'envoi dans le <strong>chat Twitch</strong> et/ou dans un <strong>canal Discord</strong>.
+			Les événements sub, follow et raid utilisent Twitch EventSub ; les clips sont détectés par vérification périodique.
+		</p>
+	</div>
+</div>
+
+<form action="{{ url_for('save_twitch_events') }}" method="POST" class="space-y-8">
+	{% for cfg in configs %}
+	<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+		<div class="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-wrap gap-4">
+			<h2 class="text-xl font-semibold text-gray-900 dark:text-white">{{ labels[cfg.event_type] }}</h2>
+			<div class="flex items-center gap-4">
+				<label class="flex items-center gap-2 cursor-pointer">
+					<input type="hidden" name="ev_{{ cfg.event_type }}_enable" value="0">
+					<input type="checkbox" name="ev_{{ cfg.event_type }}_enable" value="1" {{ 'checked' if cfg.enable }}
+						class="rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500">
+					<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Activer</span>
+				</label>
+				<a href="{{ url_for('toggle_twitch_event', event_type=cfg.event_type) }}" 
+					class="text-sm {{ 'text-green-600 dark:text-green-400' if cfg.enable else 'text-gray-500' }}">
+					{{ 'Activé' if cfg.enable else 'Désactivé' }}
+				</a>
+			</div>
+		</div>
+		<div class="p-6 space-y-6">
+			<div class="grid md:grid-cols-2 gap-6">
+				<div class="space-y-4">
+					<h3 class="font-medium text-gray-800 dark:text-gray-200">Où notifier</h3>
+					<label class="flex items-center gap-3 cursor-pointer">
+						<input type="hidden" name="ev_{{ cfg.event_type }}_notify_twitch_chat" value="0">
+						<input type="checkbox" name="ev_{{ cfg.event_type }}_notify_twitch_chat" value="1" {{ 'checked' if cfg.notify_twitch_chat }}
+							class="rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500">
+						<span class="text-gray-700 dark:text-gray-300">Chat Twitch</span>
+					</label>
+					<label class="flex items-center gap-3 cursor-pointer">
+						<input type="hidden" name="ev_{{ cfg.event_type }}_notify_discord" value="0">
+						<input type="checkbox" name="ev_{{ cfg.event_type }}_notify_discord" value="1" {{ 'checked' if cfg.notify_discord }}
+							class="rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500">
+						<span class="text-gray-700 dark:text-gray-300">Discord (canal de notifs)</span>
+					</label>
+					<div>
+						<label for="ev_{{ cfg.event_type }}_discord_channel" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Canal Discord</label>
+						<select name="ev_{{ cfg.event_type }}_discord_channel_id" id="ev_{{ cfg.event_type }}_discord_channel"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+							<option value="">— Choisir un canal —</option>
+							{% for ch in channels %}
+							<option value="{{ ch.id }}" {{ 'selected' if cfg.discord_channel_id == ch.id }}>{{ ch.name }}</option>
+							{% endfor %}
+						</select>
+					</div>
+				</div>
+				<div class="space-y-4">
+					<div>
+						<label for="ev_{{ cfg.event_type }}_message_twitch" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message (chat Twitch)</label>
+						<input type="text" name="ev_{{ cfg.event_type }}_message_twitch" id="ev_{{ cfg.event_type }}_message_twitch" maxlength="500"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+							value="{{ cfg.message_twitch }}" placeholder="Merci {user} !">
+						<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+							Sub/Follow: <code>{user}</code> <code>{user_name}</code> —
+							Raid: <code>{from_broadcaster_name}</code> <code>{viewers}</code> —
+							Clip: <code>{user}</code> <code>{title}</code> <code>{url}</code>
+						</p>
+					</div>
+					<div>
+						<label for="ev_{{ cfg.event_type }}_message_discord" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message Discord (optionnel, avant l'embed)</label>
+						<textarea name="ev_{{ cfg.event_type }}_message_discord" id="ev_{{ cfg.event_type }}_message_discord" rows="2" maxlength="2000"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-y">{{ cfg.message_discord or '' }}</textarea>
+					</div>
+				</div>
+			</div>
+			<div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+				<h4 class="font-medium text-gray-800 dark:text-gray-200 mb-3">Embed Discord (optionnel)</h4>
+				<div class="grid sm:grid-cols-2 gap-4">
+					<div>
+						<label for="ev_{{ cfg.event_type }}_embed_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Titre</label>
+						<input type="text" name="ev_{{ cfg.event_type }}_embed_title" id="ev_{{ cfg.event_type }}_embed_title" maxlength="256"
+							class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+							value="{{ cfg.embed_title or '' }}" placeholder="Ex: Nouveau clip">
+					</div>
+					<div>
+						<label for="ev_{{ cfg.event_type }}_embed_color" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Couleur (hex)</label>
+						<input type="text" name="ev_{{ cfg.event_type }}_embed_color" id="ev_{{ cfg.event_type }}_embed_color" maxlength="6"
+							class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono"
+							value="{{ cfg.embed_color or '9146FF' }}" placeholder="9146FF">
+					</div>
+				</div>
+				<div class="mt-3">
+					<label for="ev_{{ cfg.event_type }}_embed_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+					<textarea name="ev_{{ cfg.event_type }}_embed_description" id="ev_{{ cfg.event_type }}_embed_description" rows="2" maxlength="2000"
+						class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-y">{{ cfg.embed_description or '' }}</textarea>
+				</div>
+				<label class="flex items-center gap-2 mt-3 cursor-pointer">
+					<input type="hidden" name="ev_{{ cfg.event_type }}_embed_thumbnail" value="0">
+					<input type="checkbox" name="ev_{{ cfg.event_type }}_embed_thumbnail" value="1" {{ 'checked' if cfg.embed_thumbnail }}
+						class="rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500">
+					<span class="text-sm text-gray-700 dark:text-gray-300">Miniature dans l'embed (clips)</span>
+				</label>
+			</div>
+		</div>
+	</div>
+	{% endfor %}
+
+	<div class="flex justify-end">
+		<button type="submit" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+			Enregistrer tout
+		</button>
+	</div>
+</form>
+{% endblock %}

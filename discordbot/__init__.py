@@ -7,8 +7,9 @@ from webapp import webapp
 from database import db
 from database.helpers import ConfigurationHelper
 from database.models import Configuration, Humeur, Commande
-from discord import Message, TextChannel, Member
+from discord import Message, TextChannel, Member, VoiceChannel
 from discordbot.humblebundle import checkHumbleBundleAndNotify
+from discordbot.freeloot import checkFreeLootAndNotify
 from discordbot.moderation import (
 	handle_warning_command,
 	handle_remove_warning_command,
@@ -24,6 +25,7 @@ from discordbot.moderation import (
 )
 from discordbot.welcome import sendWelcomeMessage, sendLeaveMessage, updateInviteCache
 from discordbot.youtube import checkYouTubeVideos
+from discordbot.auto_rooms import on_voice_state_update_auto_rooms, on_raw_reaction_add_auto_rooms
 from protondb import searhProtonDb
 
 class DiscordBot(discord.Client):
@@ -40,6 +42,7 @@ class DiscordBot(discord.Client):
 		self.loop.create_task(self.updateStatus())
 		self.loop.create_task(self.updateHumbleBundle())
 		self.loop.create_task(self.updateYouTube())
+		self.loop.create_task(self.updateFreeLoot())
 
 	async def on_disconnect(self):
 		webapp.config["BOT_STATUS"]["discord_connected"] = False
@@ -64,13 +67,25 @@ class DiscordBot(discord.Client):
 			await checkYouTubeVideos()
 			await asyncio.sleep(5*60)
 
+	async def updateFreeLoot(self):
+		while not self.is_closed():
+			await checkFreeLootAndNotify(self)
+			await asyncio.sleep(30*60)
+
 	def getAllTextChannel(self) -> list[TextChannel]:
 		channels = []
 		for channel in self.get_all_channels():
 			if isinstance(channel, TextChannel):
 				channels.append(channel)
 		return channels
-	
+
+	def getAllVoiceChannels(self) -> list[VoiceChannel]:
+		channels = []
+		for channel in self.get_all_channels():
+			if isinstance(channel, VoiceChannel):
+				channels.append(channel)
+		return channels
+
 	def getAllRoles(self):
 		guilds_roles = []
 		for guild in self.guilds:
@@ -260,6 +275,14 @@ async def on_message(message: Message):
 			await message.channel.send(embed=embed)
 		except Exception as e:
 			logging.error(f"Échec de l'envoi de l'embed ProtonDB : {e}")
+
+@bot.event
+async def on_voice_state_update(member: Member, before, after):
+	await on_voice_state_update_auto_rooms(bot, member, before, after)
+
+@bot.event
+async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
+	await on_raw_reaction_add_auto_rooms(bot, payload)
 
 @bot.event
 async def on_member_join(member: Member):

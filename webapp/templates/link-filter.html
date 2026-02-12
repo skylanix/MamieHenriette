@@ -1,0 +1,176 @@
+{% extends "template.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Filtre de liens</h1>
+        <p class="text-gray-600 dark:text-gray-400">Bloquez les liens non autorises sur votre chat Twitch.</p>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+                <div class="p-3 rounded-lg {{ 'bg-green-100 dark:bg-green-900/30' if config.enabled else 'bg-gray-100 dark:bg-gray-700' }}">
+                    <svg class="w-6 h-6 {{ 'text-green-600 dark:text-green-400' if config.enabled else 'text-gray-500' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Protection des liens</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ 'Active' if config.enabled else 'Desactive' }}</p>
+                </div>
+            </div>
+            <a href="{{ url_for('toggle_link_filter') }}" class="px-4 py-2 rounded-lg font-medium transition-colors {{ 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400' if config.enabled else 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400' }}">
+                {{ 'Desactiver' if config.enabled else 'Activer' }}
+            </a>
+        </div>
+
+        <form action="{{ url_for('update_link_filter') }}" method="POST" class="space-y-6">
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <h3 class="font-medium text-gray-900 dark:text-white">Autoriser les liens pour</h3>
+                    <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                        <input type="checkbox" name="allow_moderators" {{ 'checked' if config.allow_moderators }} class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                        <div>
+                            <span class="text-gray-900 dark:text-white font-medium">Moderateurs</span>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Les modos peuvent toujours poster des liens</p>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                        <input type="checkbox" name="allow_vips" {{ 'checked' if config.allow_vips }} class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                        <div>
+                            <span class="text-gray-900 dark:text-white font-medium">VIP</span>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Les VIP peuvent poster des liens</p>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                        <input type="checkbox" name="allow_subscribers" {{ 'checked' if config.allow_subscribers }} class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                        <div>
+                            <span class="text-gray-900 dark:text-white font-medium">Abonnes</span>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Les abonnes peuvent poster des liens</p>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duree du timeout (secondes)</label>
+                        <input type="number" name="timeout_duration" value="{{ config.timeout_duration }}" min="0" max="1209600"
+                            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">0 = pas de timeout, juste suppression du message</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message d'avertissement</label>
+                        <textarea name="warning_message" rows="2" 
+                            class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none">{{ config.warning_message }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium">
+                Enregistrer les parametres
+            </button>
+        </form>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                    </svg>
+                    Domaines autorises ({{ domains|length }})
+                </h3>
+            </div>
+            
+            <form action="{{ url_for('add_allowed_domain') }}" method="POST" class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex gap-2">
+                    <input type="text" name="domain" placeholder="exemple.com" required
+                        class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm">
+                    <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium">
+                        Ajouter
+                    </button>
+                </div>
+            </form>
+
+            {% if domains %}
+            <div class="max-h-48 overflow-y-auto">
+                <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for domain in domains %}
+                    <div class="px-4 py-2 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <code class="text-sm text-gray-700 dark:text-gray-300 font-mono">{{ domain.domain }}</code>
+                        <a href="{{ url_for('delete_allowed_domain', domain_id=domain.id) }}" class="text-red-600 hover:text-red-700 text-sm">Supprimer</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="px-4 py-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+                Aucun domaine autorise
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                <h3 class="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    Viewers autorises ({{ users|length }})
+                </h3>
+            </div>
+            
+            <form action="{{ url_for('add_allowed_user') }}" method="POST" class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex gap-2">
+                    <input type="text" name="username" placeholder="@pseudo" required
+                        class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium">
+                        Ajouter
+                    </button>
+                </div>
+            </form>
+
+            {% if users %}
+            <div class="max-h-48 overflow-y-auto">
+                <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for user in users %}
+                    <div class="px-4 py-2 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <span class="text-sm text-gray-700 dark:text-gray-300">@{{ user.username }}</span>
+                        <a href="{{ url_for('delete_allowed_user', user_id=user.id) }}" class="text-red-600 hover:text-red-700 text-sm">Supprimer</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="px-4 py-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+                Aucun viewer en liste blanche
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Commande Permit
+        </h3>
+        <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">
+            Utilisez la commande <code class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-xs">!permit</code> pour autoriser temporairement un viewer a poster un lien.
+        </p>
+        <div class="flex flex-wrap gap-4 text-sm">
+            <div class="flex items-center gap-2">
+                <code class="px-2 py-1 bg-white dark:bg-gray-800 rounded text-xs font-mono text-purple-600 dark:text-purple-400">!permit @viewer</code>
+                <span class="text-gray-600 dark:text-gray-400">Autorise 1 min</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <code class="px-2 py-1 bg-white dark:bg-gray-800 rounded text-xs font-mono text-purple-600 dark:text-purple-400">!permit @viewer 5</code>
+                <span class="text-gray-600 dark:text-gray-400">Autorise 5 min</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

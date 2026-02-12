@@ -1,5 +1,6 @@
 from flask import render_template, request, redirect, url_for
 from webapp import webapp
+from webapp.auth import require_page, can_write_page
 from database import db
 from database.models import ModerationEvent
 
@@ -30,6 +31,7 @@ def _top_moderators():
 	)
 
 @webapp.route("/moderation")
+@require_page("moderation")
 def moderation():
 	events = ModerationEvent.query.order_by(ModerationEvent.created_at.desc()).all()
 	top_sanctioned = _top_sanctioned()
@@ -43,6 +45,7 @@ def moderation():
 	)
 
 @webapp.route("/moderation/edit/<int:event_id>")
+@require_page("moderation")
 def open_edit_moderation_event(event_id):
 	event = ModerationEvent.query.get_or_404(event_id)
 	events = ModerationEvent.query.order_by(ModerationEvent.created_at.desc()).all()
@@ -57,14 +60,20 @@ def open_edit_moderation_event(event_id):
 	)
 
 @webapp.route("/moderation/update/<int:event_id>", methods=['POST'])
+@require_page("moderation")
 def update_moderation_event(event_id):
+	if not can_write_page("moderation"):
+		return render_template("403.html"), 403
 	event = ModerationEvent.query.get_or_404(event_id)
 	event.reason = request.form.get('reason')
 	db.session.commit()
 	return redirect(url_for('moderation'))
 
 @webapp.route("/moderation/delete/<int:event_id>")
+@require_page("moderation")
 def delete_moderation_event(event_id):
+	if not can_write_page("moderation"):
+		return render_template("403.html"), 403
 	event = ModerationEvent.query.get_or_404(event_id)
 	db.session.delete(event)
 	db.session.commit()

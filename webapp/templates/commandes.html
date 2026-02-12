@@ -1,55 +1,130 @@
 {% extends "template.html" %}
 
 {% block content %}
-<h1>Commandes de Mamie</h1>
-<p>Gérez les commandes personnalisées du bot. Ces commandes peuvent être activées sur Discord et/ou Twitch selon vos besoins.</p>
-<table>
-	<thead>
-		<tr>
-			<th>Commande</th>
-			<th>Réponse</th>
-			<th>Discord</th>
-			<th>Twitch</th>
-			<th>Actions</th>
-		</tr>
-	</thead>
-	<tbody>
-		{% for commande in commandes %}
-		<tr>
-			<td>{{ commande.trigger }}</td>
-			<td>{{ commande.response }}</td>
-			<td>
-				<a href="{{ url_for('toggle_discord_commande', commande_id = commande.id) }}" class="icon">
-					{{ '✅' if commande.discord_enable else '❌' }}
-				</a>
-			</td>
-			<td>
-				<a href="{{ url_for('toggle_twitch_commande', commande_id = commande.id) }}" class="icon">
-					{{ '✅' if commande.twitch_enable else '❌' }}
-				</a>
-			</td>
-			<td>
-				<a href="{{ url_for('delete_commande', commande_id = commande.id) }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette commande ?')">Supprimer</a>
-			</td>
-		</tr>
-		{% endfor %}
-	</tbody>
-</table>
+<div class="mb-8">
+	<h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Commandes de Mamie</h1>
+	<div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+		<p class="text-gray-700 dark:text-gray-300">
+			Gérez les commandes personnalisées du bot. Ces commandes peuvent être activées sur Discord et/ou Twitch selon vos besoins.
+		</p>
+	</div>
+</div>
 
-<h2>Ajouter une commande</h2>
-<form action="{{ url_for('add_commande') }}" method="POST">
-	<label for="trigger">Commande</label>
-	<input name="trigger" type="text" />
-	<label for="response">Réponse</label>
-	<textarea name="response" rows="5" cols="50"></textarea>
-	<div>
-		<label for="discord_enable">Discord</label>
-		<input name="discord_enable" type="checkbox" checked />
+<div class="mb-8">
+	<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Liste des commandes</h2>
+	<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+		<div class="overflow-x-auto">
+			<table class="w-full">
+				<thead class="bg-gray-50 dark:bg-gray-700">
+					<tr>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Commande</th>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Réponse</th>
+						<th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Discord</th>
+						<th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Twitch</th>
+						<th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Permission Twitch</th>
+						<th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+					{% for commande in commandes %}
+					<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+						<td class="px-6 py-4 whitespace-nowrap">
+							<code class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-purple-600 dark:text-purple-400 font-mono">{{ commande.trigger }}</code>
+						</td>
+						<td class="px-6 py-4 text-gray-600 dark:text-gray-400 max-w-md truncate">{{ commande.response }}</td>
+						<td class="px-6 py-4 text-center">
+							<a href="{{ url_for('toggle_discord_commande', commande_id = commande.id) }}" 
+								class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors inline-block"
+								title="{{ 'Désactiver sur Discord' if commande.discord_enable else 'Activer sur Discord' }}">
+								{{ '✅' if commande.discord_enable else '❌' }}
+							</a>
+						</td>
+						<td class="px-6 py-4 text-center">
+							<a href="{{ url_for('toggle_twitch_commande', commande_id = commande.id) }}" 
+								class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors inline-block"
+								title="{{ 'Désactiver sur Twitch' if commande.twitch_enable else 'Activer sur Twitch' }}">
+								{{ '✅' if commande.twitch_enable else '❌' }}
+							</a>
+						</td>
+						<td class="px-6 py-4 text-center">
+							{% if commande.twitch_enable %}
+							<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+								{{ twitch_permissions.get(commande.twitch_permission or 'viewer', 'Tous') }}
+							</span>
+							{% else %}
+							<span class="text-gray-400 dark:text-gray-500">—</span>
+							{% endif %}
+						</td>
+						<td class="px-6 py-4 text-center">
+							<a href="{{ url_for('delete_commande', commande_id = commande.id) }}" 
+								onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette commande ?')"
+								class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-red-600 dark:text-red-400 inline-block"
+								title="Supprimer">
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+							</a>
+						</td>
+					</tr>
+					{% else %}
+					<tr>
+						<td colspan="6" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+							Aucune commande configurée. Ajoutez-en une ci-dessous.
+						</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
 	</div>
-	<div>
-		<label for="twitch_enable">Twitch</label>
-		<input name="twitch_enable" type="checkbox" unchecked />
-	</div>
-	<input type="Submit" value="Ajouter">
-</form>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+	<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Ajouter une commande</h2>
+	
+	<form action="{{ url_for('add_commande') }}" method="POST" class="space-y-6">
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+			<div>
+				<label for="trigger" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Commande</label>
+				<input name="trigger" id="trigger" type="text" required
+					class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+					placeholder="!macommande"/>
+			</div>
+			
+			<div class="flex flex-wrap items-end gap-6">
+				<label class="flex items-center gap-2 cursor-pointer">
+					<input name="discord_enable" type="checkbox" checked 
+						class="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500 dark:bg-gray-700">
+					<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Discord</span>
+				</label>
+				<label class="flex items-center gap-2 cursor-pointer">
+					<input name="twitch_enable" type="checkbox" id="twitch_enable_checkbox"
+						class="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500 dark:bg-gray-700">
+					<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Twitch</span>
+				</label>
+				<div class="w-full sm:w-auto">
+					<label for="twitch_permission" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Permission Twitch (qui peut utiliser la commande)</label>
+					<select name="twitch_permission" id="twitch_permission"
+						class="w-full sm:w-48 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+						{% for value, label in twitch_permissions.items() %}
+						<option value="{{ value }}">{{ label }}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+		</div>
+		
+		<div>
+			<label for="response" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Réponse</label>
+			<textarea name="response" id="response" rows="4" required
+				class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-y"
+				placeholder="La réponse que le bot enverra..."></textarea>
+		</div>
+		
+		<div>
+			<button type="submit" 
+				class="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+				Ajouter la commande
+			</button>
+		</div>
+	</form>
+</div>
 {% endblock %}

@@ -1,0 +1,386 @@
+{% extends "template.html" %}
+
+{% block content %}
+<div class="mb-8">
+	<div class="flex items-center justify-between">
+		<div>
+			<h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Paramètres et Permissions</h1>
+			<p class="text-gray-600 dark:text-gray-400">Configuration des rôles et des accès aux pages (super administrateur uniquement)</p>
+		</div>
+		<button type="button" onclick="document.getElementById('help-modal').classList.remove('hidden')"
+			class="px-4 py-2 rounded-lg bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-900/50 transition-colors flex items-center gap-2">
+			<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+			</svg>
+			<span>Aide</span>
+		</button>
+	</div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+	{% if messages %}
+		<div class="mb-6 space-y-2">
+			{% for category, msg in messages %}
+				<div class="p-4 rounded-lg {% if category == 'error' %}bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800{% else %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800{% endif %}">
+					{{ msg }}
+				</div>
+			{% endfor %}
+		</div>
+	{% endif %}
+{% endwith %}
+
+<div class="space-y-8">
+	<!-- Inscriptions -->
+	<section class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+		<div class="flex items-start gap-4">
+			<div class="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+				<svg class="w-6 h-6 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+				</svg>
+			</div>
+			<div class="flex-grow">
+				<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Inscriptions</h2>
+				<p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Autoriser ou bloquer la création de nouveaux comptes par les visiteurs</p>
+				<form action="{{ url_for('settings_toggle_registration') }}" method="post">
+					<label class="inline-flex items-center gap-3 cursor-pointer group">
+						<div class="relative">
+							<input type="checkbox" name="enabled" value="1" {% if registration_enabled %}checked{% endif %}
+								onchange="this.form.submit()"
+								class="sr-only peer">
+							<div class="w-14 h-7 bg-gray-300 dark:bg-gray-600 rounded-full peer peer-checked:bg-green-500 dark:peer-checked:bg-green-600 transition-colors"></div>
+							<div class="absolute left-1 top-1 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-7 shadow-md"></div>
+						</div>
+						<span class="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">
+							{% if registration_enabled %}✓ Inscriptions activées{% else %}✗ Inscriptions désactivées{% endif %}
+						</span>
+					</label>
+				</form>
+			</div>
+		</div>
+	</section>
+
+	<!-- Rôles -->
+	<section class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+		<div class="p-6 border-b border-gray-200 dark:border-gray-700">
+			<div class="flex items-start gap-4">
+				<div class="flex-shrink-0 w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+					<svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+					</svg>
+				</div>
+				<div class="flex-grow">
+					<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Hiérarchie des rôles</h2>
+					<p class="text-sm text-gray-600 dark:text-gray-400">
+						Les rôles définissent le niveau d'accès des utilisateurs. Plus le niveau est élevé, plus les permissions sont étendues.
+					</p>
+				</div>
+			</div>
+		</div>
+		
+		<div class="p-6">
+			<div class="space-y-3 mb-6">
+				{% for r in roles %}
+				<div class="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 transition-colors">
+					<div class="flex items-start gap-4">
+						<div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: {{ r.color or '#6B7280' }}20;">
+							<span class="text-2xl" style="color: {{ r.color or '#6B7280' }};">●</span>
+						</div>
+						<div class="flex-grow min-w-0">
+							<div class="flex items-center gap-3 mb-2">
+								<h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ r.name }}</h3>
+								<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+									style="background-color: {{ r.color or '#6B7280' }}20; color: {{ r.color or '#6B7280' }};">
+									Niveau {{ r.level }}
+								</span>
+							</div>
+							{% if r.description %}
+							<p class="text-sm text-gray-600 dark:text-gray-400 mb-3">{{ r.description }}</p>
+							{% else %}
+							{% set default_desc = default_roles_meta.get(r.name, {}).get('description') %}
+							{% if default_desc %}
+							<p class="text-sm text-gray-600 dark:text-gray-400 mb-3">{{ default_desc }}</p>
+							{% endif %}
+							{% endif %}
+							
+							<details class="group">
+								<summary class="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 cursor-pointer list-none flex items-center gap-1">
+									<svg class="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+									</svg>
+									<span>Modifier ce rôle</span>
+								</summary>
+								<form action="{{ url_for('settings_role_edit', role_id=r.id) }}" method="post" class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600 grid grid-cols-1 sm:grid-cols-2 gap-3">
+									<div>
+										<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Niveau (0-99)</label>
+										<input type="number" name="level" value="{{ r.level }}" min="0" max="99" 
+											class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500">
+									</div>
+									<div>
+										<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Couleur</label>
+										<input type="color" name="color" value="{{ r.color or '#6B7280' }}"
+											class="w-full h-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 cursor-pointer">
+									</div>
+									<div class="sm:col-span-2">
+										<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
+										<input type="text" name="description" value="{{ r.description or '' }}" placeholder="Description du rôle..."
+											class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500">
+									</div>
+									<div class="sm:col-span-2 flex items-center gap-2">
+										<button type="submit" class="px-4 py-2 rounded-lg bg-primary-600 dark:bg-primary-500 text-white text-sm font-medium hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors">
+											Enregistrer
+										</button>
+										{% if r.name not in ['viewer_twitch','utilisateur_discord','moderateur_discord','expert_discord','moderateur_twitch','super_administrateur'] %}
+										<button type="button" onclick="if(confirm('Supprimer ce rôle ?')) { this.closest('details').querySelector('form').setAttribute('action', '{{ url_for('settings_role_delete', role_id=r.id) }}'); this.closest('form').submit(); }"
+											class="px-4 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-sm font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
+											Supprimer
+										</button>
+										{% endif %}
+									</div>
+								</form>
+							</details>
+						</div>
+					</div>
+				</div>
+				{% endfor %}
+			</div>
+			
+			<details class="bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
+				<summary class="px-4 py-3 cursor-pointer list-none flex items-center gap-2 text-primary-700 dark:text-primary-300 font-medium hover:text-primary-800 dark:hover:text-primary-200">
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+					</svg>
+					<span>Créer un nouveau rôle</span>
+				</summary>
+				<form action="{{ url_for('settings_role_add') }}" method="post" class="p-4 pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+					<div>
+						<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nom du rôle *</label>
+						<input type="text" name="name" placeholder="ex: editeur_contenu" required minlength="2"
+							class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500">
+					</div>
+					<div>
+						<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Niveau (0-99) *</label>
+						<input type="number" name="level" value="0" min="0" max="99"
+							class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500">
+					</div>
+					<div>
+						<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Couleur</label>
+						<input type="color" name="color" value="#6B7280"
+							class="w-full h-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 cursor-pointer">
+					</div>
+					<div>
+						<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Icône (optionnel)</label>
+						<input type="text" name="icon" placeholder="ex: star, shield, user"
+							class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500">
+					</div>
+					<div class="sm:col-span-2">
+						<label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
+						<input type="text" name="description" placeholder="Description du rôle..."
+							class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500">
+					</div>
+					<div class="sm:col-span-2">
+						<button type="submit" class="px-4 py-2 rounded-lg bg-primary-600 dark:bg-primary-500 text-white font-medium hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors">
+							Créer le rôle
+						</button>
+					</div>
+				</form>
+			</details>
+		</div>
+	</section>
+
+	<!-- Permissions par page -->
+	<section class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+		<div class="p-6 border-b border-gray-200 dark:border-gray-700">
+			<div class="flex items-start gap-4">
+				<div class="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+					<svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+					</svg>
+				</div>
+				<div class="flex-grow">
+					<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Accès aux pages</h2>
+					<p class="text-sm text-gray-600 dark:text-gray-400">
+						Définissez le rôle minimum requis pour accéder à chaque section de l'interface
+					</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- Appliquer en masse -->
+		<div class="p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
+			<details class="group">
+				<summary class="cursor-pointer list-none flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium hover:text-gray-900 dark:hover:text-white">
+					<svg class="w-5 h-5 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+					</svg>
+					<span>⚡ Modification en masse</span>
+				</summary>
+				<form action="{{ url_for('settings_permissions_bulk') }}" method="post" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+					<div class="flex flex-wrap items-center gap-4 mb-4">
+						<label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+							<span>Appliquer le rôle :</span>
+							<select name="role" required class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary-500">
+								{% for r in roles %}
+								<option value="{{ r.name }}" style="color: {{ r.color or '#6B7280' }};">{{ r.name }} (niveau {{ r.level }})</option>
+								{% endfor %}
+							</select>
+						</label>
+						<span class="text-sm text-gray-500 dark:text-gray-400">aux pages cochées :</span>
+					</div>
+					<div class="flex flex-wrap gap-2 mb-4">
+						<button type="button" onclick="document.querySelectorAll('.bulk-page-cb').forEach(c => c.checked = true)"
+							class="text-xs px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
+							Tout cocher
+						</button>
+						<button type="button" onclick="document.querySelectorAll('.bulk-page-cb').forEach(c => c.checked = false)"
+							class="text-xs px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
+							Tout décocher
+						</button>
+					</div>
+					<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
+						{% for page_key, meta in page_metadata.items() %}
+						<label class="flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:border-primary-300 dark:hover:border-primary-600 cursor-pointer transition-colors">
+							<input type="checkbox" name="page_keys" value="{{ page_key }}" class="bulk-page-cb rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500">
+							<span class="text-xs text-gray-700 dark:text-gray-300">{{ meta.label }}</span>
+						</label>
+						{% endfor %}
+					</div>
+					<button type="submit" class="px-4 py-2 rounded-lg bg-primary-600 dark:bg-primary-500 text-white font-medium hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors">
+						Appliquer à la sélection
+					</button>
+				</form>
+			</details>
+		</div>
+
+		<!-- Pages par catégorie -->
+		<div class="p-6">
+			{% for category_key in ['general', 'content', 'moderation', 'config', 'admin'] %}
+				{% if category_key in pages_by_category %}
+				{% set category_info = category_labels[category_key] %}
+				<div class="mb-8 last:mb-0">
+					<div class="flex items-center gap-3 mb-4">
+						<div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: {{ category_info.color }}20;">
+							<span class="text-lg" style="color: {{ category_info.color }};">●</span>
+						</div>
+						<h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ category_info.label }}</h3>
+						<div class="flex-grow h-px bg-gray-200 dark:bg-gray-700"></div>
+					</div>
+					
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						{% for page_data in pages_by_category[category_key] %}
+						{% set page_key = page_data.key %}
+						{% set meta = page_data.meta %}
+						{% set perm = page_data.permission %}
+						{% set min_lvl = perm.min_level if perm else 0 %}
+						
+						<div class="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 transition-colors">
+							<div class="flex items-start justify-between gap-3 mb-2">
+								<div>
+									<h4 class="font-medium text-gray-900 dark:text-white mb-1">{{ meta.label }}</h4>
+									<p class="text-xs text-gray-600 dark:text-gray-400">{{ meta.description }}</p>
+								</div>
+								{% for r in roles %}
+									{% if r.level == min_lvl %}
+									<span class="flex-shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+										style="background-color: {{ r.color or '#6B7280' }}20; color: {{ r.color or '#6B7280' }};">
+										{{ r.name }}
+									</span>
+									{% endif %}
+								{% endfor %}
+							</div>
+							<form action="{{ url_for('settings_permissions_update') }}" method="post" class="flex items-center gap-2">
+								<input type="hidden" name="page_key" value="{{ page_key }}">
+								<select name="role" class="flex-grow px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-primary-500">
+									{% for r in roles %}
+									<option value="{{ r.name }}" {% if r.level == min_lvl %}selected{% endif %}>{{ r.name }} (niv. {{ r.level }})</option>
+									{% endfor %}
+								</select>
+								<button type="submit" class="px-3 py-1.5 rounded-lg bg-primary-600 dark:bg-primary-500 text-white text-xs font-medium hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors">
+									OK
+								</button>
+							</form>
+						</div>
+						{% endfor %}
+					</div>
+				</div>
+				{% endif %}
+			{% endfor %}
+		</div>
+	</section>
+</div>
+
+<!-- Modal d'aide -->
+<div id="help-modal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+	<div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+		<div class="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-80 transition-opacity" onclick="document.getElementById('help-modal').classList.add('hidden')"></div>
+		<div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+			<div class="bg-white dark:bg-gray-800 px-6 pt-6 pb-4">
+				<div class="flex items-start justify-between mb-4">
+					<h3 class="text-xl font-semibold text-gray-900 dark:text-white">Guide des permissions</h3>
+					<button type="button" onclick="document.getElementById('help-modal').classList.add('hidden')"
+						class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+						<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						</svg>
+					</button>
+				</div>
+				<div class="space-y-4 text-sm text-gray-600 dark:text-gray-400">
+					<div>
+						<h4 class="font-semibold text-gray-900 dark:text-white mb-2">🎭 Rôles</h4>
+						<p>Les rôles définissent le niveau d'autorité d'un utilisateur. Plus le niveau est élevé, plus l'utilisateur a accès à des fonctionnalités.</p>
+						<ul class="list-disc list-inside mt-2 space-y-1 ml-4">
+							<li><strong>Niveau 0-1</strong> : Accès basique en lecture seule</li>
+							<li><strong>Niveau 2-3</strong> : Modification de contenu et gestion basique</li>
+							<li><strong>Niveau 4</strong> : Modération et configuration avancée</li>
+							<li><strong>Niveau 5+</strong> : Administration complète du système</li>
+						</ul>
+					</div>
+					<div>
+						<h4 class="font-semibold text-gray-900 dark:text-white mb-2">🔐 Permissions par page</h4>
+						<p>Chaque page peut être restreinte à un rôle minimum. Un utilisateur doit avoir au moins le niveau requis pour y accéder.</p>
+					</div>
+					<div>
+						<h4 class="font-semibold text-gray-900 dark:text-white mb-2">📋 Catégories</h4>
+						<ul class="list-disc list-inside space-y-1 ml-4">
+							<li><strong style="color: #6B7280;">●</strong> <strong>Général</strong> : Pages d'accueil et navigation</li>
+							<li><strong style="color: #3B82F6;">●</strong> <strong>Contenu</strong> : Gestion des commandes, alertes, humeurs, etc.</li>
+							<li><strong style="color: #EF4444;">●</strong> <strong>Modération</strong> : Outils de modération Discord/Twitch</li>
+							<li><strong style="color: #8B5CF6;">●</strong> <strong>Configuration</strong> : Paramètres techniques des bots</li>
+							<li><strong style="color: #F59E0B;">●</strong> <strong>Administration</strong> : Gestion des utilisateurs et permissions</li>
+						</ul>
+					</div>
+					<div>
+						<h4 class="font-semibold text-gray-900 dark:text-white mb-2">💡 Bonnes pratiques</h4>
+						<ul class="list-disc list-inside space-y-1 ml-4">
+							<li>Attribuez le rôle le plus bas possible selon les besoins</li>
+							<li>Testez les permissions avec un compte utilisateur avant de les déployer</li>
+							<li>Documentez les rôles personnalisés avec des descriptions claires</li>
+							<li>Vérifiez régulièrement les accès des utilisateurs</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="bg-gray-50 dark:bg-gray-700/50 px-6 py-4">
+				<button type="button" onclick="document.getElementById('help-modal').classList.add('hidden')"
+					class="w-full px-4 py-2 rounded-lg bg-primary-600 dark:bg-primary-500 text-white font-medium hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors">
+					Compris !
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+/* Améliorer le style du toggle switch */
+input[type="checkbox"].sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border-width: 0;
+}
+</style>
+{% endblock %}

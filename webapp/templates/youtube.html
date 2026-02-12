@@ -1,153 +1,264 @@
 {% extends "template.html" %}
 
 {% block content %}
-<h1>Notifications YouTube</h1>
-
-{% if msg %}
-<div id="alert-msg" class="alert alert-{{ msg_type }}" style="padding: 10px; margin: 10px 0; border: 1px solid {{ '#f00' if msg_type == 'error' else '#0f0' }}; background-color: {{ '#ffe0e0' if msg_type == 'error' else '#e0ffe0' }};">
-	{{ msg }}
+<div class="mb-8">
+	<h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Notifications YouTube</h1>
+	
+	{% if msg %}
+	<div id="alert-msg" class="mb-4 p-4 rounded-lg {{ 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300' if msg_type == 'error' else 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300' }}">
+		{{ msg }}
+	</div>
+	<script>
+		setTimeout(function() {
+			var el = document.getElementById('alert-msg');
+			if (el) el.style.display = 'none';
+		}, 5000);
+	</script>
+	{% endif %}
+	
+	<div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+		<p class="text-gray-700 dark:text-gray-300">
+			Liste des chaînes YouTube surveillées pour les notifications de nouvelles vidéos.
+			Le bot vérifie toutes les 5 minutes les nouvelles vidéos des chaînes en dessous.
+			Quand une nouvelle vidéo est détectée, le bot enverra une notification sur Discord.
+		</p>
+	</div>
 </div>
-<script>
-	setTimeout(function() {
-		var el = document.getElementById('alert-msg');
-		if (el) el.style.display = 'none';
-	}, 5000);
-</script>
-{% endif %}
-
-<p>
-	Liste des chaînes YouTube surveillées pour les notifications de nouvelles vidéos.
-
-	Le bot vérifie toutes les 5 minutes les nouvelles vidéos des chaînes en dessous.
-	Quand une nouvelle vidéo est détectée, le bot enverra une notification sur Discord.
-</p>
 
 {% if not notification %}
-<h2>Notifications</h2>
-<table class="live-alert">
-	<thead>
-		<tr>
-			<th>Chaîne YouTube</th>
-			<th>Canal Discord</th>
-			<th>Type</th>
-			<th>Message</th>
-			<th>#</th>
-		</tr>
-	</thead>
-	<tbody>
-		{% for notification in notifications %}
-		<tr>
-			<td>{{notification.channel_id}}</td>
-			<td>{{notification.notify_channel_name}}</td>
-			<td>
-				{% if notification.video_type == 'all' %}
-					Toutes
-				{% elif notification.video_type == 'video' %}
-					Vidéos uniquement
-				{% elif notification.video_type == 'short' %}
-					Shorts uniquement
-				{% endif %}
-			</td>
-			<td>{{notification.message}}</td>
-			<td>
-				<a href="{{ url_for('toggleYouTube', id = notification.id) }}" class="icon">{{ '✅' if notification.enable else '❌' }}</a>
-				<a href="{{ url_for('openEditYouTube', id = notification.id) }}" class="icon">✐</a>
-				<a href="{{ url_for('delYouTube', id = notification.id) }}"
-					onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette notification ?')" class="icon">🗑</a>
-			</td>
-		</tr>
-		{% endfor %}
-	</tbody>
-</table>
+<div class="mb-8">
+	<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Notifications configurées</h2>
+	<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+		<div class="overflow-x-auto">
+			<table class="w-full">
+				<thead class="bg-gray-50 dark:bg-gray-700">
+					<tr>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Chaîne YouTube</th>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Canal Discord</th>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Message</th>
+						<th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+					{% for notification in notifications %}
+					<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+						<td class="px-6 py-4 whitespace-nowrap">
+							<code class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-red-600 dark:text-red-400 font-mono text-sm">{{ notification.channel_id }}</code>
+						</td>
+						<td class="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">{{ notification.notify_channel_name }}</td>
+						<td class="px-6 py-4 whitespace-nowrap">
+							<span class="px-2 py-1 text-xs font-medium rounded-full 
+								{% if notification.video_type == 'all' %}bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300
+								{% elif notification.video_type == 'video' %}bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300
+								{% else %}bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300{% endif %}">
+								{% if notification.video_type == 'all' %}Toutes
+								{% elif notification.video_type == 'video' %}Vidéos
+								{% else %}Shorts{% endif %}
+							</span>
+						</td>
+						<td class="px-6 py-4 text-gray-600 dark:text-gray-400 max-w-xs truncate">{{ notification.message }}</td>
+						<td class="px-6 py-4 whitespace-nowrap text-center">
+							<div class="flex items-center justify-center gap-2">
+								<a href="{{ url_for('toggleYouTube', id = notification.id) }}" 
+									class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" 
+									title="{{ 'Désactiver' if notification.enable else 'Activer' }}">
+									{{ '✅' if notification.enable else '❌' }}
+								</a>
+								<a href="{{ url_for('openEditYouTube', id = notification.id) }}" 
+									class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors text-blue-600 dark:text-blue-400" 
+									title="Modifier">
+									<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+								</a>
+								<a href="{{ url_for('delYouTube', id = notification.id) }}"
+									onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette notification ?')" 
+									class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-red-600 dark:text-red-400"
+									title="Supprimer">
+									<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+								</a>
+							</div>
+						</td>
+					</tr>
+					{% else %}
+					<tr>
+						<td colspan="5" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+							Aucune notification configurée. Ajoutez-en une ci-dessous.
+						</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
 {% endif %}
 
-<h2>{{ 'Editer une notification' if notification else 'Ajouter une notification YouTube' }}</h2>
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+	<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+		{{ 'Modifier la notification' if notification else 'Ajouter une notification YouTube' }}
+	</h2>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-	<div>
-		<form id="youtube-form" action="{{ url_for('submitEditYouTube', id = notification.id) if notification else url_for('addYouTube') }}" method="POST">
-			<fieldset>
-				<legend>Configuration de base</legend>
-				<label for="channel_id">Lien ou ID de la chaîne YouTube</label>
-				<input name="channel_id" id="channel_id" type="text" maxlength="256" required="required" value="{{notification.channel_id if notification}}" placeholder="https://www.youtube.com/@513v3 ou https://www.youtube.com/channel/UC... ou UC..."/>
-				
-				<label for="notify_channel">Canal de Notification Discord</label>
-				<select name="notify_channel" id="notify_channel">
-					{% for channel in channels %}
-					<option value="{{channel.id}}"{% if notification and notification.notify_channel == channel.id %}
-						selected="selected" {% endif %}>{{channel.name}}</option>
-					{% endfor %}
-				</select>
-				
-				<label for="video_type">Type de vidéo à notifier</label>
-				<select name="video_type" id="video_type">
-					<option value="all"{% if notification and notification.video_type == 'all' %} selected="selected" {% endif %}>Toutes (vidéos + shorts)</option>
-					<option value="video"{% if notification and notification.video_type == 'video' %} selected="selected" {% endif %}>Vidéos uniquement</option>
-					<option value="short"{% if notification and notification.video_type == 'short' %} selected="selected" {% endif %}>Shorts uniquement</option>
-				</select>
-				
-				<label for="message">Message (optionnel, envoyé avant l'embed)</label>
-				<textarea name="message" id="message" rows="3" cols="50">{{notification.message if notification}}</textarea>
-			</fieldset>
+	<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+		<div>
+			<form id="youtube-form" action="{{ url_for('submitEditYouTube', id = notification.id) if notification else url_for('addYouTube') }}" method="POST" class="space-y-6">
+				<div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-4">
+					<h3 class="font-medium text-gray-800 dark:text-gray-200">Configuration de base</h3>
+					
+					<div>
+						<label for="channel_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lien ou ID de la chaîne YouTube</label>
+						<input name="channel_id" id="channel_id" type="text" maxlength="256" required
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+							placeholder="https://www.youtube.com/@513v3 ou UC..."
+							value="{{notification.channel_id if notification}}"/>
+					</div>
+					
+					<div>
+						<label for="notify_channel" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Canal de notification Discord</label>
+						<select name="notify_channel" id="notify_channel"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all">
+							{% for channel in channels %}
+							<option value="{{channel.id}}" {% if notification and notification.notify_channel == channel.id %}selected{% endif %}>{{channel.name}}</option>
+							{% endfor %}
+						</select>
+					</div>
+					
+					<div>
+						<label for="video_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type de vidéo à notifier</label>
+						<select name="video_type" id="video_type"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all">
+							<option value="all" {% if notification and notification.video_type == 'all' %}selected{% endif %}>Toutes (vidéos + shorts)</option>
+							<option value="video" {% if notification and notification.video_type == 'video' %}selected{% endif %}>Vidéos uniquement</option>
+							<option value="short" {% if notification and notification.video_type == 'short' %}selected{% endif %}>Shorts uniquement</option>
+						</select>
+					</div>
+					
+					<div>
+						<label for="message" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message (optionnel)</label>
+						<textarea name="message" id="message" rows="2"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all resize-y"
+							placeholder="Message envoyé avant l'embed">{{notification.message if notification}}</textarea>
+					</div>
+				</div>
 
-			<fieldset>
-				<legend>Personnalisation de l'embed Discord</legend>
-				
-				<label for="embed_title">Titre de l'embed</label>
-				<input name="embed_title" id="embed_title" type="text" maxlength="256" value="{{notification.embed_title if notification}}" placeholder="{video_title} (par défaut: titre de la vidéo)"/>
-				<small>Variables: {video_title}, {channel_name}, {video_url}, {video_id}</small>
-				
-				<label for="embed_description">Description de l'embed</label>
-				<textarea name="embed_description" id="embed_description" rows="4" cols="50" placeholder="Description optionnelle de l'embed">{{notification.embed_description if notification}}</textarea>
-				<small>Variables: {video_title}, {channel_name}, {video_url}, {published_at}, {is_short}</small>
-				
-				<label for="embed_color">Couleur de l'embed (hexadécimal)</label>
-				<input name="embed_color" id="embed_color" type="color" value="#{{notification.embed_color if notification else 'FF0000'}}" style="width: 100px; height: 40px;"/>
-				<input type="text" id="embed_color_text" value="{{notification.embed_color if notification else 'FF0000'}}" placeholder="FF0000" style="width: 100px; margin-left: 10px;" maxlength="6"/>
-				<small>Format: FF0000 (rouge YouTube par défaut)</small>
-				
-				<label for="embed_author_name">Nom de l'auteur</label>
-				<input name="embed_author_name" id="embed_author_name" type="text" maxlength="256" value="{{notification.embed_author_name if notification}}" placeholder="{channel_name} (par défaut: nom de la chaîne)"/>
-				
-				<label for="embed_author_icon">Icône de l'auteur (URL)</label>
-				<input name="embed_author_icon" id="embed_author_icon" type="text" maxlength="512" value="{{notification.embed_author_icon if notification}}" placeholder="https://www.youtube.com/img/desktop/yt_1200.png"/>
-				
-				<label for="embed_footer">Pied de page</label>
-				<input name="embed_footer" id="embed_footer" type="text" maxlength="2048" value="{{notification.embed_footer if notification}}" placeholder="Texte optionnel en bas de l'embed"/>
-				
-				<label>
-					<input type="checkbox" name="embed_thumbnail" id="embed_thumbnail" {% if not notification or notification.embed_thumbnail %}checked="checked"{% endif %}>
-					Afficher la miniature (thumbnail) en haut à droite
-				</label>
-				
-				<label>
-					<input type="checkbox" name="embed_image" id="embed_image" {% if not notification or notification.embed_image %}checked="checked"{% endif %}>
-					Afficher l'image principale (image de la vidéo)
-				</label>
-			</fieldset>
+				<div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-4">
+					<h3 class="font-medium text-gray-800 dark:text-gray-200">Personnalisation de l'embed Discord</h3>
+					
+					<div>
+						<label for="embed_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Titre de l'embed</label>
+						<input name="embed_title" id="embed_title" type="text" maxlength="256"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+							placeholder="{video_title}"
+							value="{{notification.embed_title if notification}}"/>
+						<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Variables: {video_title}, {channel_name}, {video_url}, {video_id}</p>
+					</div>
+					
+					<div>
+						<label for="embed_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description de l'embed</label>
+						<textarea name="embed_description" id="embed_description" rows="2"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all resize-y"
+							placeholder="Description optionnelle">{{notification.embed_description if notification}}</textarea>
+					</div>
+					
+					<div class="grid grid-cols-2 gap-4">
+						<div>
+							<label for="embed_color" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Couleur</label>
+							<div class="flex items-center gap-2">
+								<input name="embed_color" id="embed_color" type="color" 
+									class="w-12 h-10 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
+									value="#{{notification.embed_color if notification else 'FF0000'}}"/>
+								<input type="text" id="embed_color_text" maxlength="6"
+									class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm"
+									value="{{notification.embed_color if notification else 'FF0000'}}" placeholder="FF0000"/>
+							</div>
+						</div>
+						<div>
+							<label for="embed_author_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom de l'auteur</label>
+							<input name="embed_author_name" id="embed_author_name" type="text" maxlength="256"
+								class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+								placeholder="{channel_name}"
+								value="{{notification.embed_author_name if notification}}"/>
+						</div>
+					</div>
+					
+					<div>
+						<label for="embed_author_icon" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Icône de l'auteur (URL)</label>
+						<input name="embed_author_icon" id="embed_author_icon" type="text" maxlength="512"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+							placeholder="https://www.youtube.com/img/desktop/yt_1200.png"
+							value="{{notification.embed_author_icon if notification}}"/>
+					</div>
+					
+					<div>
+						<label for="embed_footer" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pied de page</label>
+						<input name="embed_footer" id="embed_footer" type="text" maxlength="2048"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+							placeholder="Texte optionnel en bas"
+							value="{{notification.embed_footer if notification}}"/>
+					</div>
+					
+					<div class="flex flex-wrap gap-4">
+						<label class="flex items-center gap-2 cursor-pointer">
+							<input type="checkbox" name="embed_thumbnail" id="embed_thumbnail" 
+								{% if not notification or notification.embed_thumbnail %}checked{% endif %}
+								class="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-red-600 focus:ring-red-500 dark:bg-gray-700">
+							<span class="text-sm text-gray-700 dark:text-gray-300">Miniature</span>
+						</label>
+						<label class="flex items-center gap-2 cursor-pointer">
+							<input type="checkbox" name="embed_image" id="embed_image" 
+								{% if not notification or notification.embed_image %}checked{% endif %}
+								class="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-red-600 focus:ring-red-500 dark:bg-gray-700">
+							<span class="text-sm text-gray-700 dark:text-gray-300">Image principale</span>
+						</label>
+					</div>
+				</div>
 
-			<input type="Submit" value="{{ 'Modifier' if notification else 'Ajouter' }}">
-		</form>
-	</div>
-
-	<div>
-		<h3>Prévisualisation de l'embed Discord</h3>
-		<div id="embed-preview" style="background-color: #2f3136; border-radius: 4px; padding: 16px; font-family: 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #dcddde; max-width: 520px; border-left: 4px solid #FF0000;">
-			<div id="embed-author" style="display: flex; align-items: center; margin-bottom: 8px; font-size: 14px;">
-				<img id="embed-author-icon" src="https://www.youtube.com/img/desktop/yt_1200.png" style="width: 20px; height: 20px; border-radius: 50%; margin-right: 8px;" onerror="this.style.display='none'"/>
-				<span id="embed-author-name" style="font-weight: 600;">Nom de la chaîne</span>
-			</div>
-			<a id="embed-title" href="#" style="color: #00aff4; text-decoration: none; font-size: 16px; font-weight: 600; display: block; margin-bottom: 8px;">Titre de la vidéo</a>
-			<div id="embed-description" style="font-size: 14px; line-height: 1.375; margin-bottom: 8px; color: #dcddde;"></div>
-			<div id="embed-thumbnail-container" style="margin: 8px 0;">
-				<img id="embed-thumbnail" src="" style="max-width: 80px; max-height: 80px; border-radius: 4px; float: right; margin-left: 16px; display: none;"/>
-			</div>
-			<div id="embed-image-container" style="margin-top: 16px;">
-				<img id="embed-image" src="https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg" style="max-width: 100%; border-radius: 4px; display: none;"/>
-			</div>
-			<div id="embed-footer" style="margin-top: 8px; font-size: 12px; color: #72767d;"></div>
+				<div class="flex items-center gap-4">
+					<button type="submit" 
+						class="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+						{{ 'Enregistrer' if notification else 'Ajouter la notification' }}
+					</button>
+					{% if notification %}
+					<a href="{{ url_for('youtube') }}" 
+						class="px-6 py-2.5 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 font-medium rounded-lg transition-colors">
+						Annuler
+					</a>
+					{% endif %}
+				</div>
+			</form>
 		</div>
-		<small style="color: #666;">Cette prévisualisation est approximative. L'apparence réelle sur Discord peut varier légèrement.</small>
+
+		<div>
+			<h3 class="font-medium text-gray-800 dark:text-gray-200 mb-4">Prévisualisation de l'embed Discord</h3>
+			<div id="embed-preview" class="bg-[#2f3136] rounded p-4 font-sans text-[#dcddde] max-w-xl border-l-4" style="border-left-color: #FF0000;">
+				<div id="embed-author" class="flex items-center mb-2 text-sm">
+					<img id="embed-author-icon" src="https://www.youtube.com/img/desktop/yt_1200.png" class="w-5 h-5 rounded-full mr-2" onerror="this.style.display='none'"/>
+					<span id="embed-author-name" class="font-semibold">Nom de la chaîne</span>
+				</div>
+				<a id="embed-title" href="#" class="text-[#00aff4] no-underline text-base font-semibold block mb-2">Titre de la vidéo</a>
+				<div id="embed-description" class="text-sm leading-relaxed mb-2 text-[#dcddde]"></div>
+				<div id="embed-thumbnail-container" class="my-2">
+					<img id="embed-thumbnail" src="" class="max-w-[80px] max-h-[80px] rounded float-right ml-4 hidden"/>
+				</div>
+				<div id="embed-image-container" class="mt-4">
+					<img id="embed-image" src="https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg" class="max-w-full rounded hidden"/>
+				</div>
+				<div id="embed-footer" class="mt-2 text-xs text-[#72767d]"></div>
+			</div>
+			<p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Cette prévisualisation est approximative.</p>
+			
+			<div class="mt-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+				<h4 class="font-medium text-gray-800 dark:text-gray-200 mb-2">Variables disponibles</h4>
+				<ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+					<li><code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">{channel_name}</code> — Nom de la chaîne</li>
+					<li><code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">{video_title}</code> — Titre de la vidéo</li>
+					<li><code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">{video_url}</code> — Lien vers la vidéo</li>
+					<li><code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">{video_id}</code> — ID de la vidéo</li>
+					<li><code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">{thumbnail}</code> — URL de la miniature</li>
+					<li><code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">{published_at}</code> — Date de publication</li>
+					<li><code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">{is_short}</code> — True si c'est un short</li>
+				</ul>
+			</div>
+		</div>
 	</div>
 </div>
 
@@ -228,18 +339,4 @@
 
 	updatePreview();
 </script>
-
-<p>
-	<strong>Variables disponibles pour l'embed :</strong>
-	<ul>
-		<li><code>{channel_name}</code> : nom de la chaîne YouTube</li>
-		<li><code>{video_title}</code> : titre de la vidéo</li>
-		<li><code>{video_url}</code> : lien vers la vidéo</li>
-		<li><code>{video_id}</code> : ID de la vidéo</li>
-		<li><code>{thumbnail}</code> : URL de la miniature</li>
-		<li><code>{published_at}</code> : date de publication</li>
-		<li><code>{is_short}</code> : True si c'est un short, False sinon</li>
-	</ul>
-</p>
-
 {% endblock %}

@@ -1,0 +1,224 @@
+{% extends "template.html" %}
+
+{% block content %}
+<div class="mb-8">
+	<h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">FreeLoot — Jeux gratuits</h1>
+	{% if request.args.get('msg') %}
+	{% set msg_type = request.args.get('type') %}
+	<div class="mb-4 p-4 rounded-lg {% if msg_type == 'success' %}bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300{% elif msg_type == 'error' %}bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300{% else %}bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300{% endif %}">
+		{{ request.args.get('msg') }}
+	</div>
+	{% endif %}
+	<div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+		<p class="text-gray-700 dark:text-gray-300">
+			Notifications des jeux gratuits (Epic Games, Amazon Prime, GOG, Google Play, Apple App Store) via le flux
+			<a href="https://feed.eikowagenknecht.com/lootscraper.xml" target="_blank" rel="noopener" class="text-amber-700 dark:text-amber-300 hover:underline">LootScraper</a>.
+			Choisissez le canal Discord et les types de loot à notifier (PC, Android, iOS selon la source). Le bot vérifie le flux environ toutes les 30 minutes.
+		</p>
+	</div>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+	<div class="flex items-center gap-3 mb-6">
+		<span class="text-3xl">🎁</span>
+		<h2 class="text-xl font-semibold text-gray-900 dark:text-white">Configuration FreeLoot</h2>
+	</div>
+
+	<form action="{{ url_for('updateFreeLoot') }}" method="POST" class="space-y-6">
+		<div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-4">
+			<label class="flex items-center gap-2 cursor-pointer">
+				<input type="checkbox" name="freeloot_enable" {% if configuration.getValue('freeloot_enable') %}checked{% endif %}
+					class="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-amber-600 focus:ring-amber-500 dark:bg-gray-700">
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Activer les notifications FreeLoot</span>
+			</label>
+		</div>
+
+		<div>
+			<label for="freeloot_channel_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Canal Discord pour les notifications</label>
+			<select name="freeloot_channel_id" id="freeloot_channel_id"
+				class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all">
+				<option value="">— Choisir un canal —</option>
+				{% for channel in channels %}
+				<option value="{{ channel.id }}" {% if configuration.getIntValue('freeloot_channel_id') == channel.id %}selected{% endif %}>{{ channel.name }}</option>
+				{% endfor %}
+			</select>
+		</div>
+
+		<div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-4">
+			<h3 class="font-medium text-gray-800 dark:text-gray-200">Mentions (optionnel)</h3>
+			<p class="text-sm text-gray-600 dark:text-gray-400">Choisissez qui mentionner au début du message (avant l’embed).</p>
+			<div class="flex flex-wrap gap-4">
+				<label class="flex items-center gap-2 cursor-pointer">
+					<input type="checkbox" name="freeloot_mention_everyone" {% if mention_everyone %}checked{% endif %}
+						class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-amber-600 focus:ring-amber-500 dark:bg-gray-700">
+					<span class="text-sm text-gray-700 dark:text-gray-300">@everyone</span>
+				</label>
+				<label class="flex items-center gap-2 cursor-pointer">
+					<input type="checkbox" name="freeloot_mention_here" {% if mention_here %}checked{% endif %}
+						class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-amber-600 focus:ring-amber-500 dark:bg-gray-700">
+					<span class="text-sm text-gray-700 dark:text-gray-300">@here</span>
+				</label>
+			</div>
+			{% if roles %}
+			<div>
+				<p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rôles à mentionner</p>
+				{% if roles|length > 1 %}
+				<div class="flex flex-wrap gap-1 border-b border-gray-200 dark:border-gray-600 mb-3">
+					{% for guild_data in roles %}
+					<button type="button" class="freeloot-role-tab px-4 py-2 text-sm font-medium rounded-t-lg transition-colors {% if loop.first %}bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600{% endif %}"
+						data-tab="freeloot-roles-{{ guild_data.guild_id }}" {% if loop.first %}data-default{% endif %}>
+						{{ guild_data.guild_name }}
+					</button>
+					{% endfor %}
+				</div>
+				{% endif %}
+				{% for guild_data in roles %}
+				<div id="freeloot-roles-{{ guild_data.guild_id }}" class="freeloot-role-panel {% if not loop.first %}hidden{% endif %} max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg p-3 space-y-2">
+					{% for role in guild_data.roles %}
+					<label class="flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600/50 p-1 rounded">
+						<input type="checkbox" name="freeloot_mention_roles" value="{{ role.id }}"
+							{% if role.id|string in mention_role_ids %}checked{% endif %}
+							class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-amber-600 focus:ring-amber-500 dark:bg-gray-700">
+						{% if role.color is defined and role.color is not none and role.color.value != 0 %}
+						<span class="w-3 h-3 rounded-full flex-shrink-0" style="background-color:#{{ '%06x'|format(role.color.value) }}"></span>
+						{% else %}
+						<span class="w-3 h-3 rounded-full flex-shrink-0 bg-gray-400"></span>
+						{% endif %}
+						<span class="text-sm text-gray-700 dark:text-gray-300">{{ role.name }}</span>
+					</label>
+					{% endfor %}
+				</div>
+				{% endfor %}
+			</div>
+			{% endif %}
+		</div>
+
+		<div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-4">
+			<h3 class="font-medium text-gray-800 dark:text-gray-200">Types de loot à notifier</h3>
+			<p class="text-sm text-gray-600 dark:text-gray-400">Cochez les sources et plateformes pour lesquelles vous voulez recevoir une notification.</p>
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+				{% for key, label, emoji in sources %}
+				<label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600/50 transition-colors">
+					<input type="checkbox" name="freeloot_sources" value="{{ key }}"
+						{% if not enabled_sources or key in enabled_sources %}checked{% endif %}
+						class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-amber-600 focus:ring-amber-500 dark:bg-gray-700">
+					<span class="text-lg" title="{{ label }}">{{ emoji }}</span>
+					<span class="text-sm text-gray-700 dark:text-gray-300">{{ label }}</span>
+				</label>
+				{% endfor %}
+			</div>
+		</div>
+
+		<button type="submit"
+			class="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+			Enregistrer
+		</button>
+	</form>
+
+		<div class="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+		<h3 class="font-medium text-gray-800 dark:text-gray-200 mb-3">Aperçu de l’embed Discord (style DraftBot)</h3>
+		<p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Exemple du message envoyé dans le canal.</p>
+		<div class="inline-block rounded-r-lg overflow-hidden border border-gray-300 dark:border-gray-600 bg-[#2f3136] max-w-lg shadow-lg" style="border-left: 4px solid #E67E22;">
+			<div class="p-4">
+				<div class="flex items-start gap-2 mb-2">
+					<a href="#" class="text-[#00a8fc] hover:underline font-semibold text-base flex-1">Definitely Not Fried Chicken gratuit sur l'Epic Games Store !</a>
+					<img src="https://store.epicgames.com/favicon.ico" alt="" class="w-10 h-10 rounded flex-shrink-0" title="Logo boutique">
+				</div>
+				<p class="text-[#dcddde] text-sm leading-relaxed mb-3">Definitely Not Fried Chicken is a business management sim with a twist! Grow your drugs trade through legitimate fronts, managing both sides of the business. Acquire new "businesses", meet new clientele, develop more potent narcotics…</p>
+				<div class="text-sm mb-2">
+					<span class="text-[#b9bbbe]">Prix</span>
+					<p class="text-[#dcddde]"><strong>Gratuit</strong> • jusqu'au 05/02/2026</p>
+				</div>
+				<div class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-2">
+					<div><span class="text-[#b9bbbe]">Prix recommandé</span><p class="text-[#dcddde]">39.99 EUR</p></div>
+					<div><span class="text-[#b9bbbe]">Genres</span><p class="text-[#dcddde]">Simulation, Indie</p></div>
+					<div><span class="text-[#b9bbbe]">Ratings</span><p class="text-[#dcddde]">PEGI 18, USK 18</p></div>
+				</div>
+				<p class="mb-3"><a href="#" class="text-[#00a8fc] hover:underline text-sm">Ouvrir dans la boutique !</a></p>
+				<div class="rounded overflow-hidden bg-[#202225] aspect-video flex items-center justify-center my-2">
+					<span class="text-4xl text-gray-500">🎁</span>
+				</div>
+				<p class="text-xs text-[#72767d] pt-1">MamieHenriette • FreeLoot</p>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+document.querySelectorAll('.freeloot-role-tab').forEach(btn => {
+	btn.addEventListener('click', function() {
+		var tabId = this.getAttribute('data-tab');
+		document.querySelectorAll('.freeloot-role-panel').forEach(p => p.classList.add('hidden'));
+		document.querySelectorAll('.freeloot-role-tab').forEach(b => {
+			b.classList.remove('bg-gray-200', 'dark:bg-gray-600', 'text-gray-900', 'dark:text-white');
+			b.classList.add('bg-gray-100', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-400');
+		});
+		document.getElementById(tabId).classList.remove('hidden');
+		this.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-400');
+		this.classList.add('bg-gray-200', 'dark:bg-gray-600', 'text-gray-900', 'dark:text-white');
+	});
+});
+document.querySelector('.freeloot-role-tab[data-default]')?.click();
+</script>
+
+{% if entries %}
+<div class="mt-8">
+	<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+		<div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+			<h2 class="text-xl font-semibold text-gray-900 dark:text-white">Jeux gratuits actuellement disponibles</h2>
+		</div>
+		<div class="p-6 overflow-x-auto">
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+				{% for e in entries %}
+				<article class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
+					<div class="aspect-video bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+						{% if e.image_url %}
+						<img src="{{ e.image_url }}" alt="" class="w-full h-full object-cover" loading="lazy" />
+						{% else %}
+						<span class="text-4xl text-gray-400 dark:text-gray-500">🎁</span>
+						{% endif %}
+					</div>
+					<div class="p-4 flex flex-col flex-1 border-t border-gray-200 dark:border-gray-700">
+						<h3 class="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2" title="{{ e.game_name }}">{{ e.game_name }}</h3>
+						<p class="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 mb-2">
+							<span>{{ e.emoji }}</span>
+							<span>{{ e.source_label }}</span>
+						</p>
+						{% if e.recommended_price or e.genres or e.rating %}
+						<div class="text-xs text-gray-500 dark:text-gray-400 space-y-0.5 mb-2">
+							{% if e.recommended_price %}<p><span class="text-gray-500 dark:text-gray-500">Prix recommandé:</span> {{ e.recommended_price }}</p>{% endif %}
+							{% if e.genres %}<p><span class="text-gray-500 dark:text-gray-500">Genres:</span> {{ e.genres }}</p>{% endif %}
+							{% if e.rating %}<p><span class="text-gray-500 dark:text-gray-500">Ratings:</span> {{ e.rating }}</p>{% endif %}
+						</div>
+						{% endif %}
+						{% if e.updated_formatted %}
+						<p class="text-xs text-gray-500 dark:text-gray-500 mb-3">{{ e.updated_formatted }}</p>
+						{% endif %}
+						<div class="mt-auto flex flex-col gap-2">
+							<form action="{{ url_for('send_free_loot_to_discord') }}" method="POST" class="w-full">
+								<input type="hidden" name="entry_id" value="{{ e.id }}">
+								<button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+									<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+									Envoyer sur Discord
+								</button>
+							</form>
+							{% if e.link %}
+							<a href="{{ e.link }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 w-full px-3 py-2 text-sm font-medium rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition-colors focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+								Ouvrir dans la boutique
+								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+							</a>
+							{% endif %}
+						</div>
+					</div>
+				</article>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+</div>
+{% else %}
+<div class="mt-8 p-4 rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
+	<p class="text-gray-600 dark:text-gray-400 text-sm">Le flux LootScraper n’a pas pu être chargé. Réessayez plus tard.</p>
+</div>
+{% endif %}
+{% endblock %}

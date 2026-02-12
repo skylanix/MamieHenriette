@@ -10,7 +10,6 @@
 	</p>
 </div>
 
-{# Zone Discord #}
 <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mb-8">
 	<div class="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-4">
 		<div class="flex items-center gap-3">
@@ -43,7 +42,6 @@
 	</div>
 </div>
 
-{# Zone Twitch #}
 <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mb-8">
 	<div class="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-4">
 		<div class="flex items-center gap-3">
@@ -60,12 +58,19 @@
 			<p class="text-2xl font-bold text-slate-800 dark:text-white mt-1">{% if twitch_channel_name %}{{ twitch_channel_name }}{% else %}—{% endif %}</p>
 		</div>
 		<div class="rounded-lg bg-slate-50 dark:bg-slate-700/50 p-4 border border-slate-200 dark:border-slate-600">
-			<p class="text-sm font-medium text-slate-500 dark:text-slate-400">Sanctions</p>
-			<p class="text-2xl font-bold text-slate-800 dark:text-white mt-1">—</p>
-			<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">À venir</p>
+			<p class="text-sm font-medium text-slate-500 dark:text-slate-400">Annonces configurées</p>
+			<p class="text-2xl font-bold text-slate-800 dark:text-white mt-1">{{ twitch_announcements_count }}</p>
 		</div>
-		<div class="rounded-lg bg-slate-50 dark:bg-slate-700/50 p-4 border border-slate-200 dark:border-slate-600 sm:col-span-2 lg:col-span-2 flex items-center justify-center">
-			<p class="text-sm text-slate-500 dark:text-slate-400">Intégrations du bot Twitch à venir.</p>
+		<div class="rounded-lg bg-slate-50 dark:bg-slate-700/50 p-4 border border-slate-200 dark:border-slate-600">
+			<p class="text-sm font-medium text-slate-500 dark:text-slate-400">Actions de modération</p>
+			<p class="text-2xl font-bold text-slate-800 dark:text-white mt-1">{{ twitch_moderation_count }}</p>
+		</div>
+		<div class="rounded-lg bg-slate-50 dark:bg-slate-700/50 p-4 border border-slate-200 dark:border-slate-600 flex items-center justify-center">
+			<div class="flex flex-wrap gap-3 justify-center">
+				<a href="/announcements" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition-colors">Annonces</a>
+				<a href="/twitch-moderation" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-white text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors">Modération</a>
+				<a href="/link-filter" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-white text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors">Filtre de liens</a>
+			</div>
 		</div>
 	</div>
 </div>

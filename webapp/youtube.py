@@ -2,8 +2,8 @@ import re
 import requests
 from urllib.parse import urlencode
 from flask import render_template, request, redirect, url_for
-
 from webapp import webapp
+from webapp.auth import require_page, can_write_page
 from database import db
 from database.models import YouTubeNotification
 from discordbot import bot
@@ -64,6 +64,7 @@ def _get_channel_id_from_handle(handle: str) -> str:
 
 
 @webapp.route("/youtube")
+@require_page("youtube")
 def openYouTube():
 	notifications: list[YouTubeNotification] = YouTubeNotification.query.all()
 	channels = bot.getAllTextChannel()
@@ -77,7 +78,10 @@ def openYouTube():
 
 
 @webapp.route("/youtube/add", methods=['POST'])
+@require_page("youtube")
 def addYouTube():
+	if not can_write_page("youtube"):
+		return render_template("403.html"), 403
 	channel_input = request.form.get('channel_id', '').strip()
 	channel_id = extract_channel_id(channel_input)
 	
@@ -118,7 +122,10 @@ def addYouTube():
 
 
 @webapp.route("/youtube/toggle/<int:id>")
+@require_page("youtube")
 def toggleYouTube(id):
+	if not can_write_page("youtube"):
+		return render_template("403.html"), 403
 	notification: YouTubeNotification = YouTubeNotification.query.get_or_404(id)
 	notification.enable = not notification.enable
 	db.session.commit()
@@ -126,6 +133,7 @@ def toggleYouTube(id):
 
 
 @webapp.route("/youtube/edit/<int:id>")
+@require_page("youtube")
 def openEditYouTube(id):
 	notification = YouTubeNotification.query.get_or_404(id)
 	channels = bot.getAllTextChannel()
@@ -135,7 +143,10 @@ def openEditYouTube(id):
 
 
 @webapp.route("/youtube/edit/<int:id>", methods=['POST'])
+@require_page("youtube")
 def submitEditYouTube(id):
+	if not can_write_page("youtube"):
+		return render_template("403.html"), 403
 	notification: YouTubeNotification = YouTubeNotification.query.get_or_404(id)
 	
 	channel_input = request.form.get('channel_id', '').strip()
@@ -174,7 +185,10 @@ def submitEditYouTube(id):
 
 
 @webapp.route("/youtube/del/<int:id>")
+@require_page("youtube")
 def delYouTube(id):
+	if not can_write_page("youtube"):
+		return render_template("403.html"), 403
 	notification = YouTubeNotification.query.get_or_404(id)
 	db.session.delete(notification)
 	db.session.commit()
