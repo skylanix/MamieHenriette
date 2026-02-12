@@ -1,0 +1,964 @@
+{% extends "template.html" %}
+
+{% block content %}
+<style>
+	.panel-moderation {
+		display: grid;
+		grid-template-columns: minmax(320px, 56%) 1fr;
+		gap: 1rem;
+		min-height: calc(100vh - 8rem);
+	}
+	@media (max-width: 1024px) {
+		.panel-moderation { grid-template-columns: 1fr; }
+	}
+	.player-wrap {
+		position: relative;
+		width: 100%;
+		padding-bottom: 56.25%;
+		height: 0;
+		overflow: hidden;
+		border-radius: 12px;
+		background: #0e0e10;
+		box-shadow: 0 4px 20px rgba(0,0,0,.25);
+	}
+	.player-wrap iframe {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		border: none;
+	}
+	.chat-wrap {
+		border-radius: 12px;
+		overflow: hidden;
+		background: #18181b;
+		box-shadow: 0 4px 20px rgba(0,0,0,.2);
+		min-height: 320px;
+		display: flex;
+		flex-direction: column;
+	}
+	.chat-wrap iframe {
+		flex: 1;
+		min-height: 280px;
+		border: none;
+	}
+	.mod-toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px;
+		padding: 10px 12px;
+		background: #1f1f23;
+		border-bottom: 1px solid #2d2d35;
+	}
+	.mod-toolbar input[type="text"] {
+		width: 140px;
+		padding: 6px 10px;
+		border-radius: 6px;
+		border: 1px solid #3d3d48;
+		background: #18181b;
+		color: #efeff1;
+		font-size: 13px;
+	}
+	.mod-toolbar input::placeholder { color: #6b6b7b; }
+	.mod-toolbar button {
+		padding: 6px 12px;
+		border-radius: 6px;
+		font-size: 12px;
+		font-weight: 500;
+		border: none;
+		cursor: pointer;
+		transition: background .15s, transform .05s;
+	}
+	.mod-toolbar button:active { transform: scale(0.98); }
+	.btn-timeout { background: #e0a82e; color: #1f1f23; }
+	.btn-timeout:hover { background: #e8b84a; }
+	.btn-ban { background: #eb0400; color: #fff; }
+	.btn-ban:hover { background: #ff1a15; }
+	.btn-unban { background: #338847; color: #fff; }
+	.btn-unban:hover { background: #3da352; }
+	.btn-clean { background: #53535f; color: #efeff1; }
+	.btn-clean:hover { background: #63636f; }
+	.btn-copy { background: #9147ff; color: #fff; }
+	.btn-copy:hover { background: #a970ff; }
+	.right-col { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+	.commandes-logs {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		flex: 1;
+		min-height: 0;
+	}
+	.section-card {
+		background: #fff;
+		border-radius: 12px;
+		border: 1px solid #e5e7eb;
+		overflow: hidden;
+		box-shadow: 0 1px 3px rgba(0,0,0,.06);
+	}
+	.dark .section-card {
+		background: #1f2937;
+		border-color: #374151;
+		box-shadow: 0 1px 3px rgba(0,0,0,.2);
+	}
+	.section-card-header {
+		padding: 10px 14px;
+		font-weight: 600;
+		font-size: 14px;
+		color: #111827;
+		background: #f9fafb;
+		border-bottom: 1px solid #e5e7eb;
+	}
+	.dark .section-card-header {
+		background: #111827;
+		color: #f3f4f6;
+		border-color: #374151;
+	}
+	.section-card-body {
+		max-height: 220px;
+		overflow: auto;
+	}
+	.section-card-body-logs {
+		max-height: 280px;
+	}
+	.cmd-table, .logs-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+	.cmd-table th, .logs-table th {
+		text-align: left;
+		padding: 8px 12px;
+		background: #f3f4f6;
+		color: #4b5563;
+		font-weight: 600;
+	}
+	.dark .cmd-table th, .dark .logs-table th { background: #374151; color: #9ca3af; }
+	.cmd-table td, .logs-table td { padding: 6px 12px; border-bottom: 1px solid #e5e7eb; color: #374151; }
+	.dark .cmd-table td, .dark .logs-table td { border-color: #374151; color: #e5e7eb; }
+	.cmd-table tr:hover, .logs-table tr:hover { background: #f9fafb; }
+	.dark .cmd-table tr:hover, .dark .logs-table tr:hover { background: #374151; }
+	.page-title-mod { font-size: 1.25rem; margin-bottom: 0.5rem; }
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(-10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+	.animate-fade-in {
+		animation: fadeIn 0.3s ease-out;
+	}
+</style>
+
+<div class="space-y-4">
+	<div>
+		<h1 class="page-title-mod font-bold text-gray-900 dark:text-white">Modération Twitch</h1>
+		<p class="text-sm text-gray-600 dark:text-gray-400">Commandes et logs de modération pour {{ twitch_channel }}</p>
+	</div>
+
+	<!-- Info bricks: Live status, Link filter, Banned words -->
+	<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+		<!-- Live Status -->
+		<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+			<div class="flex items-center justify-between">
+				<div class="flex items-center gap-3">
+					<div class="p-2 rounded-lg {{ 'bg-red-100 dark:bg-red-900/30' if is_live else 'bg-gray-100 dark:bg-gray-700' }}">
+						<svg class="w-5 h-5 {{ 'text-red-600 dark:text-red-400' if is_live else 'text-gray-500' }}" fill="currentColor" viewBox="0 0 20 20">
+							<circle cx="10" cy="10" r="8"/>
+						</svg>
+					</div>
+					<div>
+						<h3 class="font-semibold text-gray-900 dark:text-white text-sm">Live</h3>
+						<p class="text-xs text-gray-500 dark:text-gray-400">{{ 'En ligne' if is_live else 'Hors ligne' }}</p>
+					</div>
+				</div>
+				{% if is_live %}
+				<div class="text-right">
+					<div class="text-lg font-bold text-purple-600 dark:text-purple-400">{{ viewer_count }}</div>
+					<div class="text-xs text-gray-500 dark:text-gray-400">viewers</div>
+				</div>
+				{% endif %}
+			</div>
+		</div>
+
+		<!-- Link Filter -->
+		<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+			<div class="flex items-center justify-between">
+				<div class="flex items-center gap-3">
+					<div class="p-2 rounded-lg {{ 'bg-green-100 dark:bg-green-900/30' if link_filter_enabled else 'bg-gray-100 dark:bg-gray-700' }}">
+						<svg class="w-5 h-5 {{ 'text-green-600 dark:text-green-400' if link_filter_enabled else 'text-gray-500' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+						</svg>
+					</div>
+					<div>
+						<h3 class="font-semibold text-gray-900 dark:text-white text-sm">Filtre de liens</h3>
+						<p class="text-xs text-gray-500 dark:text-gray-400">{{ 'Actif' if link_filter_enabled else 'Inactif' }}</p>
+					</div>
+				</div>
+				<a href="{{ url_for('link_filter') }}" class="text-xs text-purple-600 dark:text-purple-400 hover:underline">Configurer</a>
+			</div>
+		</div>
+
+		<!-- Banned Words -->
+		<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+			<div class="flex items-center justify-between">
+				<div class="flex items-center gap-3">
+					<div class="p-2 rounded-lg {{ 'bg-orange-100 dark:bg-orange-900/30' if banned_words else 'bg-gray-100 dark:bg-gray-700' }}">
+						<svg class="w-5 h-5 {{ 'text-orange-600 dark:text-orange-400' if banned_words else 'text-gray-500' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+						</svg>
+					</div>
+					<div>
+						<h3 class="font-semibold text-gray-900 dark:text-white text-sm">Mots interdits</h3>
+						<p class="text-xs text-gray-500 dark:text-gray-400">{{ banned_words|length }} mot{{ 's' if banned_words|length > 1 else '' }}</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Commandes & logs Twitch (sans lecteur/iframe) -->
+	<div class="grid md:grid-cols-2 gap-4">
+		<!-- Commandes de modération -->
+		<div class="section-card">
+			<div class="section-card-header flex items-center justify-between">
+				<span>Commandes de modération</span>
+				<input type="text" id="searchInput" placeholder="Rechercher..." class="w-36 px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+			</div>
+			<div class="section-card-body">
+				<table class="cmd-table" id="commandsTable">
+					<thead>
+						<tr>
+							<th>Commande(s)</th>
+							<th>Usage</th>
+							<th>Permission</th>
+						</tr>
+					</thead>
+					<tbody id="commandsBody">
+						{% for cmd in commands %}
+						<tr class="command-row" data-search="{{ cmd.commands|join(' ') }} {{ cmd.usage }} {{ cmd.description }}">
+							<td>
+								{% for c in cmd.commands %}
+								<code class="px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-xs font-mono">{{ c }}</code>
+								{% if not loop.last %} {% endif %}
+								{% endfor %}
+							</td>
+							<td><code class="text-xs font-mono text-gray-600 dark:text-gray-400">{{ cmd.usage }}</code></td>
+							<td><span class="text-xs text-gray-500 dark:text-gray-400">{{ cmd.permission }}</span></td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<!-- Logs de modération -->
+		<div class="section-card">
+			<div class="section-card-header flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+				<span>Logs de modération (<span id="logsCount">{{ logs|length }}</span>)</span>
+				<div class="flex items-center gap-2">
+					<input type="text" id="logsSearchInput" placeholder="Rechercher..." class="w-32 px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+					{% if logs %}
+					<a href="{{ url_for('clear_twitch_logs') }}" onclick="return confirm('Effacer tous les logs ?')" class="text-xs text-red-600 hover:text-red-700">Effacer</a>
+					{% endif %}
+				</div>
+			</div>
+			<div class="section-card-body">
+				{% if logs %}
+				<table class="logs-table" id="logsTable">
+					<thead>
+						<tr>
+							<th>Date</th>
+							<th>Action</th>
+							<th>Modo</th>
+							<th>Cible</th>
+							<th>Détails</th>
+						</tr>
+					</thead>
+					<tbody id="logsBody">
+						{% for log in logs %}
+						<tr class="log-row" data-search="{{ log.action }} {{ log.moderator }} {{ log.target or '' }} {{ log.details or '' }}">
+							<td class="whitespace-nowrap text-gray-500 dark:text-gray-400">{{ log.created_at.strftime('%d/%m %H:%M') }}</td>
+							<td><code class="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs">{{ log.action }}</code></td>
+							<td>{{ log.moderator }}</td>
+							<td>{{ log.target or '-' }}</td>
+							<td class="max-w-[120px] truncate" title="{{ log.details or '' }}">{{ log.details or '-' }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+				{% else %}
+				<div class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">Aucun log</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+
+	<!-- Lecteur Live + Chat Twitch (si live en cours) OU Formulaire + Chat (hors live) -->
+	<div class="mt-6">
+		{% if is_live %}
+		<!-- Layout avec lecteur vidéo (live en cours) -->
+		<div class="grid lg:grid-cols-3 gap-6">
+			<!-- Lecteur Twitch (2/3) -->
+			<div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+				<div class="aspect-video bg-gray-900">
+					<iframe 
+						src="https://player.twitch.tv/?channel={{ twitch_channel }}&enableExtensions=true&muted=false&parent={{ embed_parent }}&player=popout&quality=auto&volume=0.5"
+						style="width: 100%; height: 100%; border: none;"
+						allowfullscreen>
+					</iframe>
+				</div>
+				<div class="p-3 bg-gray-50 dark:bg-gray-700 flex items-center justify-between">
+					<div class="flex items-center gap-2">
+						<span class="flex h-2 w-2 relative">
+							<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+							<span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+						</span>
+						<span class="text-sm font-medium text-gray-900 dark:text-white">EN DIRECT</span>
+						<span class="text-sm text-gray-500 dark:text-gray-400">• {{ viewer_count }} viewers</span>
+					</div>
+					<a href="https://www.twitch.tv/{{ twitch_channel }}" target="_blank" class="text-xs text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1">
+						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+						</svg>
+						Ouvrir sur Twitch
+					</a>
+				</div>
+			</div>
+			
+			<!-- Formulaire rapide (1/3) -->
+			<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+				<h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+					</svg>
+					Nouvelle commande
+				</h2>
+				<form action="{{ url_for('add_twitch_commande') }}" method="POST" class="space-y-3">
+					<input type="text" name="trigger" placeholder="!commande" required
+						class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 text-sm">
+					<select name="twitch_permission"
+						class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 text-sm">
+						{% for value, label in twitch_permissions.items() %}
+						<option value="{{ value }}">{{ label }}</option>
+						{% endfor %}
+					</select>
+					<textarea name="response" rows="3" placeholder="Réponse... ({user} = mention)" required
+						class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 text-sm resize-none"></textarea>
+					<button type="submit" class="w-full px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm">Ajouter</button>
+				</form>
+			</div>
+		</div>
+		
+		<!-- Chat en dessous du lecteur -->
+		<div class="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col" style="height: 500px;">
+		{% else %}
+		<!-- Layout sans lecteur (hors live) -->
+		<div class="grid md:grid-cols-2 gap-6">
+			<!-- Formulaire d'ajout de commande -->
+			<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+				<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+					</svg>
+					Ajouter une commande
+				</h2>
+				<form action="{{ url_for('add_twitch_commande') }}" method="POST" class="space-y-3">
+					<div class="grid grid-cols-2 gap-2">
+						<input type="text" name="trigger" placeholder="!commande" required
+							class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 text-sm">
+						<select name="twitch_permission"
+							class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 text-sm">
+							{% for value, label in twitch_permissions.items() %}
+							<option value="{{ value }}">{{ label }}</option>
+							{% endfor %}
+						</select>
+					</div>
+					<textarea name="response" rows="2" placeholder="Réponse du bot... ({user} = mention)" required
+						class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 text-sm resize-none"></textarea>
+					<button type="submit" class="w-full px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm">Ajouter</button>
+				</form>
+			</div>
+			
+			<!-- Chat -->
+			<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col" style="height: 500px;">
+		{% endif %}
+		<div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between">
+			<div class="flex items-center gap-2">
+				<h3 class="font-semibold text-gray-900 dark:text-white">Chat en direct</h3>
+				<span class="flex h-2 w-2 relative">
+					<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+					<span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+				</span>
+			</div>
+			<a href="https://www.twitch.tv/{{ twitch_channel }}/chat" target="_blank" class="text-xs text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1">
+				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+				</svg>
+				Ouvrir sur Twitch
+			</a>
+		</div>
+		
+		<!-- Zone d'affichage des messages et actions -->
+		<div class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900/50 p-4" id="chatDisplay">
+			<div class="space-y-2">
+				<div class="text-center text-sm text-gray-500 dark:text-gray-400 py-8">
+					<div class="animate-pulse mb-4">
+						<svg class="w-12 h-12 mx-auto mb-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+						</svg>
+					</div>
+					<p class="font-medium text-gray-700 dark:text-gray-300">Récupération du chat...</p>
+					<p class="text-xs mt-1">Les messages du chat Twitch apparaîtront ici en temps réel</p>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Zone de saisie et boutons -->
+		<div class="p-3 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-600">
+			<!-- Boutons d'action rapide -->
+			<div class="grid grid-cols-4 gap-1.5 mb-3">
+				<!-- Ligne 1 : Actions sur les users -->
+				<button onclick="executeQuickAction('ban')" class="px-2 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded transition-colors text-xs font-medium flex items-center justify-center gap-1" title="Bannir un utilisateur">
+					<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 75.636 5.636m12.728 12.728L5.636 5.636"></path>
+					</svg>
+					Ban
+				</button>
+				<button onclick="executeQuickAction('timeout')" class="px-2 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded transition-colors text-xs font-medium flex items-center justify-center gap-1" title="Timeout un utilisateur">
+					<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+					</svg>
+					Timeout
+				</button>
+				<button onclick="executeQuickAction('clean')" class="px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors text-xs font-medium flex items-center justify-center gap-1" title="Nettoyer le chat">
+					<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+					</svg>
+					Clean
+				</button>
+				<button onclick="executeQuickAction('permit')" class="px-2 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded transition-colors text-xs font-medium flex items-center justify-center gap-1" title="Permettre un lien">
+					<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+					</svg>
+					Permit
+				</button>
+				
+				<!-- Ligne 2 : Modes du chat -->
+				<button onclick="executeQuickAction('subon')" class="px-2 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors text-xs font-medium flex items-center justify-center gap-1" title="Activer mode abonnés">
+					<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+					</svg>
+					Sub ON
+				</button>
+				<button onclick="executeQuickAction('suboff')" class="px-2 py-1.5 bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors text-xs font-medium flex items-center justify-center gap-1" title="Désactiver mode abonnés">
+					<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
+					</svg>
+					Sub OFF
+				</button>
+				<button onclick="executeQuickAction('emoteon')" class="px-2 py-1.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors text-xs font-medium flex items-center justify-center gap-1" title="Activer mode emotes">
+					😀 ON
+				</button>
+				<button onclick="executeQuickAction('emoteoff')" class="px-2 py-1.5 bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors text-xs font-medium flex items-center justify-center gap-1" title="Désactiver mode emotes">
+					😀 OFF
+				</button>
+			</div>
+			
+			<!-- Input de message -->
+			<form onsubmit="sendMessage(event)" class="flex gap-2">
+				<input 
+					type="text" 
+					id="chatMessage" 
+					placeholder="Message ou commande..." 
+					class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 text-sm"
+					autocomplete="off">
+				<button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium text-sm">
+					Envoyer
+				</button>
+			</form>
+		<p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Envoyé via le bot • <a href="https://www.twitch.tv/popout/{{ twitch_channel }}/chat" target="_blank" class="text-purple-600 dark:text-purple-400 hover:underline">Ouvrir le chat</a></p>
+	</div>
+</div>
+		</div>
+	</div> <!-- Fermeture du conteneur principal -->
+
+	{% if custom_commands %}
+	<div class="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+		<div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+			<h3 class="font-semibold text-gray-900 dark:text-white">Commandes personnalisées Twitch ({{ custom_commands|length }})</h3>
+		</div>
+		<div class="overflow-x-auto">
+			<table class="w-full text-sm">
+				<thead class="bg-gray-50 dark:bg-gray-700/50">
+					<tr>
+						<th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">Commande</th>
+						<th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">Réponse</th>
+						<th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">Permission</th>
+						<th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">Actions</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+					{% for cmd in custom_commands %}
+					<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+						<td class="px-4 py-2"><code class="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-xs">{{ cmd.trigger }}</code></td>
+						<td class="px-4 py-2 text-gray-700 dark:text-gray-300 max-w-xs truncate">{{ cmd.response }}</td>
+						<td class="px-4 py-2">{{ twitch_permissions.get(cmd.twitch_permission or 'viewer', 'Tous') }}</td>
+						<td class="px-4 py-2"><a href="{{ url_for('delete_commande', commande_id=cmd.id) }}" onclick="return confirm('Supprimer ?')" class="text-red-600 hover:text-red-700 text-xs">Supprimer</a></td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+	{% endif %}
+
+	<!-- Section mots interdits -->
+	<div class="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+		<div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+			<h3 class="font-semibold text-gray-900 dark:text-white">Mots interdits ({{ banned_words|length }})</h3>
+		</div>
+		
+		<!-- Formulaire d'ajout -->
+		<div class="p-4 border-b border-gray-200 dark:border-gray-700">
+			<form action="{{ url_for('add_banned_word') }}" method="POST" class="flex flex-wrap gap-2 items-end">
+				<div class="flex-1 min-w-[200px]">
+					<label for="banned_word" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Mot interdit</label>
+					<input type="text" name="word" id="banned_word" placeholder="mot" required
+						class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 text-sm">
+				</div>
+				<div class="w-32">
+					<label for="banned_word_timeout" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Timeout (s)</label>
+					<input type="number" name="timeout_duration" id="banned_word_timeout" value="60" min="0" max="1209600"
+						class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 text-sm">
+				</div>
+				<button type="submit" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors font-medium text-sm">Ajouter</button>
+			</form>
+		</div>
+
+		<!-- Liste des mots interdits -->
+		{% if banned_words %}
+		<div class="overflow-x-auto">
+			<table class="w-full text-sm">
+				<thead class="bg-gray-50 dark:bg-gray-700/50">
+					<tr>
+						<th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">Mot</th>
+						<th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">Timeout</th>
+						<th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">Ajouté le</th>
+						<th class="px-4 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-300">Actions</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+					{% for word in banned_words %}
+					<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+						<td class="px-4 py-2"><code class="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded text-xs font-mono">{{ word.word }}</code></td>
+						<td class="px-4 py-2 text-gray-700 dark:text-gray-300">{{ word.timeout_duration }}s</td>
+						<td class="px-4 py-2 text-gray-500 dark:text-gray-400 text-xs">{{ word.created_at.strftime('%d/%m/%Y %H:%M') if word.created_at else '-' }}</td>
+						<td class="px-4 py-2"><a href="{{ url_for('delete_banned_word', word_id=word.id) }}" onclick="return confirm('Supprimer ce mot interdit ?')" class="text-red-600 hover:text-red-700 text-xs">Supprimer</a></td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+		{% else %}
+		<div class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">Aucun mot interdit configuré</div>
+		{% endif %}
+	</div>
+</div>
+
+<script>
+(function() {
+	var modTarget = document.getElementById('modTarget');
+	var copyCmdBtn = document.getElementById('copyCmdBtn');
+	var lastCmd = '';
+
+	document.querySelectorAll('.mod-toolbar button[data-cmd]').forEach(function(btn) {
+		btn.addEventListener('click', function() {
+			var user = (modTarget && modTarget.value.trim()) || '';
+			lastCmd = this.getAttribute('data-cmd').replace(/\{\}/g, user).trim();
+			if (user && (this.classList.contains('btn-clean') && lastCmd === '!clean')) {
+				lastCmd = '!clean';
+			}
+			navigator.clipboard && navigator.clipboard.writeText(lastCmd).then(function() {
+				var t = copyCmdBtn.textContent;
+				copyCmdBtn.textContent = 'Copié !';
+				setTimeout(function() { copyCmdBtn.textContent = t; }, 1200);
+			});
+		});
+	});
+
+	if (copyCmdBtn) {
+		copyCmdBtn.addEventListener('click', function() {
+			if (lastCmd) {
+				navigator.clipboard && navigator.clipboard.writeText(lastCmd).then(function() {
+					var t = copyCmdBtn.textContent;
+					copyCmdBtn.textContent = 'Copié !';
+					setTimeout(function() { copyCmdBtn.textContent = t; }, 1200);
+				});
+			}
+		});
+	}
+
+	var rows = document.querySelectorAll('.command-row');
+	var searchInput = document.getElementById('searchInput');
+	if (searchInput) {
+		searchInput.addEventListener('input', function() {
+			var q = this.value.toLowerCase();
+			rows.forEach(function(row) {
+				row.style.display = row.dataset.search.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+			});
+		});
+	}
+
+	var logRows = document.querySelectorAll('.log-row');
+	var logsSearchInput = document.getElementById('logsSearchInput');
+	var logsCount = document.getElementById('logsCount');
+	if (logsSearchInput) {
+		logsSearchInput.addEventListener('input', function() {
+			var q = this.value.toLowerCase();
+			var n = 0;
+			logRows.forEach(function(row) {
+				var ok = row.dataset.search.toLowerCase().indexOf(q) >= 0;
+				row.style.display = ok ? '' : 'none';
+				if (ok) n++;
+			});
+		if (logsCount) logsCount.textContent = n;
+	});
+}
+})();
+
+// Fonctions pour le chat Twitch
+var displayedMessages = new Set();
+var isAutoScroll = true;
+
+function addMessageToDisplay(username, message, timestamp, badges, userColor) {
+	var chatDisplay = document.getElementById('chatDisplay');
+	var messagesContainer = chatDisplay.querySelector('.space-y-2');
+	
+	// Supprimer le message d'aide si c'est le premier message
+	var helpText = messagesContainer.querySelector('.text-center');
+	if (helpText) {
+		helpText.remove();
+	}
+	
+	// Créer un ID unique pour ce message
+	var messageId = timestamp + username + message;
+	if (displayedMessages.has(messageId)) {
+		return; // Message déjà affiché
+	}
+	displayedMessages.add(messageId);
+	
+	// Créer l'élément de message
+	var messageDiv = document.createElement('div');
+	var msgDate = new Date(timestamp);
+	var timeStr = msgDate.getHours().toString().padStart(2, '0') + ':' + msgDate.getMinutes().toString().padStart(2, '0');
+	
+	// Déterminer les badges
+	var badgeIcons = '';
+	if (badges && badges.is_mod) {
+		badgeIcons += '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" title="Modérateur">MOD</span>';
+	}
+	if (badges && badges.is_vip) {
+		badgeIcons += '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400" title="VIP">VIP</span>';
+	}
+	if (badges && badges.is_subscriber) {
+		badgeIcons += '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400" title="Abonné">SUB</span>';
+	}
+	
+	messageDiv.className = 'bg-white dark:bg-gray-800 rounded-lg p-3 text-sm animate-fade-in border-l-2 border-gray-300 dark:border-gray-600';
+	messageDiv.style.borderLeftColor = userColor || '#9146FF';
+	messageDiv.innerHTML = `
+		<div class="flex items-start gap-2">
+			<div class="flex-1 min-w-0">
+				<div class="flex items-center gap-2 mb-1 flex-wrap">
+					<span class="font-bold" style="color: ${userColor || '#9146FF'}">${escapeHtml(username)}</span>
+					${badgeIcons}
+					<span class="text-xs text-gray-500 dark:text-gray-400">${timeStr}</span>
+				</div>
+				<div class="text-gray-900 dark:text-gray-100 break-words">${escapeHtml(message)}</div>
+			</div>
+		</div>
+	`;
+	
+	messagesContainer.appendChild(messageDiv);
+	
+	// Limiter à 100 messages affichés
+	while (messagesContainer.children.length > 100) {
+		messagesContainer.removeChild(messagesContainer.firstChild);
+	}
+	
+	// Scroll vers le bas si auto-scroll activé
+	if (isAutoScroll) {
+		chatDisplay.scrollTop = chatDisplay.scrollHeight;
+	}
+}
+
+function addBotMessageToDisplay(message, type) {
+	var chatDisplay = document.getElementById('chatDisplay');
+	var messagesContainer = chatDisplay.querySelector('.space-y-2');
+	
+	// Supprimer le message d'aide si c'est le premier message
+	var helpText = messagesContainer.querySelector('.text-center');
+	if (helpText) {
+		helpText.remove();
+	}
+	
+	var now = new Date();
+	var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+	
+	var bgColor = 'bg-blue-50 dark:bg-blue-900/20';
+	var borderColor = '#3b82f6';
+	
+	if (type === 'command') {
+		bgColor = 'bg-purple-50 dark:bg-purple-900/20';
+		borderColor = '#9146FF';
+	}
+	
+	var messageDiv = document.createElement('div');
+	messageDiv.className = `${bgColor} rounded-lg p-3 text-sm animate-fade-in border-l-2`;
+	messageDiv.style.borderLeftColor = borderColor;
+	messageDiv.innerHTML = `
+		<div class="flex items-start gap-2">
+			<div class="flex-1 min-w-0">
+				<div class="flex items-center gap-2 mb-1">
+					<span class="font-bold text-purple-600 dark:text-purple-400">Bot</span>
+					<span class="text-xs text-gray-500 dark:text-gray-400">${timeStr}</span>
+				</div>
+				<div class="text-gray-900 dark:text-gray-100 break-words">${escapeHtml(message)}</div>
+			</div>
+		</div>
+	`;
+	
+	messagesContainer.appendChild(messageDiv);
+	
+	// Limiter à 100 messages
+	while (messagesContainer.children.length > 100) {
+		messagesContainer.removeChild(messagesContainer.firstChild);
+	}
+	
+	// Scroll vers le bas
+	if (isAutoScroll) {
+		chatDisplay.scrollTop = chatDisplay.scrollHeight;
+	}
+}
+
+// Polling pour récupérer les messages
+function fetchChatMessages() {
+	fetch('{{ url_for("get_twitch_messages") }}')
+		.then(response => response.json())
+		.then(data => {
+			if (data.messages && data.messages.length > 0) {
+				data.messages.forEach(function(msg) {
+					addMessageToDisplay(
+						msg.username,
+						msg.text,
+						msg.timestamp,
+						{
+							is_mod: msg.is_mod,
+							is_vip: msg.is_vip,
+							is_subscriber: msg.is_subscriber
+						},
+						msg.color
+					);
+				});
+			}
+		})
+		.catch(error => {
+			console.error('Erreur lors de la récupération des messages:', error);
+		});
+}
+
+// Démarrer le polling
+setInterval(fetchChatMessages, 2000); // Toutes les 2 secondes
+fetchChatMessages(); // Premier chargement immédiat
+
+// Détecter le scroll manuel pour désactiver l'auto-scroll
+document.getElementById('chatDisplay').addEventListener('scroll', function() {
+	var element = this;
+	var isAtBottom = element.scrollHeight - element.scrollTop <= element.clientHeight + 50;
+	isAutoScroll = isAtBottom;
+});
+
+function escapeHtml(text) {
+	var div = document.createElement('div');
+	div.textContent = text;
+	return div.innerHTML;
+}
+
+function sendMessage(event) {
+	event.preventDefault();
+	var input = document.getElementById('chatMessage');
+	var message = input.value.trim();
+	
+	if (!message) return;
+	
+	// Désactiver le bouton pendant l'envoi
+	var submitBtn = event.target.querySelector('button[type="submit"]');
+	var originalText = submitBtn.textContent;
+	submitBtn.disabled = true;
+	submitBtn.textContent = 'Envoi...';
+	
+	// Utiliser la fonction sendTextMessage pour les messages normaux
+	fetch('{{ url_for("send_twitch_message") }}', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({ message: message })
+	})
+	.then(response => response.json())
+	.then(data => {
+		if (data.success) {
+			// Ajouter le message à l'affichage
+			var type = message.startsWith('!') ? 'command' : 'message';
+			addBotMessageToDisplay(message, type);
+			input.value = '';
+			showNotification('Message envoyé', 'success');
+		} else {
+			showNotification(data.error || 'Erreur lors de l\'envoi', 'error');
+		}
+	})
+	.catch(error => {
+		showNotification('Erreur réseau', 'error');
+	})
+	.finally(function() {
+		submitBtn.disabled = false;
+		submitBtn.textContent = originalText;
+	});
+}
+
+function executeQuickAction(action) {
+	// Commandes simples sans paramètres
+	if (['subon', 'suboff', 'emoteon', 'emoteoff'].includes(action)) {
+		executeModerationAction(action, {});
+		return;
+	}
+	
+	// Ban : demander utilisateur + raison
+	if (action === 'ban') {
+		var username = prompt('Nom d\'utilisateur à bannir :', '@');
+		if (username && username.trim() && username !== '@') {
+			username = username.trim().replace('@', '');
+			var reason = prompt('Raison (optionnelle) :', 'Violation des règles');
+			executeModerationAction('ban', {
+				username: username,
+				reason: reason || 'Ban'
+			});
+		}
+		return;
+	}
+	
+	// Timeout : demander utilisateur + durée + raison
+	if (action === 'timeout') {
+		var username = prompt('Nom d\'utilisateur à timeout :', '@');
+		if (username && username.trim() && username !== '@') {
+			username = username.trim().replace('@', '');
+			var duration = prompt('Durée en minutes (défaut: 10) :', '10');
+			duration = parseInt(duration) || 10;
+			var reason = prompt('Raison (optionnelle) :', 'Timeout');
+			executeModerationAction('timeout', {
+				username: username,
+				duration: duration * 60, // Convertir en secondes
+				reason: reason || 'Timeout'
+			});
+		}
+		return;
+	}
+	
+	// Clean : demander si utilisateur spécifique ou tout le chat
+	if (action === 'clean') {
+		var username = prompt('Nom d\'utilisateur (ou laissez vide pour tout le chat) :', '');
+		if (username === null) return; // Annulé
+		executeModerationAction('clean', {
+			username: username ? username.trim().replace('@', '') : ''
+		});
+		return;
+	}
+	
+	// Permit : demander utilisateur + durée
+	if (action === 'permit') {
+		var username = prompt('Nom d\'utilisateur à autoriser :', '@');
+		if (username && username.trim() && username !== '@') {
+			username = username.trim().replace('@', '');
+			var duration = prompt('Durée en minutes (défaut: 1) :', '1');
+			duration = parseInt(duration) || 1;
+			executeModerationAction('permit', {
+				username: username,
+				duration: duration * 60 // Convertir en secondes
+			});
+		}
+		return;
+	}
+}
+
+function executeModerationAction(action, params) {
+	fetch('{{ url_for("execute_moderation_action") }}', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({ action: action, params: params })
+	})
+	.then(response => response.json())
+	.then(data => {
+		if (data.success) {
+			showNotification(data.message || 'Action exécutée', 'success');
+			// Ajouter un message visuel dans le chat
+			var actionText = action.toUpperCase();
+			if (params.username) {
+				actionText += ' @' + params.username;
+			}
+			if (params.duration) {
+				actionText += ' (' + (params.duration / 60) + 'min)';
+			}
+			if (params.reason) {
+				actionText += ' - ' + params.reason;
+			}
+			addBotMessageToDisplay(actionText, 'command');
+		} else {
+			showNotification(data.error || 'Erreur lors de l\'exécution', 'error');
+		}
+	})
+	.catch(error => {
+		showNotification('Erreur réseau', 'error');
+	});
+}
+
+// Cette fonction est conservée pour les messages texte normaux (non-modération)
+function sendTextMessage(message) {
+	fetch('{{ url_for("send_twitch_message") }}', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({ message: message })
+	})
+	.then(response => response.json())
+	.then(data => {
+		if (data.success) {
+			var type = message.startsWith('!') ? 'command' : 'message';
+			addBotMessageToDisplay(message, type);
+			showNotification('Message envoyé', 'success');
+		} else {
+			showNotification(data.error || 'Erreur lors de l\'envoi', 'error');
+		}
+	})
+	.catch(error => {
+		showNotification('Erreur réseau', 'error');
+	});
+}
+
+function showNotification(message, type) {
+	var color = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+	var notification = document.createElement('div');
+	notification.className = `fixed bottom-4 right-4 ${color} text-white px-4 py-2 rounded-lg shadow-lg z-50`;
+	notification.textContent = message;
+	document.body.appendChild(notification);
+	
+	setTimeout(function() {
+		notification.remove();
+	}, 3000);
+}
+</script>
+{% endblock %}

@@ -8,6 +8,8 @@ from database.helpers import ConfigurationHelper
 from database.models import  GameBundle
 from discord import Client
 
+_humblebundle_first_check = True
+
 
 def _isEnable():
 	helper = ConfigurationHelper()
@@ -40,10 +42,22 @@ def _formatMessage(bundle):
 	return message
 
 async def checkHumbleBundleAndNotify(bot: Client):
+	global _humblebundle_first_check
 	if _isEnable() :
 		try : 
 			bundles = _callGithub()
 			bundle = _findFirstNotNotified(bundles)
+			
+			# Premier check : synchronisation sans notification
+			if _humblebundle_first_check:
+				if bundle != None:
+					logging.info(f'HumbleBundle: première vérification, synchronisation sans notification pour {bundle["name"]}')
+					db.session.add(GameBundle(url=bundle['url'], name=bundle['name'], json = json.dumps(bundle)))
+					db.session.commit()
+				_humblebundle_first_check = False
+				return
+			
+			# Vérifications normales ensuite
 			if bundle != None :
 				message = _formatMessage(bundle)
 				await bot.get_channel(ConfigurationHelper().getIntValue('humble_bundle_channel')).send(message)

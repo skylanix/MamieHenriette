@@ -1,124 +1,135 @@
 {% extends "template.html" %}
 
 {% block content %}
-<div class="mb-6">
-	<h1 class="text-2xl font-semibold text-slate-800 dark:text-white mb-1">ProtonDB</h1>
-	<p class="text-sm text-slate-600 dark:text-slate-400">
-		Compatibilité des jeux Windows sur Linux via Steam Play.
-	</p>
-</div>
-
-{% if configuration.getValue('proton_db_enable_enable') %}
-<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
-	<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
-		<h2 class="text-lg font-medium text-slate-800 dark:text-white">Alias de jeux</h2>
-	</div>
-	<div class="overflow-x-auto">
-		<table class="w-full">
-			<thead>
-				<tr class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-					<th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Alias</th>
-					<th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Nom du jeu</th>
-					<th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
-				</tr>
-			</thead>
-			<tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-				{% for a in aliases %}
-				<tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-					<td class="px-4 py-3">
-						<code class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-xs font-mono">{{ a.alias }}</code>
-					</td>
-					<td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
-						{{ a.name }}
-					</td>
-					<td class="px-4 py-3 text-right">
-						<a href="{{ url_for('delGameAlias', id = a.id) }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet alias ?')" class="text-sm text-slate-500 hover:text-red-600 dark:hover:text-red-400 transition-colors">
-							Supprimer
-						</a>
-					</td>
-				</tr>
-				{% else %}
-				<tr>
-					<td colspan="3" class="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-						Aucun alias configuré
-					</td>
-				</tr>
-				{% endfor %}
-			</tbody>
-		</table>
-	</div>
-</div>
-
-<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5 mb-6">
-	<h2 class="text-lg font-medium text-slate-800 dark:text-white mb-5">Ajouter un alias</h2>
-	
-	<form action="{{ url_for('addGameAlias') }}" method="POST" class="space-y-6">
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-			<div>
-				<label for="alias" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Alias</label>
-				<input type="text" name="alias" id="alias" maxlength="32" required placeholder="GTA" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
-			</div>
-			<div>
-				<label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nom complet</label>
-				<input type="text" name="name" id="name" maxlength="256" required placeholder="Grand Theft Auto" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
-			</div>
-		</div>
-		
-		<div class="flex justify-end">
-			<button type="submit" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-colors">
-				Ajouter
-			</button>
-		</div>
-	</form>
-
-	<div class="mt-5 bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
-		<p class="text-sm text-slate-600 dark:text-slate-400">
-			<strong class="text-slate-800 dark:text-white">Exemple :</strong> Si vous créez un alias GTA → Grand Theft Auto, alors !protondb GTA 5 fera une recherche sur Grand Theft Auto 5.
+<div class="mb-8">
+	<h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">ProtonDB</h1>
+	<div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+		<p class="text-gray-700 dark:text-gray-300">
+			ProtonDB évalue la compatibilité des jeux Windows sur Linux via Steam Play.
 		</p>
 	</div>
 </div>
+
+{% if configuration.getValue('proton_db_enable_enable') %}
+<div class="mb-8">
+	<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Alias de jeux</h2>
+	<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+		<div class="overflow-x-auto">
+			<table class="w-full">
+				<thead class="bg-gray-50 dark:bg-gray-700">
+					<tr>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Alias</th>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Jeu</th>
+						<th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">Action</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+					{% for a in aliases %}
+					<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+						<td class="px-6 py-4 whitespace-nowrap">
+							<code class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-purple-600 dark:text-purple-400 font-mono">{{ a.alias }}</code>
+						</td>
+						<td class="px-6 py-4 text-gray-700 dark:text-gray-300">{{ a.name }}</td>
+						<td class="px-6 py-4 text-center">
+							<a href="{{ url_for('delGameAlias', id = a.id) }}" 
+								onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet alias ?')"
+								class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-red-600 dark:text-red-400 inline-block"
+								title="Supprimer">
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+							</a>
+						</td>
+					</tr>
+					{% else %}
+					<tr>
+						<td colspan="3" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+							Aucun alias configuré. Ajoutez-en un ci-dessous.
+						</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+	<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Ajouter un alias</h2>
+	
+	<form action="{{ url_for('addGameAlias') }}" method="POST" class="space-y-6">
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+			<div>
+				<label for="alias" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Alias</label>
+				<input name="alias" id="alias" type="text" maxlength="32" required
+					class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+					placeholder="GTA"/>
+			</div>
+			<div>
+				<label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom du jeu</label>
+				<input name="name" id="name" type="text" maxlength="256" required
+					class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+					placeholder="Grand Theft Auto"/>
+			</div>
+		</div>
+		
+		<div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+			<p class="text-sm text-gray-600 dark:text-gray-400">
+				Si vous créez un alias <code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">GTA</code> → <code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">Grand Theft Auto</code>, 
+				alors la commande <code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">!protondb GTA 5</code> fera une recherche sur <strong class="text-gray-800 dark:text-gray-200">Grand Theft Auto 5</strong>.
+			</p>
+		</div>
+		
+		<div>
+			<button type="submit" 
+				class="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+				Ajouter l'alias
+			</button>
+		</div>
+	</form>
+</div>
 {% endif %}
 
-<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-	<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
-		<h2 class="text-lg font-medium text-slate-800 dark:text-white">Configuration</h2>
-	</div>
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+	<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Configuration</h2>
 	
-	<form action="{{ url_for('updateConfiguration') }}" method="POST" class="p-5 space-y-6">
-		<label class="flex items-center gap-3 cursor-pointer">
-			<input type="checkbox" name="proton_db_enable_enable" {% if configuration.getValue('proton_db_enable_enable') %}checked{% endif %} class="w-4 h-4 text-slate-600 bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-slate-500">
-			<span class="text-sm text-slate-700 dark:text-slate-300">Activer la commande ProtonDB</span>
-		</label>
-
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+	<form action="{{ url_for('updateConfiguration') }}" method="POST" class="space-y-6">
+		<div class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+			<input type="checkbox" name="proton_db_enable_enable" id="proton_db_enable_enable"
+				{% if configuration.getValue('proton_db_enable_enable') %}checked{% endif %}
+				class="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500 dark:bg-gray-700">
+			<label for="proton_db_enable_enable" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+				Activer la commande ProtonDB
+			</label>
+		</div>
+		
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 			<div>
-				<label for="proton_db_api_id" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">API ID</label>
-				<input type="text" name="proton_db_api_id" id="proton_db_api_id" value="{{ configuration.getValue('proton_db_api_id') }}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
+				<label for="proton_db_api_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">API ID</label>
+				<input name="proton_db_api_id" id="proton_db_api_id" type="text"
+					class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+					value="{{ configuration.getValue('proton_db_api_id') }}"/>
 			</div>
 			<div>
-				<label for="proton_db_api_key" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Clé API</label>
-				<input type="text" name="proton_db_api_key" id="proton_db_api_key" value="{{ configuration.getValue('proton_db_api_key') }}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
+				<label for="proton_db_api_key" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Clé API</label>
+				<input name="proton_db_api_key" id="proton_db_api_key" type="text"
+					class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+					value="{{ configuration.getValue('proton_db_api_key') }}"/>
 			</div>
 		</div>
-
-		<button type="submit" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-colors">
-			Enregistrer
-		</button>
+		
+		<div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+			<p class="text-sm text-amber-800 dark:text-amber-200">
+				Pour trouver les clés : ouvrez l'outil d'inspection (F12) dans votre navigateur, faites une recherche de jeux sur ProtonDB, 
+				puis cherchez les clés dans les requêtes (onglet Réseau/Network). 
+				<a href="/static/img/algolia-key.jpg" target="_blank" class="underline hover:no-underline">Voir l'exemple</a>
+			</p>
+		</div>
+		
+		<div>
+			<button type="submit" 
+				class="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+				Enregistrer la configuration
+			</button>
+		</div>
 	</form>
-
-	<div class="px-5 pb-5">
-		<div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
-			<p class="text-sm font-medium text-slate-800 dark:text-white mb-2">Comment trouver les clés API ?</p>
-			<ol class="list-decimal list-inside space-y-1 text-sm text-slate-600 dark:text-slate-400">
-				<li>Ouvrez l'outil d'inspection de votre navigateur (F12)</li>
-				<li>Allez dans l'onglet Réseau/Network</li>
-				<li>Faites une recherche de jeu sur ProtonDB</li>
-				<li>Cherchez les clés dans les requêtes réseau</li>
-			</ol>
-			<a href="/static/img/algolia-key.jpg" target="_blank" class="inline-block mt-3 text-sm text-slate-600 dark:text-slate-400 hover:underline">
-				Voir l'exemple en image
-			</a>
-		</div>
-	</div>
 </div>
 {% endblock %}

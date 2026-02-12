@@ -1,135 +1,335 @@
 {% extends "template.html" %}
 
 {% block content %}
-<div class="mb-6">
-	<h1 class="text-2xl font-semibold text-slate-800 dark:text-white mb-1">Alertes Live</h1>
-	<p class="text-sm text-slate-600 dark:text-slate-400">
-		Chaînes Twitch surveillées. Vérification toutes les 5 minutes, maximum 100 chaînes.
-	</p>
+<div class="mb-8">
+	<h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Alerte Live</h1>
+	<div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+		<p class="text-gray-700 dark:text-gray-300">
+			Liste des chaînes surveillées pour les alertes de live Twitch.
+			Le bot vérifie toutes les 5 minutes qui est en live dans la liste en dessous.
+			Le bot enregistre le status de stream toutes les 5 minutes, quand le status passe de "hors-ligne" à "en ligne" alors
+			le bot enverra une notification (embed Discord) sur le canal choisi.
+			<span class="font-medium text-blue-600 dark:text-blue-400">Ne peut surveiller qu'au maximum 100 chaînes.</span>
+		</p>
+	</div>
 </div>
 
 {% if not alert %}
-<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
-	<div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
-		<h2 class="text-lg font-medium text-slate-800 dark:text-white">Alertes configurées</h2>
-	</div>
-	<div class="overflow-x-auto">
-		<table class="w-full">
-			<thead>
-				<tr class="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-					<th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Chaîne</th>
-					<th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Canal Discord</th>
-					<th class="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Message</th>
-					<th class="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Actions</th>
-				</tr>
-			</thead>
-			<tbody class="divide-y divide-slate-200 dark:divide-slate-700">
-				{% for alert in alerts %}
-				<tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-					<td class="px-4 py-3">
-						<a href="https://www.twitch.tv/{{ alert.login }}" target="_blank" class="text-sm font-medium text-slate-700 dark:text-slate-300 hover:underline">{{ alert.login }}</a>
-					</td>
-					<td class="px-4 py-3">
-						<span class="text-sm text-slate-600 dark:text-slate-400">#{{ alert.notify_channel_name }}</span>
-					</td>
-					<td class="px-4 py-3 text-sm text-slate-600 dark:text-slate-400 max-w-xs">
-						<div class="line-clamp-2">{{ alert.message }}</div>
-					</td>
-					<td class="px-4 py-3">
-						<div class="flex items-center justify-end gap-2">
-							<a href="{{ url_for('toggleLiveAlert', id = alert.id) }}" class="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors" title="{{ 'Désactiver' if alert.enable else 'Activer' }}">
-								{% if alert.enable %}
-								<span class="text-green-600 dark:text-green-500">Actif</span>
-								{% else %}
-								<span class="text-slate-400">Inactif</span>
-								{% endif %}
+<div class="mb-8">
+	<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Alertes configurées</h2>
+	<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+		<div class="overflow-x-auto">
+			<table class="w-full">
+				<thead class="bg-gray-50 dark:bg-gray-700">
+					<tr>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Chaîne</th>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Canal</th>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Message / Embed</th>
+						<th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" title="Le bot affichera 'Regarde [streamer]' comme activité">Activité</th>
+						<th class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+					{% for alert in alerts %}
+					<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+						<td class="px-6 py-4 whitespace-nowrap">
+							<a href="https://www.twitch.tv/{{alert.login}}" target="_blank" class="text-purple-600 dark:text-purple-400 hover:underline font-medium">{{alert.login}}</a>
+						</td>
+						<td class="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-300">{{alert.notify_channel_name}}</td>
+						<td class="px-6 py-4 text-gray-600 dark:text-gray-400 max-w-md truncate">{{alert.message or '(embed)'}}</td>
+						<td class="px-6 py-4 whitespace-nowrap text-center">
+							<a href="{{ url_for('toggleWatchActivity', id = alert.id) }}" 
+								class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" 
+								title="{{ 'Désactiver l\'activité' if alert.watch_activity else 'Activer l\'activité' }}">
+								{{ '👁️' if alert.watch_activity else '👁️‍🗨️' }}
 							</a>
-							<a href="{{ url_for('openEditLiveAlert', id = alert.id) }}" class="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors">
-								Modifier
-							</a>
-							<a href="{{ url_for('delLiveAlert', id = alert.id) }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette alerte ?')" class="text-sm text-slate-500 hover:text-red-600 dark:hover:text-red-400 transition-colors">
-								Supprimer
-							</a>
-						</div>
-					</td>
-				</tr>
-				{% else %}
-				<tr>
-					<td colspan="4" class="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-						Aucune alerte configurée
-					</td>
-				</tr>
-				{% endfor %}
-			</tbody>
-		</table>
+						</td>
+						<td class="px-6 py-4 whitespace-nowrap text-center">
+							<div class="flex items-center justify-center gap-2">
+								<a href="{{ url_for('toggleLiveAlert', id = alert.id) }}" 
+									class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" 
+									title="{{ 'Désactiver' if alert.enable else 'Activer' }}">
+									{{ '✅' if alert.enable else '❌' }}
+								</a>
+								<a href="{{ url_for('openEditLiveAlert', id = alert.id) }}" 
+									class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors text-blue-600 dark:text-blue-400" 
+									title="Modifier">
+									<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+								</a>
+								<a href="{{ url_for('delLiveAlert', id = alert.id) }}"
+									onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette alerte ?')" 
+									class="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-red-600 dark:text-red-400"
+									title="Supprimer">
+									<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+								</a>
+							</div>
+						</td>
+					</tr>
+					{% else %}
+					<tr>
+						<td colspan="5" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+							Aucune alerte configurée. Ajoutez-en une ci-dessous.
+						</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
 	</div>
 </div>
 {% endif %}
 
-<div class="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5">
-	<h2 class="text-lg font-medium text-slate-800 dark:text-white mb-5">
-		{% if alert %}Modifier l'alerte{% else %}Ajouter une alerte{% endif %}
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+	<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+		{{ 'Modifier l\'alerte' if alert else 'Ajouter une alerte de Live' }}
 	</h2>
-	
-	<form action="{{ url_for('submitEditLiveAlert', id = alert.id) if alert else url_for('addLiveAlert') }}" method="POST" class="space-y-6">
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-			<div>
-				<label for="login" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Chaîne Twitch</label>
-				<input type="text" name="login" id="login" maxlength="32" required value="{{ alert.login if alert else '' }}" placeholder="chainesteve" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
-				<p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Le login de la chaîne, ex: chainesteve</p>
-			</div>
-			
-			<div>
-				<label for="notify_channel" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Canal de Notification</label>
-				<select name="notify_channel" id="notify_channel" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all">
-					{% for channel in channels %}
-					<option value="{{ channel.id }}" {% if alert and alert.notify_channel == channel.id %}selected{% endif %}>{{ channel.name }}</option>
-					{% endfor %}
-				</select>
-			</div>
-		</div>
-		
+
+	<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 		<div>
-			<label for="message" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Message de notification</label>
-			<textarea name="message" id="message" rows="4" required placeholder="🔴 **{0.user_name}** est en live !" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all resize-none">{{ alert.message if alert else '' }}</textarea>
+			<form id="live-alert-form" action="{{ url_for('submitEditLiveAlert', id = alert.id) if alert else url_for('addLiveAlert') }}" method="POST" class="space-y-6">
+				<div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-4">
+					<h3 class="font-medium text-gray-800 dark:text-gray-200">Configuration de base</h3>
+					
+					<div>
+						<label for="login" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Chaîne Twitch</label>
+						<input name="login" id="login" type="text" maxlength="32" required
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+							placeholder="chainesteve"
+							value="{{alert.login if alert}}"/>
+					</div>
+					
+					<div>
+						<label for="notify_channel" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Canal de notification Discord</label>
+						<select name="notify_channel" id="notify_channel"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+							{% for channel in channels %}
+							<option value="{{channel.id}}" {% if alert and alert.notify_channel == channel.id %}selected{% endif %}>{{channel.name}}</option>
+							{% endfor %}
+						</select>
+					</div>
+					
+					<div>
+						<label for="message" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message (optionnel, avant l'embed)</label>
+						<textarea name="message" id="message" rows="2"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-y"
+							placeholder="Message envoyé avant l'embed">{{alert.message if alert}}</textarea>
+						<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Variables: {user_name}, {title}, [lien](https://www.twitch.tv/{user_login})</p>
+					</div>
+					
+					<div class="flex items-center gap-3">
+						<input type="checkbox" name="watch_activity" id="watch_activity" value="1"
+							class="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500 dark:bg-gray-700"
+							{% if alert and alert.watch_activity %}checked{% endif %}>
+						<label for="watch_activity" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+							Afficher "Regarde ce stream" comme activité du bot Discord
+						</label>
+					</div>
+				</div>
+
+				<div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-4">
+					<h3 class="font-medium text-gray-800 dark:text-gray-200">Personnalisation de l'embed Discord</h3>
+					
+					<div>
+						<label for="embed_title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Titre de l'embed</label>
+						<input name="embed_title" id="embed_title" type="text" maxlength="256"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+							placeholder="{title}"
+							value="{{alert.embed_title if alert else '{title}'}}"/>
+						<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Variables: {title}, {user_name}, {game_name}, {stream_url}, {user_login}</p>
+					</div>
+					
+					<div>
+						<label for="embed_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description de l'embed</label>
+						<textarea name="embed_description" id="embed_description" rows="2"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-y"
+							placeholder="Description optionnelle">{{alert.embed_description if alert}}</textarea>
+					</div>
+					
+					<div class="grid grid-cols-2 gap-4">
+						<div>
+							<label for="embed_color" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Couleur</label>
+							<div class="flex items-center gap-2">
+								<input name="embed_color" id="embed_color" type="color" 
+									class="w-12 h-10 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
+									value="#{{alert.embed_color if alert else '9146FF'}}"/>
+								<input type="text" id="embed_color_text" maxlength="6"
+									class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm"
+									value="{{alert.embed_color if alert else '9146FF'}}" placeholder="9146FF"/>
+							</div>
+						</div>
+						<div>
+							<label for="embed_author_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom de l'auteur</label>
+							<input name="embed_author_name" id="embed_author_name" type="text" maxlength="256"
+								class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+								placeholder="{user_name}"
+								value="{{alert.embed_author_name if alert}}"/>
+						</div>
+					</div>
+					
+					<div>
+						<label for="embed_author_icon" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Icône de l'auteur (URL)</label>
+						<input name="embed_author_icon" id="embed_author_icon" type="text" maxlength="512"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+							placeholder="Laissez vide pour l'avatar Twitch"
+							value="{{alert.embed_author_icon if alert}}"/>
+					</div>
+					
+					<div>
+						<label for="embed_footer" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pied de page</label>
+						<input name="embed_footer" id="embed_footer" type="text" maxlength="2048"
+							class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+							placeholder="Texte optionnel en bas"
+							value="{{alert.embed_footer if alert}}"/>
+					</div>
+					
+					<div class="flex flex-wrap gap-4">
+						<label class="flex items-center gap-2 cursor-pointer">
+							<input type="checkbox" name="embed_thumbnail" id="embed_thumbnail" 
+								{% if not alert or alert.embed_thumbnail %}checked{% endif %}
+								class="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500 dark:bg-gray-700">
+							<span class="text-sm text-gray-700 dark:text-gray-300">Miniature (preview)</span>
+						</label>
+						<label class="flex items-center gap-2 cursor-pointer">
+							<input type="checkbox" name="embed_image" id="embed_image" 
+								{% if not alert or alert.embed_image %}checked{% endif %}
+								class="w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500 dark:bg-gray-700">
+							<span class="text-sm text-gray-700 dark:text-gray-300">Image principale</span>
+						</label>
+					</div>
+				</div>
+
+				<div class="flex items-center gap-4">
+					<button type="submit" 
+						class="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+						{{ 'Enregistrer' if alert else 'Ajouter l\'alerte' }}
+					</button>
+					{% if alert %}
+					<a href="{{ url_for('openLiveAlert') }}" 
+						class="px-6 py-2.5 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 font-medium rounded-lg transition-colors">
+						Annuler
+					</a>
+					{% endif %}
+				</div>
+			</form>
 		</div>
-		
-		<div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
-			<p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Variables disponibles :</p>
-			<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-				<div class="flex items-center gap-2">
-					<code class="px-2 py-0.5 bg-slate-200 dark:bg-slate-600 rounded text-xs font-mono">{0.user_login}</code>
-					<span class="text-slate-600 dark:text-slate-400">Lien vers la chaîne</span>
+
+		<div>
+			<h3 class="font-medium text-gray-800 dark:text-gray-200 mb-4">Prévisualisation de l'embed Discord</h3>
+			<div id="embed-preview" class="bg-[#2f3136] rounded p-4 font-sans text-[#dcddde] max-w-xl border-l-4" style="border-left-color: #9146FF;">
+				<div id="embed-author" class="flex items-center mb-2 text-sm">
+					<img id="embed-author-icon" src="https://static-cdn.jtvnw.net/ttv-favicon/favicon-32x32.png" class="w-5 h-5 rounded-full mr-2" onerror="this.style.display='none'"/>
+					<span id="embed-author-name" class="font-semibold">Nom du streamer</span>
 				</div>
-				<div class="flex items-center gap-2">
-					<code class="px-2 py-0.5 bg-slate-200 dark:bg-slate-600 rounded text-xs font-mono">{0.user_name}</code>
-					<span class="text-slate-600 dark:text-slate-400">Nom du streamer</span>
+				<a id="embed-title" href="#" class="text-[#00aff4] no-underline text-base font-semibold block mb-2">Titre du stream</a>
+				<div id="embed-description" class="text-sm leading-relaxed mb-2 text-[#dcddde]"></div>
+				<div id="embed-thumbnail-container" class="my-2">
+					<img id="embed-thumbnail" src="" class="max-w-[80px] max-h-[80px] rounded float-right ml-4 hidden"/>
 				</div>
-				<div class="flex items-center gap-2">
-					<code class="px-2 py-0.5 bg-slate-200 dark:bg-slate-600 rounded text-xs font-mono">{0.game_name}</code>
-					<span class="text-slate-600 dark:text-slate-400">Jeu en cours</span>
+				<div id="embed-image-container" class="mt-4">
+					<img id="embed-image" src="https://static-cdn.jtvnw.net/previews-ttv/live_user_chaine-320x180.jpg" class="max-w-full rounded hidden"/>
 				</div>
-				<div class="flex items-center gap-2">
-					<code class="px-2 py-0.5 bg-slate-200 dark:bg-slate-600 rounded text-xs font-mono">{0.title}</code>
-					<span class="text-slate-600 dark:text-slate-400">Titre du stream</span>
-				</div>
-				<div class="flex items-center gap-2">
-					<code class="px-2 py-0.5 bg-slate-200 dark:bg-slate-600 rounded text-xs font-mono">{0.language}</code>
-					<span class="text-slate-600 dark:text-slate-400">Langue du stream</span>
-				</div>
+				<div id="embed-footer" class="mt-2 text-xs text-[#72767d]"></div>
+			</div>
+			<p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Cette prévisualisation est approximative.</p>
+			
+			<div class="mt-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+				<h4 class="font-medium text-gray-800 dark:text-gray-200 mb-2">Variables disponibles (embed)</h4>
+				<ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+					<li><code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">{user_login}</code> — Login Twitch</li>
+					<li><code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">{user_name}</code> — Nom d'affichage</li>
+					<li><code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">{game_name}</code> — Jeu en cours</li>
+					<li><code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">{title}</code> — Titre du stream</li>
+					<li><code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">{language}</code> — Langue</li>
+					<li><code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">{stream_url}</code> — Lien Twitch</li>
+					<li><code class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-600 rounded">{thumbnail}</code> — URL preview</li>
+				</ul>
 			</div>
 		</div>
-		
-		<div class="flex items-center justify-end gap-3">
-			{% if alert %}
-			<a href="{{ url_for('openLiveAlert') }}" class="px-4 py-2 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-				Annuler
-			</a>
-			{% endif %}
-			<button type="submit" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-colors">
-				{% if alert %}Enregistrer{% else %}Ajouter{% endif %}
-			</button>
-		</div>
-	</form>
+	</div>
 </div>
+
+<script>
+	function formatText(text, vars) {
+		if (!text) return '';
+		return text.replace(/\{(\w+)\}/g, function(match, key) {
+			return vars[key] !== undefined && vars[key] !== null ? vars[key] : match;
+		});
+	}
+
+	function updatePreview() {
+		const embedTitle = document.getElementById('embed_title').value || '{title}';
+		const embedDescription = document.getElementById('embed_description').value || '';
+		const embedColor = document.getElementById('embed_color_text').value || '9146FF';
+		const embedAuthorName = document.getElementById('embed_author_name').value || '{user_name}';
+		const embedAuthorIcon = document.getElementById('embed_author_icon').value || '';
+		const embedFooter = document.getElementById('embed_footer').value || '';
+		const embedThumbnail = document.getElementById('embed_thumbnail').checked;
+		const embedImage = document.getElementById('embed_image').checked;
+
+		const vars = {
+			user_login: 'chainesteve',
+			user_name: 'ChaîneSteve',
+			game_name: 'Minecraft',
+			title: '🔴 Live chill avec les viewers',
+			language: 'fr',
+			stream_url: 'https://www.twitch.tv/chainesteve',
+			thumbnail: 'https://static-cdn.jtvnw.net/previews-ttv/live_user_chainesteve-320x180.jpg'
+		};
+
+		document.getElementById('embed-title').textContent = formatText(embedTitle, vars);
+		document.getElementById('embed-title').href = vars.stream_url;
+		document.getElementById('embed-description').textContent = formatText(embedDescription, vars);
+		document.getElementById('embed-author-name').textContent = formatText(embedAuthorName, vars);
+		document.getElementById('embed-author-icon').src = embedAuthorIcon || 'https://static-cdn.jtvnw.net/ttv-favicon/favicon-32x32.png';
+		document.getElementById('embed-author-icon').style.display = embedAuthorIcon ? '' : 'none';
+		document.getElementById('embed-footer').textContent = formatText(embedFooter, vars);
+		
+		document.getElementById('embed-preview').style.borderLeftColor = '#' + embedColor;
+		
+		if (embedThumbnail) {
+			document.getElementById('embed-thumbnail').src = vars.thumbnail;
+			document.getElementById('embed-thumbnail').style.display = 'block';
+		} else {
+			document.getElementById('embed-thumbnail').style.display = 'none';
+		}
+		
+		if (embedImage) {
+			document.getElementById('embed-image').src = vars.thumbnail;
+			document.getElementById('embed-image').style.display = 'block';
+		} else {
+			document.getElementById('embed-image').style.display = 'none';
+		}
+	}
+
+	const colorInput = document.getElementById('embed_color');
+	if (colorInput) {
+		colorInput.addEventListener('input', function(e) {
+			document.getElementById('embed_color_text').value = e.target.value.substring(1).toUpperCase();
+			updatePreview();
+		});
+	}
+
+	const colorText = document.getElementById('embed_color_text');
+	if (colorText) {
+		colorText.addEventListener('input', function(e) {
+			const val = e.target.value.replace(/[^0-9A-Fa-f]/g, '').substring(0, 6);
+			e.target.value = val;
+			if (val.length === 6) {
+				document.getElementById('embed_color').value = '#' + val;
+				updatePreview();
+			}
+		});
+	}
+
+	const formFields = ['embed_title', 'embed_description', 'embed_author_name', 'embed_author_icon', 'embed_footer', 'embed_thumbnail', 'embed_image'];
+	formFields.forEach(function(field) {
+		const el = document.getElementById(field);
+		if (el) {
+			el.addEventListener('input', updatePreview);
+			el.addEventListener('change', updatePreview);
+		}
+	});
+
+	updatePreview();
+</script>
 {% endblock %}
