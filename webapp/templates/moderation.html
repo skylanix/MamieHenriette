@@ -95,6 +95,10 @@
 					<code class="text-slate-700 dark:text-slate-300 font-mono">!banlist</code>
 					<span class="text-slate-500 dark:text-slate-400">Liste des utilisateurs bannis</span>
 				</div>
+				<div class="px-5 py-3 flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+					<code class="text-slate-700 dark:text-slate-300 font-mono">!transfert #canal message_id</code>
+					<span class="text-slate-500 dark:text-slate-400">Transfère un message vers un autre canal (textuel, thread ou forum)</span>
+				</div>
 			</div>
 		</div>
 	</details>
@@ -129,6 +133,10 @@
 						<span class="text-xs font-medium text-yellow-600 dark:text-yellow-400">Warn</span>
 						{% elif mod_event.type == 'unban' %}
 						<span class="text-xs font-medium text-green-600 dark:text-green-400">Unban</span>
+						{% elif mod_event.type == 'transfer' %}
+						<span class="text-xs font-medium text-blue-600 dark:text-blue-400">Transfert</span>
+						{% elif mod_event.type == 'timeout' %}
+						<span class="text-xs font-medium text-purple-600 dark:text-purple-400">Timeout</span>
 						{% else %}
 						<span class="text-xs font-medium text-slate-600 dark:text-slate-400">{{ mod_event.type }}</span>
 						{% endif %}

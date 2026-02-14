@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 from database import db
 from database.helpers import ConfigurationHelper
 from database.models import ModerationEvent
-from discord import Message
+from discord import Message, TextChannel, ForumChannel, Thread
 
 def _get_local_tz():
 	tz_name = os.environ.get('APP_TZ') or os.environ.get('TZ') or 'Europe/Paris'
@@ -1061,8 +1061,9 @@ async def handle_staff_help_command(message: Message, bot):
 				"  Transfère un message vers un autre canal\n"
 				"  *Alias: !transfer, !move*\n"
 				"  Ex: `!transfert #entraide 123456789012345678`\n"
-				"  Ex: `!transfert #general https://discord.com/channels/.../...`\n"
-				"  Le message sera envoyé comme si c'était l'auteur original"
+				"  Ex: `!transfert #général https://discord.com/channels/.../...`\n"
+				"  Le message sera envoyé comme si c'était l'auteur original\n"
+				"  Supporte les canaux textuels, threads et forums (crée un post)"
 			),
 			inline=False
 		)
@@ -1473,6 +1474,17 @@ async def handle_transfer_command(message: Message, bot):
 		asyncio.create_task(delete_after_delay(msg))
 		return
 	
+	# Vérifier que le canal de destination est compatible
+	if not isinstance(target_channel, (TextChannel, ForumChannel, Thread)):
+		embed = discord.Embed(
+			title="❌ Erreur",
+			description=f"Le transfert n'est pas supporté vers ce type de canal. Utilisez un canal textuel, un forum ou un thread.",
+			color=discord.Color.red()
+		)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
+		return
+	
 	# Récupérer le message à transférer
 	message_id = None
 	source_channel = message.channel
@@ -1543,30 +1555,6 @@ async def handle_transfer_command(message: Message, bot):
 	# Raison du transfert (optionnel)
 	reason = parts[3] if len(parts) > 3 else "Message posté dans le mauvais canal"
 	
-	# Créer un webhook pour envoyer le message en tant que l'auteur original
-	webhooks = await target_channel.webhooks()
-	webhook = None
-	
-	# Chercher un webhook existant créé par le bot
-	for wh in webhooks:
-		if wh.user == bot.user:
-			webhook = wh
-			break
-	
-	# Créer un webhook si nécessaire
-	if not webhook:
-		try:
-			webhook = await target_channel.create_webhook(name="Mamie Henriette - Transfert")
-		except discord.Forbidden:
-			embed = discord.Embed(
-				title="❌ Erreur",
-				description="Je n'ai pas la permission de créer un webhook dans le canal de destination.",
-				color=discord.Color.red()
-			)
-			msg = await message.channel.send(embed=embed)
-			asyncio.create_task(delete_after_delay(msg))
-			return
-	
 	# Préparer le contenu du message
 	content = original_message.content
 	embeds = original_message.embeds
@@ -1583,73 +1571,169 @@ async def handle_transfer_command(message: Message, bot):
 		except Exception as e:
 			logging.error(f"Erreur lors du téléchargement de la pièce jointe: {e}")
 	
-	# Envoyer le message via le webhook
-	try:
-		await webhook.send(
-			content=content,
-			username=original_message.author.display_name,
-			avatar_url=original_message.author.display_avatar.url,
-			embeds=embeds[:10] if embeds else [],  # Discord limite à 10 embeds
-			files=files_to_send,
-			allowed_mentions=discord.AllowedMentions.none()
-		)
-		
-		# Supprimer le message original
+	# Gestion différente selon le type de canal
+	transferred_message = None
+	
+	if isinstance(target_channel, ForumChannel):
+		# Pour un forum : créer un nouveau post (thread)
 		try:
-			await original_message.delete()
-		except discord.Forbidden:
-			logging.warning(f"Impossible de supprimer le message original (ID: {message_id})")
+			# Générer un titre pour le post avec le nom de l'auteur original
+			post_title = f"{original_message.author.display_name} - "
+			if content and len(content) > 0:
+				# Utiliser le contenu pour le reste du titre
+				remaining_length = 100 - len(post_title)
+				post_title += content[:remaining_length]
+			else:
+				post_title += "Message transféré"
+			
+			if len(post_title) > 100:
+				post_title = post_title[:97] + "..."
+			
+			# Ajouter un message informatif au début du contenu
+			transfer_notice = f"**Message original de {original_message.author.mention}**\n"
+			transfer_notice += f"*Ce message a été transféré par un membre du staff depuis {source_channel.mention}*\n"
+			transfer_notice += "─" * 50 + "\n\n"
+			
+			# Combiner le message informatif avec le contenu original
+			full_content = transfer_notice + (content or "")
+			
+			# Créer le post dans le forum
+			thread = await target_channel.create_thread(
+				name=post_title,
+				content=full_content,
+				embeds=embeds[:10] if embeds else [],
+				files=files_to_send,
+				reason=f"Transfert depuis {source_channel.name} par {message.author.name}"
+			)
+			transferred_message = thread.message  # Le message initial du thread
+			
+		except discord.HTTPException as e:
+			logging.error(f"Erreur lors de la création du post dans le forum: {e}")
+			embed = discord.Embed(
+				title="❌ Erreur",
+				description=f"Une erreur est survenue lors de la création du post dans le forum: {str(e)}",
+				color=discord.Color.red()
+			)
+			msg = await message.channel.send(embed=embed)
+			asyncio.create_task(delete_after_delay(msg))
+			return
+			
+	else:
+		# Pour un canal textuel ou thread : utiliser un webhook
+		# Créer un webhook pour envoyer le message en tant que l'auteur original
+		webhooks = await target_channel.webhooks()
+		webhook = None
 		
-		# Envoyer un message de confirmation dans le canal source
-		local_now = _to_local(datetime.now(timezone.utc))
-		embed = discord.Embed(
-			title="✅ Message transféré",
-			description=f"Le message de **{original_message.author.name}** a été transféré vers {target_channel.mention}",
-			color=discord.Color.green(),
-			timestamp=datetime.now(timezone.utc)
-		)
-		embed.add_field(name="👤 Auteur original", value=f"{original_message.author.mention}", inline=True)
-		embed.add_field(name="📤 Canal source", value=source_channel.mention, inline=True)
-		embed.add_field(name="📥 Canal destination", value=target_channel.mention, inline=True)
-		embed.add_field(name="🛡️ Modérateur", value=message.author.mention, inline=True)
-		embed.add_field(name="📝 Raison", value=reason, inline=False)
+		# Chercher un webhook existant créé par le bot
+		for wh in webhooks:
+			if wh.user == bot.user:
+				webhook = wh
+				break
 		
-		confirmation_msg = await source_channel.send(embed=embed)
-		asyncio.create_task(delete_after_delay(confirmation_msg))
+		# Créer un webhook si nécessaire
+		if not webhook:
+			try:
+				webhook = await target_channel.create_webhook(name="Mamie Henriette - Transfert")
+			except discord.Forbidden:
+				embed = discord.Embed(
+					title="❌ Erreur",
+					description="Je n'ai pas la permission de créer un webhook dans le canal de destination.",
+					color=discord.Color.red()
+				)
+				msg = await message.channel.send(embed=embed)
+				asyncio.create_task(delete_after_delay(msg))
+				return
 		
-		# Logger dans le canal de modération
-		log_embed = discord.Embed(
-			title="📨 Transfert de message",
-			description=f"Un message de **{original_message.author.name}** a été transféré",
-			color=discord.Color.blue(),
-			timestamp=datetime.now(timezone.utc)
-		)
-		log_embed.add_field(name="👤 Auteur original", value=f"{original_message.author.name}\n`{original_message.author.id}`", inline=True)
-		log_embed.add_field(name="🛡️ Modérateur", value=f"**{message.author.name}**", inline=True)
-		log_embed.add_field(name="📅 Date et heure", value=local_now.strftime('%d/%m/%Y à %H:%M'), inline=True)
-		log_embed.add_field(name="📤 De", value=source_channel.mention, inline=True)
-		log_embed.add_field(name="📥 Vers", value=target_channel.mention, inline=True)
-		log_embed.add_field(name="📝 Raison", value=reason, inline=False)
-		
-		# Ajouter un aperçu du contenu
-		preview = content[:100] + "..." if len(content) > 100 else content
-		if preview:
-			log_embed.add_field(name="💬 Aperçu du message", value=preview, inline=False)
-		
-		log_embed.set_footer(text=f"ID Auteur: {original_message.author.id} • Serveur: {message.guild.name}")
-		
-		await send_to_moderation_log_channel(bot, log_embed)
-		
-		# Supprimer la commande de transfert
-		await safe_delete_message(message)
-		
-	except discord.HTTPException as e:
-		logging.error(f"Erreur lors du transfert du message: {e}")
-		embed = discord.Embed(
-			title="❌ Erreur",
-			description=f"Une erreur est survenue lors du transfert du message: {str(e)}",
-			color=discord.Color.red()
-		)
-		msg = await message.channel.send(embed=embed)
-		asyncio.create_task(delete_after_delay(msg))
+		# Envoyer le message via le webhook
+		try:
+			transferred_message = await webhook.send(
+				content=content,
+				username=original_message.author.display_name,
+				avatar_url=original_message.author.display_avatar.url,
+				embeds=embeds[:10] if embeds else [],
+				files=files_to_send,
+				allowed_mentions=discord.AllowedMentions.none(),
+				wait=True  # Attendre pour récupérer le message envoyé
+			)
+		except discord.HTTPException as e:
+			logging.error(f"Erreur lors du transfert du message: {e}")
+			embed = discord.Embed(
+				title="❌ Erreur",
+				description=f"Une erreur est survenue lors du transfert du message: {str(e)}",
+				color=discord.Color.red()
+			)
+			msg = await message.channel.send(embed=embed)
+			asyncio.create_task(delete_after_delay(msg))
+			return
+	
+	# Supprimer le message original
+	try:
+		await original_message.delete()
+	except discord.Forbidden:
+		logging.warning(f"Impossible de supprimer le message original (ID: {message_id})")
+	
+	# Enregistrer l'événement de transfert dans la base de données
+	transfer_details = f"De {source_channel.name} vers {target_channel.name}"
+	if isinstance(target_channel, ForumChannel):
+		transfer_details += " (forum)"
+	
+	transfer_event = ModerationEvent(
+		type='transfer',
+		username=original_message.author.name,
+		discord_id=str(original_message.author.id),
+		created_at=datetime.now(timezone.utc),
+		reason=f"{reason} | {transfer_details}",
+		staff_id=str(message.author.id),
+		staff_name=message.author.name
+	)
+	db.session.add(transfer_event)
+	_commit_with_retry()
+	
+	# Envoyer un message de confirmation dans le canal source
+	local_now = _to_local(datetime.now(timezone.utc))
+	destination_info = target_channel.mention if isinstance(target_channel, (TextChannel, Thread)) else f"le forum {target_channel.name}"
+	
+	embed = discord.Embed(
+		title="✅ Message transféré",
+		description=f"Le message de **{original_message.author.name}** a été transféré vers {destination_info}",
+		color=discord.Color.green(),
+		timestamp=datetime.now(timezone.utc)
+	)
+	embed.add_field(name="👤 Auteur original", value=f"{original_message.author.mention}", inline=True)
+	embed.add_field(name="📤 Canal source", value=source_channel.mention, inline=True)
+	embed.add_field(name="📥 Canal destination", value=destination_info, inline=True)
+	embed.add_field(name="🛡️ Modérateur", value=message.author.mention, inline=True)
+	embed.add_field(name="📝 Raison", value=reason, inline=False)
+	
+	if isinstance(target_channel, ForumChannel):
+		embed.add_field(name="ℹ️ Type", value="Nouveau post créé dans le forum", inline=False)
+	
+	confirmation_msg = await source_channel.send(embed=embed)
+	asyncio.create_task(delete_after_delay(confirmation_msg))
+	
+	# Logger dans le canal de modération
+	log_embed = discord.Embed(
+		title="📨 Transfert de message",
+		description=f"Un message de **{original_message.author.name}** a été transféré",
+		color=discord.Color.blue(),
+		timestamp=datetime.now(timezone.utc)
+	)
+	log_embed.add_field(name="👤 Auteur original", value=f"{original_message.author.name}\n`{original_message.author.id}`", inline=True)
+	log_embed.add_field(name="🛡️ Modérateur", value=f"**{message.author.name}**", inline=True)
+	log_embed.add_field(name="📅 Date et heure", value=local_now.strftime('%d/%m/%Y à %H:%M'), inline=True)
+	log_embed.add_field(name="📤 De", value=source_channel.mention, inline=True)
+	log_embed.add_field(name="📥 Vers", value=f"{target_channel.name} ({type(target_channel).__name__})", inline=True)
+	log_embed.add_field(name="📝 Raison", value=reason, inline=False)
+	
+	# Ajouter un aperçu du contenu
+	preview = content[:100] + "..." if content and len(content) > 100 else content
+	if preview:
+		log_embed.add_field(name="💬 Aperçu du message", value=preview, inline=False)
+	
+	log_embed.set_footer(text=f"ID Auteur: {original_message.author.id} • Serveur: {message.guild.name}")
+	
+	await send_to_moderation_log_channel(bot, log_embed)
+	
+	# Supprimer la commande de transfert
+	await safe_delete_message(message)
 
