@@ -1063,7 +1063,8 @@ async def handle_staff_help_command(message: Message, bot):
 				"  Ex: `!transfert #entraide 123456789012345678`\n"
 				"  Ex: `!transfert #général https://discord.com/channels/.../...`\n"
 				"  Le message sera envoyé comme si c'était l'auteur original\n"
-				"  Supporte les canaux textuels, threads et forums (crée un post)"
+				"  Supporte les canaux textuels, threads et forums (crée un post)\n"
+				"  Pour les forums, la raison devient le titre du post"
 			),
 			inline=False
 		)
@@ -1562,7 +1563,10 @@ async def handle_transfer_command(message: Message, bot):
 	if isinstance(target_channel, ForumChannel):
 		try:
 			post_title = f"{original_message.author.display_name} - "
-			if content and len(content) > 0:
+			if reason and reason != "Message posté dans le mauvais canal":
+				remaining_length = 100 - len(post_title)
+				post_title += reason[:remaining_length]
+			elif content and len(content) > 0:
 				remaining_length = 100 - len(post_title)
 				post_title += content[:remaining_length]
 			else:
