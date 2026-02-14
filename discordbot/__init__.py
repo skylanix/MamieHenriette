@@ -21,7 +21,8 @@ from discordbot.moderation import (
 	handle_ban_list_command,
 	handle_staff_help_command,
 	handle_timeout_command,
-	handle_say_command
+	handle_say_command,
+	handle_transfer_command
 )
 from discordbot.welcome import sendWelcomeMessage, sendLeaveMessage, updateInviteCache
 from discordbot.youtube import checkYouTubeVideos
@@ -165,6 +166,10 @@ async def on_message(message: Message):
 	
 	if command_name == '!say':
 		await handle_say_command(message, bot)
+		return
+	
+	if command_name in ['!transfert', '!transfer', '!move']:
+		await handle_transfer_command(message, bot)
 		return
 	
 	if command_name in ['!aide', '!help']:

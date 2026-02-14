@@ -4,6 +4,7 @@ import time
 import os
 import re
 import discord
+import io
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 from database import db
@@ -1055,7 +1056,13 @@ async def handle_staff_help_command(message: Message, bot):
 			value=(
 				"• `!say #channel message`\n"
 				"  Envoie un message en tant que bot\n"
-				"  Ex: `!say #annonces Nouvelle fonctionnalité !`"
+				"  Ex: `!say #annonces Nouvelle fonctionnalité !`\n\n"
+				"• `!transfert #canal message_id [raison]`\n"
+				"  Transfère un message vers un autre canal\n"
+				"  *Alias: !transfer, !move*\n"
+				"  Ex: `!transfert #entraide 123456789012345678`\n"
+				"  Ex: `!transfert #general https://discord.com/channels/.../...`\n"
+				"  Le message sera envoyé comme si c'était l'auteur original"
 			),
 			inline=False
 		)
@@ -1404,4 +1411,245 @@ async def handle_say_command(message: Message, bot):
 		asyncio.create_task(delete_after_delay(msg))
 	except Exception as e:
 		logging.error(f"Erreur lors de l'envoi du message: {e}")
+
+async def handle_transfer_command(message: Message, bot):
+	"""
+	Commande pour transférer un message d'un canal à un autre en préservant l'identité de l'auteur original.
+	Syntaxe: !transfert #canal_destination <message_id ou lien> [raison]
+	"""
+	if not has_staff_role(message.author.roles):
+		await send_access_denied(message.channel)
+		return
+	
+	parts = message.content.split(maxsplit=3)
+	
+	if len(parts) < 3:
+		embed = discord.Embed(
+			title="📋 Utilisation de la commande",
+			description="**Syntaxe :** `!transfert #canal message_id [raison]` ou `!transfert #canal lien_message [raison]`",
+			color=discord.Color.blue()
+		)
+		embed.add_field(
+			name="Exemples", 
+			value=(
+				"• `!transfert #entraide 123456789012345678`\n"
+				"• `!transfert #general https://discord.com/channels/.../...`\n"
+				"• `!transfert #entraide 123456789012345678 Message posté dans le mauvais canal`"
+			), 
+			inline=False
+		)
+		embed.add_field(
+			name="Aliases", 
+			value="`!transfert`, `!transfer`, `!move`", 
+			inline=False
+		)
+		embed.add_field(
+			name="💡 Astuce", 
+			value="Faites un clic droit sur un message → Copier l'identifiant du message, ou copiez le lien du message", 
+			inline=False
+		)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
+		return
+	
+	# Récupérer le canal de destination
+	target_channel = None
+	if message.channel_mentions:
+		target_channel = message.channel_mentions[0]
+	else:
+		try:
+			channel_id = int(parts[1].strip('<#>'))
+			target_channel = bot.get_channel(channel_id)
+		except ValueError:
+			pass
+	
+	if not target_channel:
+		embed = discord.Embed(
+			title="❌ Erreur",
+			description="Canal de destination invalide. Mentionnez un canal avec #canal.",
+			color=discord.Color.red()
+		)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
+		return
+	
+	# Récupérer le message à transférer
+	message_id = None
+	source_channel = message.channel
+	
+	# Vérifier si c'est un lien Discord
+	if 'discord.com/channels/' in parts[2]:
+		try:
+			# Format: https://discord.com/channels/guild_id/channel_id/message_id
+			link_parts = parts[2].split('/')
+			source_channel_id = int(link_parts[-2])
+			message_id = int(link_parts[-1])
+			source_channel = bot.get_channel(source_channel_id)
+			
+			if not source_channel:
+				embed = discord.Embed(
+					title="❌ Erreur",
+					description="Canal source introuvable.",
+					color=discord.Color.red()
+				)
+				msg = await message.channel.send(embed=embed)
+				asyncio.create_task(delete_after_delay(msg))
+				return
+		except (ValueError, IndexError):
+			embed = discord.Embed(
+				title="❌ Erreur",
+				description="Lien de message invalide.",
+				color=discord.Color.red()
+			)
+			msg = await message.channel.send(embed=embed)
+			asyncio.create_task(delete_after_delay(msg))
+			return
+	else:
+		# C'est un ID de message
+		try:
+			message_id = int(parts[2])
+		except ValueError:
+			embed = discord.Embed(
+				title="❌ Erreur",
+				description="ID de message invalide. Utilisez un ID numérique ou un lien Discord.",
+				color=discord.Color.red()
+			)
+			msg = await message.channel.send(embed=embed)
+			asyncio.create_task(delete_after_delay(msg))
+			return
+	
+	# Récupérer le message original
+	try:
+		original_message = await source_channel.fetch_message(message_id)
+	except discord.NotFound:
+		embed = discord.Embed(
+			title="❌ Erreur",
+			description="Message introuvable. Vérifiez l'ID ou le lien.",
+			color=discord.Color.red()
+		)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
+		return
+	except discord.Forbidden:
+		embed = discord.Embed(
+			title="❌ Erreur",
+			description="Je n'ai pas la permission d'accéder à ce message.",
+			color=discord.Color.red()
+		)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
+		return
+	
+	# Raison du transfert (optionnel)
+	reason = parts[3] if len(parts) > 3 else "Message posté dans le mauvais canal"
+	
+	# Créer un webhook pour envoyer le message en tant que l'auteur original
+	webhooks = await target_channel.webhooks()
+	webhook = None
+	
+	# Chercher un webhook existant créé par le bot
+	for wh in webhooks:
+		if wh.user == bot.user:
+			webhook = wh
+			break
+	
+	# Créer un webhook si nécessaire
+	if not webhook:
+		try:
+			webhook = await target_channel.create_webhook(name="Mamie Henriette - Transfert")
+		except discord.Forbidden:
+			embed = discord.Embed(
+				title="❌ Erreur",
+				description="Je n'ai pas la permission de créer un webhook dans le canal de destination.",
+				color=discord.Color.red()
+			)
+			msg = await message.channel.send(embed=embed)
+			asyncio.create_task(delete_after_delay(msg))
+			return
+	
+	# Préparer le contenu du message
+	content = original_message.content
+	embeds = original_message.embeds
+	files_to_send = []
+	
+	# Télécharger les pièces jointes
+	for attachment in original_message.attachments:
+		try:
+			file_data = await attachment.read()
+			files_to_send.append(discord.File(
+				fp=io.BytesIO(file_data),
+				filename=attachment.filename
+			))
+		except Exception as e:
+			logging.error(f"Erreur lors du téléchargement de la pièce jointe: {e}")
+	
+	# Envoyer le message via le webhook
+	try:
+		await webhook.send(
+			content=content,
+			username=original_message.author.display_name,
+			avatar_url=original_message.author.display_avatar.url,
+			embeds=embeds[:10] if embeds else [],  # Discord limite à 10 embeds
+			files=files_to_send,
+			allowed_mentions=discord.AllowedMentions.none()
+		)
+		
+		# Supprimer le message original
+		try:
+			await original_message.delete()
+		except discord.Forbidden:
+			logging.warning(f"Impossible de supprimer le message original (ID: {message_id})")
+		
+		# Envoyer un message de confirmation dans le canal source
+		local_now = _to_local(datetime.now(timezone.utc))
+		embed = discord.Embed(
+			title="✅ Message transféré",
+			description=f"Le message de **{original_message.author.name}** a été transféré vers {target_channel.mention}",
+			color=discord.Color.green(),
+			timestamp=datetime.now(timezone.utc)
+		)
+		embed.add_field(name="👤 Auteur original", value=f"{original_message.author.mention}", inline=True)
+		embed.add_field(name="📤 Canal source", value=source_channel.mention, inline=True)
+		embed.add_field(name="📥 Canal destination", value=target_channel.mention, inline=True)
+		embed.add_field(name="🛡️ Modérateur", value=message.author.mention, inline=True)
+		embed.add_field(name="📝 Raison", value=reason, inline=False)
+		
+		confirmation_msg = await source_channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(confirmation_msg))
+		
+		# Logger dans le canal de modération
+		log_embed = discord.Embed(
+			title="📨 Transfert de message",
+			description=f"Un message de **{original_message.author.name}** a été transféré",
+			color=discord.Color.blue(),
+			timestamp=datetime.now(timezone.utc)
+		)
+		log_embed.add_field(name="👤 Auteur original", value=f"{original_message.author.name}\n`{original_message.author.id}`", inline=True)
+		log_embed.add_field(name="🛡️ Modérateur", value=f"**{message.author.name}**", inline=True)
+		log_embed.add_field(name="📅 Date et heure", value=local_now.strftime('%d/%m/%Y à %H:%M'), inline=True)
+		log_embed.add_field(name="📤 De", value=source_channel.mention, inline=True)
+		log_embed.add_field(name="📥 Vers", value=target_channel.mention, inline=True)
+		log_embed.add_field(name="📝 Raison", value=reason, inline=False)
+		
+		# Ajouter un aperçu du contenu
+		preview = content[:100] + "..." if len(content) > 100 else content
+		if preview:
+			log_embed.add_field(name="💬 Aperçu du message", value=preview, inline=False)
+		
+		log_embed.set_footer(text=f"ID Auteur: {original_message.author.id} • Serveur: {message.guild.name}")
+		
+		await send_to_moderation_log_channel(bot, log_embed)
+		
+		# Supprimer la commande de transfert
+		await safe_delete_message(message)
+		
+	except discord.HTTPException as e:
+		logging.error(f"Erreur lors du transfert du message: {e}")
+		embed = discord.Embed(
+			title="❌ Erreur",
+			description=f"Une erreur est survenue lors du transfert du message: {str(e)}",
+			color=discord.Color.red()
+		)
+		msg = await message.channel.send(embed=embed)
+		asyncio.create_task(delete_after_delay(msg))
 
