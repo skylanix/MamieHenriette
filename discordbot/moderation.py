@@ -10,7 +10,8 @@ from zoneinfo import ZoneInfo
 from database import db
 from database.helpers import ConfigurationHelper
 from database.models import ModerationEvent
-from discord import Message, TextChannel, ForumChannel, Thread
+from discord import Message, TextChannel, ForumChannel, Thread, app_commands
+from discord.ui import Modal, TextInput, View, Select, ChannelSelect
 
 def _get_local_tz():
 	tz_name = os.environ.get('APP_TZ') or os.environ.get('TZ') or 'Europe/Paris'
@@ -1708,4 +1709,193 @@ async def handle_transfer_command(message: Message, bot):
 	await send_to_moderation_log_channel(bot, log_embed)
 	
 	await safe_delete_message(message)
+
+class TransferReasonModal(Modal, title="Raison du transfert"):
+	reason = TextInput(
+		label="Raison / Titre du post (forum)",
+		placeholder="Pour les forums, ceci devient le titre du post",
+		required=False,
+		max_length=200,
+		style=discord.TextStyle.paragraph
+	)
+	
+	def __init__(self, message: discord.Message, bot, target_channel):
+		super().__init__()
+		self.message = message
+		self.bot = bot
+		self.target_channel = target_channel
+	
+	async def on_submit(self, interaction: discord.Interaction):
+		await interaction.response.defer(ephemeral=True)
+		
+		reason = self.reason.value.strip() if self.reason.value else "Message posté dans le mauvais canal"
+		target_channel = self.target_channel
+		source_channel = self.message.channel
+		content = self.message.content
+		embeds = self.message.embeds
+		files_to_send = []
+		
+		for attachment in self.message.attachments:
+			try:
+				file_data = await attachment.read()
+				files_to_send.append(discord.File(
+					fp=io.BytesIO(file_data),
+					filename=attachment.filename
+				))
+			except Exception as e:
+				logging.error(f"Erreur lors du téléchargement de la pièce jointe: {e}")
+		
+		transferred_message = None
+		
+		if isinstance(target_channel, ForumChannel):
+			try:
+				post_title = f"{self.message.author.display_name} - "
+				if reason and reason != "Message posté dans le mauvais canal":
+					remaining_length = 100 - len(post_title)
+					post_title += reason[:remaining_length]
+				elif content and len(content) > 0:
+					remaining_length = 100 - len(post_title)
+					post_title += content[:remaining_length]
+				else:
+					post_title += "Message transféré"
+				
+				if len(post_title) > 100:
+					post_title = post_title[:97] + "..."
+				
+				transfer_notice = f"**Message original de {self.message.author.mention}**\n"
+				transfer_notice += f"*Ce message a été transféré par un membre du staff depuis {source_channel.mention}*\n"
+				transfer_notice += "─" * 50 + "\n\n"
+				
+				full_content = transfer_notice + (content or "")
+				
+				thread = await target_channel.create_thread(
+					name=post_title,
+					content=full_content,
+					embeds=embeds[:10] if embeds else [],
+					files=files_to_send,
+					reason=f"Transfert depuis {source_channel.name} par {interaction.user.name}"
+				)
+				transferred_message = thread.message
+				
+			except discord.HTTPException as e:
+				logging.error(f"Erreur lors de la création du post dans le forum: {e}")
+				await interaction.followup.send(f"❌ Erreur lors de la création du post: {str(e)}", ephemeral=True)
+				return
+		else:
+			webhooks = await target_channel.webhooks()
+			webhook = None
+			
+			for wh in webhooks:
+				if wh.user == self.bot.user:
+					webhook = wh
+					break
+			
+			if not webhook:
+				try:
+					webhook = await target_channel.create_webhook(name="Mamie Henriette - Transfert")
+				except discord.Forbidden:
+					await interaction.followup.send("❌ Je n'ai pas la permission de créer un webhook dans le canal de destination.", ephemeral=True)
+					return
+			
+			try:
+				transferred_message = await webhook.send(
+					content=content,
+					username=self.message.author.display_name,
+					avatar_url=self.message.author.display_avatar.url,
+					embeds=embeds[:10] if embeds else [],
+					files=files_to_send,
+					allowed_mentions=discord.AllowedMentions.none(),
+					wait=True
+				)
+			except discord.HTTPException as e:
+				logging.error(f"Erreur lors du transfert du message: {e}")
+				await interaction.followup.send(f"❌ Erreur lors du transfert: {str(e)}", ephemeral=True)
+				return
+		
+		try:
+			await self.message.delete()
+		except discord.Forbidden:
+			logging.warning(f"Impossible de supprimer le message original (ID: {self.message.id})")
+		
+		transfer_details = f"De {source_channel.name} vers {target_channel.name}"
+		if isinstance(target_channel, ForumChannel):
+			transfer_details += " (forum)"
+		
+		transfer_event = ModerationEvent(
+			type='transfer',
+			username=self.message.author.name,
+			discord_id=str(self.message.author.id),
+			created_at=datetime.now(timezone.utc),
+			reason=f"{reason} | {transfer_details}",
+			staff_id=str(interaction.user.id),
+			staff_name=interaction.user.name
+		)
+		db.session.add(transfer_event)
+		_commit_with_retry()
+		
+		destination_info = target_channel.mention if isinstance(target_channel, (TextChannel, Thread)) else f"le forum {target_channel.name}"
+		
+		await interaction.followup.send(
+			f"✅ Message de **{self.message.author.name}** transféré vers {destination_info}",
+			ephemeral=True
+		)
+		
+		local_now = _to_local(datetime.now(timezone.utc))
+		log_embed = discord.Embed(
+			title="📨 Transfert de message",
+			description=f"Un message de **{self.message.author.name}** a été transféré",
+			color=discord.Color.blue(),
+			timestamp=datetime.now(timezone.utc)
+		)
+		log_embed.add_field(name="👤 Auteur original", value=f"{self.message.author.name}\n`{self.message.author.id}`", inline=True)
+		log_embed.add_field(name="🛡️ Modérateur", value=f"**{interaction.user.name}**", inline=True)
+		log_embed.add_field(name="📅 Date et heure", value=local_now.strftime('%d/%m/%Y à %H:%M'), inline=True)
+		log_embed.add_field(name="📤 De", value=source_channel.mention, inline=True)
+		log_embed.add_field(name="📥 Vers", value=f"{target_channel.name} ({type(target_channel).__name__})", inline=True)
+		log_embed.add_field(name="📝 Raison", value=reason, inline=False)
+		
+		preview = content[:100] + "..." if content and len(content) > 100 else content
+		if preview:
+			log_embed.add_field(name="💬 Aperçu du message", value=preview, inline=False)
+		
+		log_embed.set_footer(text=f"ID Auteur: {self.message.author.id} • Serveur: {interaction.guild.name}")
+		
+		await send_to_moderation_log_channel(self.bot, log_embed)
+
+class TransferChannelSelect(ChannelSelect):
+	def __init__(self, message: discord.Message, bot):
+		super().__init__(
+			placeholder="Sélectionnez le canal de destination...",
+			channel_types=[discord.ChannelType.text, discord.ChannelType.forum, discord.ChannelType.public_thread, discord.ChannelType.private_thread],
+			min_values=1,
+			max_values=1
+		)
+		self.message = message
+		self.bot = bot
+	
+	async def callback(self, interaction: discord.Interaction):
+		selected_channel = self.values[0]
+		target_channel = self.bot.get_channel(selected_channel.id)
+		
+		if not target_channel:
+			await interaction.response.send_message("❌ Impossible de récupérer le canal sélectionné.", ephemeral=True)
+			return
+		
+		modal = TransferReasonModal(self.message, self.bot, target_channel)
+		await interaction.response.send_modal(modal)
+
+class TransferView(View):
+	def __init__(self, message: discord.Message, bot):
+		super().__init__(timeout=180)
+		self.add_item(TransferChannelSelect(message, bot))
+
+@app_commands.context_menu(name="Déplacer le message")
+@app_commands.default_permissions(manage_messages=True)
+async def transfer_message_context_menu(interaction: discord.Interaction, message: discord.Message):
+	if not has_staff_role(interaction.user.roles):
+		await interaction.response.send_message("❌ Vous n'avez pas les permissions nécessaires pour utiliser cette commande.", ephemeral=True)
+		return
+	
+	view = TransferView(message, interaction.client)
+	await interaction.response.send_message("📨 Sélectionnez le canal de destination :", view=view, ephemeral=True)
 

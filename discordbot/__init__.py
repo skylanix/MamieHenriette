@@ -7,7 +7,7 @@ from webapp import webapp
 from database import db
 from database.helpers import ConfigurationHelper
 from database.models import Configuration, Humeur, Commande
-from discord import Message, TextChannel, Member, VoiceChannel
+from discord import Message, TextChannel, Member, VoiceChannel, app_commands
 from discordbot.humblebundle import checkHumbleBundleAndNotify
 from discordbot.freeloot import checkFreeLootAndNotify
 from discordbot.moderation import (
@@ -22,7 +22,8 @@ from discordbot.moderation import (
 	handle_staff_help_command,
 	handle_timeout_command,
 	handle_say_command,
-	handle_transfer_command
+	handle_transfer_command,
+	transfer_message_context_menu
 )
 from discordbot.welcome import sendWelcomeMessage, sendLeaveMessage, updateInviteCache
 from discordbot.youtube import checkYouTubeVideos
@@ -30,10 +31,39 @@ from discordbot.auto_rooms import on_voice_state_update_auto_rooms, on_raw_react
 from protondb import searhProtonDb
 
 class DiscordBot(discord.Client):
+	def __init__(self, *, intents: discord.Intents):
+		super().__init__(intents=intents)
+		self.tree = app_commands.CommandTree(self)
+		self.synced = False
+	
+	async def setup_hook(self):
+		self.tree.add_command(transfer_message_context_menu)
+		logging.info("Commande contextuelle 'Déplacer le message' ajoutée au CommandTree")
+	
 	async def on_ready(self):
 		logging.info(f'Connecté en tant que {self.user} (ID: {self.user.id})')
 		webapp.config["BOT_STATUS"]["discord_connected"] = True
 		webapp.config["BOT_STATUS"]["discord_guild_count"] = len(self.guilds)
+		
+		if not self.synced:
+			try:
+				logging.info("Synchronisation des commandes d'application en cours...")
+				
+				for guild in self.guilds:
+					try:
+						synced = await self.tree.sync(guild=guild)
+						logging.info(f"✅ {len(synced)} commande(s) synchronisée(s) pour le serveur '{guild.name}' (ID: {guild.id})")
+					except Exception as e:
+						logging.error(f"❌ Erreur lors de la synchronisation pour {guild.name}: {e}")
+				
+				synced_global = await self.tree.sync()
+				logging.info(f"✅ {len(synced_global)} commande(s) synchronisée(s) globalement")
+				
+				self.synced = True
+				logging.info("🎉 Synchronisation complète terminée - Les commandes sont maintenant disponibles !")
+			except Exception as e:
+				logging.error(f"❌ Erreur lors de la synchronisation des commandes: {e}")
+		
 		for c in self.get_all_channels() :
 			logging.info(f'{c.id} {c.name}')
 		
