@@ -1414,10 +1414,6 @@ async def handle_say_command(message: Message, bot):
 		logging.error(f"Erreur lors de l'envoi du message: {e}")
 
 async def handle_transfer_command(message: Message, bot):
-	"""
-	Commande pour transférer un message d'un canal à un autre en préservant l'identité de l'auteur original.
-	Syntaxe: !transfert #canal_destination <message_id ou lien> [raison]
-	"""
 	if not has_staff_role(message.author.roles):
 		await send_access_denied(message.channel)
 		return
@@ -1453,7 +1449,6 @@ async def handle_transfer_command(message: Message, bot):
 		asyncio.create_task(delete_after_delay(msg))
 		return
 	
-	# Récupérer le canal de destination
 	target_channel = None
 	if message.channel_mentions:
 		target_channel = message.channel_mentions[0]
@@ -1474,7 +1469,6 @@ async def handle_transfer_command(message: Message, bot):
 		asyncio.create_task(delete_after_delay(msg))
 		return
 	
-	# Vérifier que le canal de destination est compatible
 	if not isinstance(target_channel, (TextChannel, ForumChannel, Thread)):
 		embed = discord.Embed(
 			title="❌ Erreur",
@@ -1485,14 +1479,11 @@ async def handle_transfer_command(message: Message, bot):
 		asyncio.create_task(delete_after_delay(msg))
 		return
 	
-	# Récupérer le message à transférer
 	message_id = None
 	source_channel = message.channel
 	
-	# Vérifier si c'est un lien Discord
 	if 'discord.com/channels/' in parts[2]:
 		try:
-			# Format: https://discord.com/channels/guild_id/channel_id/message_id
 			link_parts = parts[2].split('/')
 			source_channel_id = int(link_parts[-2])
 			message_id = int(link_parts[-1])
@@ -1517,7 +1508,6 @@ async def handle_transfer_command(message: Message, bot):
 			asyncio.create_task(delete_after_delay(msg))
 			return
 	else:
-		# C'est un ID de message
 		try:
 			message_id = int(parts[2])
 		except ValueError:
@@ -1530,7 +1520,6 @@ async def handle_transfer_command(message: Message, bot):
 			asyncio.create_task(delete_after_delay(msg))
 			return
 	
-	# Récupérer le message original
 	try:
 		original_message = await source_channel.fetch_message(message_id)
 	except discord.NotFound:
@@ -1552,15 +1541,12 @@ async def handle_transfer_command(message: Message, bot):
 		asyncio.create_task(delete_after_delay(msg))
 		return
 	
-	# Raison du transfert (optionnel)
 	reason = parts[3] if len(parts) > 3 else "Message posté dans le mauvais canal"
 	
-	# Préparer le contenu du message
 	content = original_message.content
 	embeds = original_message.embeds
 	files_to_send = []
 	
-	# Télécharger les pièces jointes
 	for attachment in original_message.attachments:
 		try:
 			file_data = await attachment.read()
@@ -1571,16 +1557,12 @@ async def handle_transfer_command(message: Message, bot):
 		except Exception as e:
 			logging.error(f"Erreur lors du téléchargement de la pièce jointe: {e}")
 	
-	# Gestion différente selon le type de canal
 	transferred_message = None
 	
 	if isinstance(target_channel, ForumChannel):
-		# Pour un forum : créer un nouveau post (thread)
 		try:
-			# Générer un titre pour le post avec le nom de l'auteur original
 			post_title = f"{original_message.author.display_name} - "
 			if content and len(content) > 0:
-				# Utiliser le contenu pour le reste du titre
 				remaining_length = 100 - len(post_title)
 				post_title += content[:remaining_length]
 			else:
@@ -1589,15 +1571,12 @@ async def handle_transfer_command(message: Message, bot):
 			if len(post_title) > 100:
 				post_title = post_title[:97] + "..."
 			
-			# Ajouter un message informatif au début du contenu
 			transfer_notice = f"**Message original de {original_message.author.mention}**\n"
 			transfer_notice += f"*Ce message a été transféré par un membre du staff depuis {source_channel.mention}*\n"
 			transfer_notice += "─" * 50 + "\n\n"
 			
-			# Combiner le message informatif avec le contenu original
 			full_content = transfer_notice + (content or "")
 			
-			# Créer le post dans le forum
 			thread = await target_channel.create_thread(
 				name=post_title,
 				content=full_content,
@@ -1605,7 +1584,7 @@ async def handle_transfer_command(message: Message, bot):
 				files=files_to_send,
 				reason=f"Transfert depuis {source_channel.name} par {message.author.name}"
 			)
-			transferred_message = thread.message  # Le message initial du thread
+			transferred_message = thread.message
 			
 		except discord.HTTPException as e:
 			logging.error(f"Erreur lors de la création du post dans le forum: {e}")
@@ -1619,18 +1598,14 @@ async def handle_transfer_command(message: Message, bot):
 			return
 			
 	else:
-		# Pour un canal textuel ou thread : utiliser un webhook
-		# Créer un webhook pour envoyer le message en tant que l'auteur original
 		webhooks = await target_channel.webhooks()
 		webhook = None
 		
-		# Chercher un webhook existant créé par le bot
 		for wh in webhooks:
 			if wh.user == bot.user:
 				webhook = wh
 				break
 		
-		# Créer un webhook si nécessaire
 		if not webhook:
 			try:
 				webhook = await target_channel.create_webhook(name="Mamie Henriette - Transfert")
@@ -1644,7 +1619,6 @@ async def handle_transfer_command(message: Message, bot):
 				asyncio.create_task(delete_after_delay(msg))
 				return
 		
-		# Envoyer le message via le webhook
 		try:
 			transferred_message = await webhook.send(
 				content=content,
@@ -1653,7 +1627,7 @@ async def handle_transfer_command(message: Message, bot):
 				embeds=embeds[:10] if embeds else [],
 				files=files_to_send,
 				allowed_mentions=discord.AllowedMentions.none(),
-				wait=True  # Attendre pour récupérer le message envoyé
+				wait=True
 			)
 		except discord.HTTPException as e:
 			logging.error(f"Erreur lors du transfert du message: {e}")
@@ -1666,13 +1640,11 @@ async def handle_transfer_command(message: Message, bot):
 			asyncio.create_task(delete_after_delay(msg))
 			return
 	
-	# Supprimer le message original
 	try:
 		await original_message.delete()
 	except discord.Forbidden:
 		logging.warning(f"Impossible de supprimer le message original (ID: {message_id})")
 	
-	# Enregistrer l'événement de transfert dans la base de données
 	transfer_details = f"De {source_channel.name} vers {target_channel.name}"
 	if isinstance(target_channel, ForumChannel):
 		transfer_details += " (forum)"
@@ -1689,7 +1661,6 @@ async def handle_transfer_command(message: Message, bot):
 	db.session.add(transfer_event)
 	_commit_with_retry()
 	
-	# Envoyer un message de confirmation dans le canal source
 	local_now = _to_local(datetime.now(timezone.utc))
 	destination_info = target_channel.mention if isinstance(target_channel, (TextChannel, Thread)) else f"le forum {target_channel.name}"
 	
@@ -1711,7 +1682,6 @@ async def handle_transfer_command(message: Message, bot):
 	confirmation_msg = await source_channel.send(embed=embed)
 	asyncio.create_task(delete_after_delay(confirmation_msg))
 	
-	# Logger dans le canal de modération
 	log_embed = discord.Embed(
 		title="📨 Transfert de message",
 		description=f"Un message de **{original_message.author.name}** a été transféré",
@@ -1725,7 +1695,6 @@ async def handle_transfer_command(message: Message, bot):
 	log_embed.add_field(name="📥 Vers", value=f"{target_channel.name} ({type(target_channel).__name__})", inline=True)
 	log_embed.add_field(name="📝 Raison", value=reason, inline=False)
 	
-	# Ajouter un aperçu du contenu
 	preview = content[:100] + "..." if content and len(content) > 100 else content
 	if preview:
 		log_embed.add_field(name="💬 Aperçu du message", value=preview, inline=False)
@@ -1734,6 +1703,5 @@ async def handle_transfer_command(message: Message, bot):
 	
 	await send_to_moderation_log_channel(bot, log_embed)
 	
-	# Supprimer la commande de transfert
 	await safe_delete_message(message)
 
